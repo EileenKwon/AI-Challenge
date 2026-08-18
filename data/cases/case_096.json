@@ -1,0 +1,20 @@
+{
+  "case_id": "case_096",
+  "facts": {
+    "max_overdue_days": 13,
+    "total_debt": 39463930,
+    "has_continuous_income": true,
+    "income_proof_available": true,
+    "has_secured_debt": true,
+    "has_overdue": true,
+    "income_drop_signal": true,
+    "court_proceeding_ongoing": false,
+    "seizure_ongoing": false,
+    "has_guarantee_debt": false,
+    "has_tax_debt": false,
+    "has_private_debt": false,
+    "legal_dispute": false,
+    "monthly_available": 1668726
+  },
+  "expected_top_path_id": "sinsok_debt_adjustment"
+}

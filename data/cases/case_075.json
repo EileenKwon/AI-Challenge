@@ -1,0 +1,20 @@
+{
+  "case_id": "case_075",
+  "facts": {
+    "max_overdue_days": 33,
+    "total_debt": 19904616,
+    "has_continuous_income": true,
+    "income_proof_available": null,
+    "has_secured_debt": true,
+    "has_overdue": true,
+    "income_drop_signal": false,
+    "court_proceeding_ongoing": false,
+    "seizure_ongoing": false,
+    "has_guarantee_debt": false,
+    "has_tax_debt": false,
+    "has_private_debt": false,
+    "legal_dispute": false,
+    "monthly_available": 748267
+  },
+  "expected_top_path_id": "pre_debt_adjustment"
+}

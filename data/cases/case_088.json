@@ -1,0 +1,20 @@
+{
+  "case_id": "case_088",
+  "facts": {
+    "max_overdue_days": 21,
+    "total_debt": 56048370,
+    "has_continuous_income": true,
+    "income_proof_available": true,
+    "has_secured_debt": true,
+    "has_overdue": true,
+    "income_drop_signal": false,
+    "court_proceeding_ongoing": true,
+    "seizure_ongoing": false,
+    "has_guarantee_debt": false,
+    "has_tax_debt": false,
+    "has_private_debt": false,
+    "legal_dispute": false,
+    "monthly_available": 1510902
+  },
+  "expected_top_path_id": "court_rehabilitation"
+}

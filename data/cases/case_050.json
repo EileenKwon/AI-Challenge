@@ -1,0 +1,20 @@
+{
+  "case_id": "case_050",
+  "facts": {
+    "max_overdue_days": 92,
+    "total_debt": 25532636,
+    "has_continuous_income": true,
+    "income_proof_available": true,
+    "has_secured_debt": true,
+    "has_overdue": true,
+    "income_drop_signal": false,
+    "court_proceeding_ongoing": false,
+    "seizure_ongoing": false,
+    "has_guarantee_debt": false,
+    "has_tax_debt": false,
+    "has_private_debt": false,
+    "legal_dispute": false,
+    "monthly_available": -395965
+  },
+  "expected_top_path_id": "personal_workout"
+}
