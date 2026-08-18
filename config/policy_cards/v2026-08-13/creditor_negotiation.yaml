@@ -1,0 +1,54 @@
+# 주의: verified 는 공식 출처 대조를 완료하기 전까지 반드시 false 로 둔다.
+# 이 경로는 신용회복위원회 등 공적 제도가 아니라 개별 금융회사에 대한 문의다.
+# 금융회사마다 상환유예·만기연장 정책이 달라 공통 자격조건을 특정하기 어렵다.
+# 그래서 conditions 에 구체적 수치를 넣지 않고 value: TODO 로 남긴다.
+
+id: creditor_negotiation
+version: "2026-08-13.1"
+name: 채권금융회사 상환조건 변경 문의
+agency: 개별 채권금융회사(대출을 실행한 금융회사)
+target: 상환유예·만기연장·상환방식 변경을 개별 문의하려는 채무자
+priority: 3
+
+verified: false                 # TODO: 공식 출처 대조 후 true
+policy_base_date: "2026-08-13"
+last_reviewed: "2026-08-13"
+
+source:
+  title: "TODO"                 # 채권금융회사별 안내는 개별 확인이 필요하다
+  url: "TODO"
+  retrieved_at: "TODO"
+
+conditions:
+  - id: has_debt
+    label: 보유 채무 존재 (개별 금융회사 자격조건은 미확인)
+    field: max_overdue_days
+    op: exists
+    value: TODO   # TODO: 금융회사별 공식 기준 확인 전까지 자격조건을 특정하지 않는다
+    required: true
+
+exclusions: []
+
+required_inputs:
+  - max_overdue_days
+
+documents:
+  - 신분증
+  - 채무 관련 서류
+
+consult_questions:
+  - 상환유예가 가능한 기간은 어느 정도인가
+  - 만기연장 시 금리나 수수료가 달라지는가
+  - 상환방식 변경이 신용점수에 영향을 주는가
+
+swing_factors:
+  - 채권금융회사별 내부 정책
+  - 연체 여부와 연체일수
+
+why_final_check: >
+  이 경로는 공적 채무조정 제도가 아니라 개별 금융회사와의 협의다.
+  가능 여부와 조건은 해당 금융회사에 직접 확인해야 한다.
+
+changelog:
+  - date: "2026-08-13"
+    change: 최초 작성 (미검증 상태, 자격조건 미확정)

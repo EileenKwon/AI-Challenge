@@ -1,0 +1,55 @@
+# 주의: verified 는 공식 출처 대조를 완료하기 전까지 반드시 false 로 둔다.
+# 개인회생·개인파산의 구체적 요건(채무초과, 지급불능, 채무 한도 등)은
+# 법원·사건별로 다르게 적용될 수 있어 공식 출처 대조 전까지 임의로 채우지 않는다.
+
+id: court_rehabilitation
+version: "2026-08-13.1"
+name: 법원 개인회생·개인파산
+agency: 법원
+target: 채무초과·지급불능 상태로 법원 절차 검토가 필요한 채무자
+priority: 5
+
+verified: false                 # TODO: 공식 출처 대조 후 true
+policy_base_date: "2026-08-13"
+last_reviewed: "2026-08-13"
+
+source:
+  title: "TODO"                 # 대법원/법원 공식 안내 확인 필요
+  url: "TODO"
+  retrieved_at: "TODO"
+
+conditions:
+  - id: insolvency_signal
+    label: 채무초과·지급불능 상태 (구체 기준 미확인)
+    field: max_overdue_days
+    op: exists
+    value: TODO   # TODO: 법원 공식 신청 요건(채무초과, 변제능력 등) 확인 후 기입
+    required: true
+
+exclusions: []
+
+required_inputs:
+  - max_overdue_days
+
+documents:
+  - 신분증
+  - 소득증빙서류
+  - 채무 관련 서류
+  - 재산목록
+
+consult_questions:
+  - 개인회생과 개인파산 중 어느 절차가 적합한가
+  - 예상 변제기간과 변제금액은 어느 정도인가
+  - 절차 진행 중 신용거래 제약은 어떻게 되는가
+
+swing_factors:
+  - 총채무액과 재산 규모
+  - 정기 소득 여부(변제능력)
+
+why_final_check: >
+  법원 절차는 이 서비스가 판단하지 않는다. 전문상담(법률구조공단, 변호사 등)을
+  통해 신청 요건과 예상 결과를 확인해야 한다.
+
+changelog:
+  - date: "2026-08-13"
+    change: 최초 작성 (미검증 상태, 자격조건 미확정)
