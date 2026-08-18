@@ -1,0 +1,24 @@
+# T08 골든 케이스 — 경계값: 전 항목 결측.
+# monthly_payment/balance 를 포함해 계산에 필요한 값이 전부 미확인인 상태에서도
+# Money 필드는 항상 확정 숫자(0)로 반환되어야 한다(CashflowResult.cashflow 는 옵셔널이 아니다).
+
+id: all_fields_missing
+description: 소득·가구·채무 정보가 전부 미확인인 극단 케이스.
+
+input:
+  debts:
+    - product_type: credit_loan
+      is_secured: false
+    - product_type: card_loan
+      is_secured: false
+  income: {}
+  household: {}
+
+expected:
+  total_debt: 0
+  monthly_total_payment: 0
+  monthly_available: 0
+  monthly_shortfall: 0
+  dti_ratio: null
+  max_overdue_days: null
+  excluded_items_count: 4

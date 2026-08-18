@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/
+
+# 업로드 원본과 세션 데이터는 절대 커밋하지 않는다
+uploads/
+sessions.db
+data/uploads/
+
+# 평가 산출물
+results/*.csv
+reports/*.md
+figures/*.png
+!results/.gitkeep
+!reports/.gitkeep
+!figures/.gitkeep

@@ -1,0 +1,55 @@
+# 기획서 15장 대표 데모 시나리오 — 계산 오차 0 검증용
+# 이 파일의 expected 값이 바뀌면 계산 모듈에 회귀가 발생한 것이다.
+
+id: kimhaneul
+description: 3개 금융회사 신용대출·카드론 보유, 연체 42일
+
+input:
+  debts:
+    - creditor: A금융
+      product_type: credit_loan
+      balance: 25000000
+      overdue_days: 42
+      is_secured: false
+      monthly_payment: 620000
+    - creditor: B카드
+      product_type: card_loan
+      balance: 14000000
+      overdue_days: 0
+      is_secured: false
+      monthly_payment: 380000
+    - creditor: C캐피탈
+      product_type: credit_loan
+      balance: 7000000
+      overdue_days: 0
+      is_secured: false
+      monthly_payment: 180000
+  income:
+    monthly_net_income: 2500000
+    support_income: 0
+  household:
+    essential_living_cost: 1450000   # 주거비 포함 (기획서 15.1 표기 기준)
+    housing_cost: 0
+    medical_care_cost: 0
+    other_fixed_cost: 0
+    dependents: 0
+
+expected:
+  total_debt: 46000000
+  monthly_total_payment: 1180000
+  monthly_available: 1050000
+  monthly_shortfall: 130000
+  dti_ratio: "0.472"
+  max_overdue_days: 42
+  excluded_items: []
+
+expected_scenario_income_drop_20:
+  monthly_net_income: 2000000
+  monthly_available: 550000
+  monthly_shortfall: 630000
+
+expected_paths:
+  # 연체 42일 → 사전채무조정 구간
+  top_path_id: pre_debt_adjustment
+  must_not_be_excluded:
+    - pre_debt_adjustment      # 소득증빙 미확인은 EXCLUDED 가 아니라 NEEDS_INFO

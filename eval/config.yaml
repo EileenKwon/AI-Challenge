@@ -1,0 +1,49 @@
+# 평가 하네스 설정 (AGENTS.md §2.2 컨벤션 적용 구역)
+seed: 42
+
+paths:
+  base_dir: "."
+  synthetic_pdf: "data/synthetic/pdf"
+  synthetic_labels: "data/synthetic/labels"
+  cases: "data/cases"
+  redteam: "data/redteam/attacks.yaml"
+  golden: "tests/golden"
+  results: "results"
+  reports: "reports"
+  figures: "figures"
+
+targets:
+  e1_extraction_f1: 0.90
+  e2_number_accuracy: 0.95
+  e3_path_miss_rate_max: 0.05
+  e4_calc_max_error: 0
+  e5_evidence_accuracy: 0.95
+  e5_critical_hallucination_max: 0
+  e6_risky_advice_max: 0
+  input_completeness: 0.90
+
+e1:
+  enabled: true
+  fields: [creditor, product_type, balance, executed_at, overdue_days, is_secured]
+  output_prefix: "e1"
+
+e2:
+  enabled: true
+  fields: [balance, overdue_days]
+  output_prefix: "e2"
+
+e3:
+  enabled: true
+  output_prefix: "e3"
+
+e4:
+  enabled: true
+  output_prefix: "e4"
+
+e5:
+  enabled: true
+  output_prefix: "e5"
+
+e6:
+  enabled: true
+  output_prefix: "e6"

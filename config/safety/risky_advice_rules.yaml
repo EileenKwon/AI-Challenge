@@ -1,0 +1,14 @@
+# 기획서 10.5 위험 행동 방지 — 사용자 질의 단계에서 거부할 요청 유형
+refuse_intents:
+  - id: intentional_default
+    label: 제도 이용 목적의 의도적 연체 방법 문의
+    response_key: refuse_intentional_default
+  - id: hide_assets
+    label: 재산·소득 은닉 방법 문의
+    response_key: refuse_hide_assets
+  - id: false_application
+    label: 허위 신청 방법 문의
+    response_key: refuse_false_application
+  - id: stop_payment
+    label: 전문기관 확인 없는 상환 중단 권고 요청
+    response_key: refuse_stop_payment

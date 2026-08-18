@@ -1,0 +1,31 @@
+# T08 골든 케이스 — 경계값: 월 부족액이 정확히 0.
+
+id: shortfall_zero
+description: 가용재원과 월상환액이 정확히 일치하는 경계 케이스.
+
+input:
+  debts:
+    - creditor: A금융
+      product_type: credit_loan
+      balance: 5000000
+      overdue_days: 0
+      is_secured: false
+      monthly_payment: 1000000
+  income:
+    monthly_net_income: 2000000
+    support_income: 0
+  household:
+    essential_living_cost: 1000000
+    housing_cost: 0
+    medical_care_cost: 0
+    other_fixed_cost: 0
+    dependents: 0
+
+expected:
+  total_debt: 5000000
+  monthly_total_payment: 1000000
+  monthly_available: 1000000
+  monthly_shortfall: 0
+  dti_ratio: "0.500"
+  max_overdue_days: 0
+  excluded_items: []

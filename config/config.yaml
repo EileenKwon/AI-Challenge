@@ -1,0 +1,56 @@
+# 채무회복 내비게이터 설정
+# 임계치·경로를 코드에 하드코딩하지 않는다 (AGENTS.md 절대 규칙 9)
+
+meta:
+  policy_base_date: "2026-08-13"
+  service_name: "채무회복 내비게이터"
+
+paths:
+  upload_dir: "./uploads"
+  policy_card_dir: "./config/policy_cards"
+  policy_card_version: "v2026-08-13"
+  safety_dir: "./config/safety"
+  synthetic_dir: "./data/synthetic"
+  questions_file: "./config/questions.yaml"
+
+session:
+  ttl_minutes: 60
+  max_violations: 3          # 초과 시 자동 응답 중단 → 공식 상담 안내
+
+ingest:
+  max_upload_mb: 20
+  allowed_mime: ["application/pdf", "image/png", "image/jpeg"]
+  min_text_chars: 50         # 페이지당 이 미만이면 스캔본으로 간주
+
+extraction:
+  low_confidence_threshold: 0.7   # 미만이면 화면에 경고 표시
+  max_debts: 30
+
+reconcile:
+  # 필수생활비 하한 임계치. 이 값은 근거를 확인한 뒤 갱신할 것.
+  # 현재 값은 플레이스홀더이며 사용자 결과를 차단하지 않고 재확인만 요청한다.
+  living_cost_floor_per_person: 0   # TODO: 공식 기준(예: 중위소득 기반) 확인 후 기입
+  living_cost_check_enabled: false  # 근거 확인 전까지 비활성
+
+cashflow:
+  currency_unit: "KRW"
+  # 부담률 경고 구간 (표시 목적. 제도 판정과 무관)
+  dti_warn_ratio: 0.30
+  dti_severe_ratio: 0.50
+
+rules:
+  allow_unverified_cards: true   # 개발 중에만 true. 배포 전 반드시 false
+  max_paths: 3
+
+narrative:
+  enabled: true
+  max_retries: 1                 # 그라운딩 실패 시 재생성 횟수
+  fallback_to_template: true
+
+report:
+  max_pages: 1
+  font_family: "Noto Sans KR"
+
+logging:
+  level: "INFO"
+  redact_pii: true

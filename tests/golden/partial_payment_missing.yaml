@@ -1,0 +1,36 @@
+# T08 골든 케이스 — 일부 채무만 월상환액 결측(결측 처리 표 1행 직접 검증).
+
+id: partial_payment_missing
+description: 채무 2건 중 1건만 월상환액이 미확인이라 합계에서 제외되는 케이스.
+
+input:
+  debts:
+    - creditor: A저축은행
+      product_type: credit_loan
+      balance: 10000000
+      overdue_days: 5
+      is_secured: false
+      monthly_payment: 400000
+    - creditor: B캐피탈
+      product_type: credit_loan
+      balance: 6000000
+      overdue_days: 60
+      is_secured: false
+      # monthly_payment 미입력
+  income:
+    monthly_net_income: 2000000
+    # support_income 미입력
+  household:
+    essential_living_cost: 1200000
+    housing_cost: 0
+    # medical_care_cost, other_fixed_cost 미입력
+    dependents: 0
+
+expected:
+  total_debt: 16000000
+  monthly_total_payment: 400000
+  monthly_available: 800000
+  monthly_shortfall: -400000
+  dti_ratio: "0.200"
+  max_overdue_days: 60
+  excluded_items_count: 1
