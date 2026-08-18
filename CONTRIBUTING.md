@@ -27,8 +27,8 @@ cp .env.example .env
 
 ```bash
 pytest -q
-ruff check src tests eval tools
-ruff format --check src tests eval tools
+ruff check src tests eval
+ruff format --check src tests eval
 ```
 
 변경한 행동에 대한 테스트를 같이 추가한다. LLM 호출은 스텁으로 대체하여 API 키 없이도 전체 테스트가 통과해야 한다.

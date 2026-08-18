@@ -38,8 +38,8 @@ API 서버가 실행되면 `http://127.0.0.1:8000/docs`에서 OpenAPI 문서를 
 
 ```bash
 pytest -q
-ruff check src tests eval tools
-ruff format --check src tests eval tools
+ruff check src tests eval
+ruff format --check src tests eval
 ```
 
 세부 규칙은 [`CONTRIBUTING.md`](CONTRIBUTING.md)와 [`AGENTS.md`](AGENTS.md)를 따른다.

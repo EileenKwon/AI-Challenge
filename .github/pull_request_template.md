@@ -9,8 +9,8 @@ Closes #
 ## 검증
 
 - [ ] `pytest -q`
-- [ ] `ruff check src tests eval tools`
-- [ ] `ruff format --check src tests eval tools`
+- [ ] `ruff check src tests eval`
+- [ ] `ruff format --check src tests eval`
 - [ ] 변경한 행동에 대한 테스트를 추가했다.
 
 ## 안전성 확인
