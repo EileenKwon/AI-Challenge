@@ -34,6 +34,12 @@ conditions:
     op: is_true
     required: true
 
+  - id: income_proof
+    label: 소득증빙 가능 여부
+    field: income_proof_available
+    op: is_true
+    required: true
+
   # TODO: 총채무액 한도, 채권금융회사 협약 여부 등
   #       공식 출처에서 확인한 조건만 추가한다.
 
