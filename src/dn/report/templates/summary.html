@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<style>
+  @page { size: A4; margin: 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "{{ font_family }}", "Noto Sans CJK KR", sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: #1a1a1a;
+    margin: 0;
+  }
+  h1 { font-size: 14pt; margin: 0 0 2mm 0; }
+  h2 { font-size: 10.5pt; margin: 3mm 0 1.5mm 0; border-bottom: 1px solid #999; padding-bottom: 1mm; }
+  .meta { color: #555; font-size: 8pt; margin-bottom: 3mm; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1mm; }
+  th, td { text-align: left; padding: 1mm 2mm; border-bottom: 1px solid #e0e0e0; font-size: 9pt; }
+  th { color: #555; font-weight: 600; }
+  .headline { font-size: 11pt; font-weight: 700; margin: 1mm 0 2mm 0; }
+  .grid { display: flex; gap: 4mm; }
+  .grid > div { flex: 1; }
+  ul { margin: 0; padding-left: 4mm; }
+  li { margin-bottom: 0.8mm; }
+  .disclaimer {
+    margin-top: 3mm; padding-top: 2mm; border-top: 1px solid #999;
+    font-size: 7.5pt; color: #555;
+  }
+  .empty { color: #888; font-style: italic; }
+</style>
+</head>
+<body>
+  <h1>{{ service_name }} — 상담용 요약서</h1>
+  <div class="meta">정책 기준일: {{ policy_base_date or "확인되지 않음" }}</div>
+
+  <h2>1. 채무 현황</h2>
+  {% if debts %}
+  <table>
+    <tr><th>채권자</th><th>잔액</th><th>연체일수</th></tr>
+    {% for d in debts %}
+    <tr><td>{{ d.creditor }}</td><td>{{ d.balance }}</td><td>{{ d.overdue_days }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="empty">확인된 채무가 없습니다.</p>
+  {% endif %}
+
+  {% if cashflow %}
+  <h2>2. 현금흐름 (확정 숫자)</h2>
+  <div class="headline">
+    {% if cashflow.shortfall_is_positive %}
+      매달 {{ cashflow.monthly_shortfall }}이 부족합니다.
+    {% else %}
+      매달 {{ cashflow.monthly_shortfall }}의 여유 자금이 있습니다.
+    {% endif %}
+  </div>
+  <div class="grid">
+    <div>총 채무액: {{ cashflow.total_debt }}</div>
+    <div>월 예정 상환액: {{ cashflow.monthly_total_payment }}</div>
+    <div>월 가용재원: {{ cashflow.monthly_available }}</div>
+    <div>부담률: {{ cashflow.dti_ratio }}</div>
+  </div>
+  {% endif %}
+
+  <h2>3. 미확인 항목</h2>
+  {% if unknowns %}
+  <ul>{% for u in unknowns %}<li>{{ u }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="empty">추가로 확인이 필요한 항목이 없습니다.</p>
+  {% endif %}
+
+  {% if options.include_paths %}
+  <h2>4. 검토 경로 (최대 3)</h2>
+  {% if paths %}
+  <table>
+    <tr><th>경로</th><th>담당기관</th><th>상태</th></tr>
+    {% for p in paths %}
+    <tr><td>{{ p.name }}</td><td>{{ p.agency }}</td><td>{{ p.status }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="empty">현재 정보로는 검토 경로를 찾지 못했습니다.</p>
+  {% endif %}
+  {% endif %}
+
+  {% if options.include_questions %}
+  <h2>5. 상담 시 확인할 질문</h2>
+  {% if questions %}
+  <ul>{% for q in questions %}<li>{{ q }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="empty">준비된 질문이 없습니다.</p>
+  {% endif %}
+  {% endif %}
+
+  <div class="disclaimer">{{ disclaimer }}</div>
+</body>
+</html>
