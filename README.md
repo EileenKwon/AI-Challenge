@@ -1,6 +1,7 @@
 # 채무회복 내비게이터
 
 저신용·다중채무자를 위한 근거 기반 AI 채무회복 실행 코파일럿.
+**2026 금융 AI Challenge** (제출 마감 2026-09-07) 출품작.
 
 ## 원칙
 
@@ -8,26 +9,117 @@
 > 상환여력은 결정론적 계산 모듈이 확정 숫자로 산출한다.
 > 제도 적합성은 판정하지 않고 근거·미확인 조건과 함께 검토 후보로만 제시한다.
 
+## 현재 진행 상황 (2026-08-18 기준)
+
+**`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 테스트 323개
+전량 통과(`pytest -q`), `ruff check` / `ruff format --check` 클린.
+
+| 항목 | 상태 |
+|---|---|
+| 태스크 구현 (T00~T23) | ✅ 23/23 완료 |
+| 단위·통합 테스트 | ✅ 323 passed |
+| 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
+| 평가 하네스 (E1~E6) | ✅ 실행 완료 — 단, 아래 한계 참고 |
+| Docker 빌드 검증 | ⚠️ 샌드박스에 Docker 권한 없어 미검증 (Dockerfile/compose는 작성 완료, 로컬 uvicorn 기준 스모크 테스트로 대체 검증) |
+| 브라우저 수동 워크스루 (T19, 375px 무가로스크롤 등) | ⚠️ 브라우저 도구 미보유로 서버 렌더링만 확인, 육안 검증 미완료 |
+| 정책 카드 공식 출처 검증 | ⚠️ 6개 카드 모두 `verified: false` / `source.url: TODO` — 배포 전 필수 확인 항목 |
+| 실제 LLM(E1/E2 추출 정확도) 평가 | ⚠️ `ANTHROPIC_API_KEY` 미설정 상태라 `StubClient` 기반 `[STUB_MODE]` 결과만 존재 |
+
+배포 전 남은 작업은 아래 [배포 전 체크리스트](#배포-전-체크리스트)를 따른다.
+
+## 전체 로드맵 (`CODEX_TASKS.md` T00~T23)
+
+| # | 태스크 | 상태 |
+|---|---|---|
+| T00 | 프로젝트 부트스트랩 | ✅ |
+| T01 | 도메인 모델 | ✅ |
+| T02 | 세션 저장소와 상태머신 | ✅ |
+| T03 | 문서 인제스트 | ✅ |
+| T04 | PII 마스킹 · 인젝션 스캐너 | ✅ |
+| T05 | LLM 클라이언트 | ✅ |
+| T06 | 추출기 · 정규화 · 검증 | ✅ |
+| T07 | 누락 · 모순 탐지 | ✅ |
+| T08 | 현금흐름 계산 모듈 ★최우선 정확도 | ✅ |
+| T09 | 소득 감소 시나리오 분석 | ✅ |
+| T10 | 정책 카드 스키마와 로더 | ✅ |
+| T11 | 3-state 조건 평가기 | ✅ |
+| T12 | 규칙 엔진 | ✅ |
+| T13 | 트리아지 | ✅ |
+| T14 | 설명 생성기와 숫자 그라운딩 검증 ★환각 방어선 | ✅ |
+| T15 | 안전 필터 | ✅ |
+| T16 | 7일 행동계획 | ✅ |
+| T17 | 상담용 요약서 PDF | ✅ |
+| T18 | API 라우터와 오케스트레이터 | ✅ |
+| T19 | 화면 7종 | ✅ |
+| T20 | 합성 신용정보조회서 생성기 | ✅ |
+| T21 | 평가 하네스 E1~E6 | ✅ |
+| T22 | 설명가능성 번들과 감사 로그 | ✅ |
+| T23 | 배포와 스모크 테스트 | ✅ |
+
+## 폴더 구조
+
+```
+debt-recovery-navigator/
+├── src/dn/                     # 애플리케이션 본체
+│   ├── domain/                 #   Tracked[T] 도메인 모델, Money/Ratio 타입
+│   ├── ingest/                 #   PDF 업로드·텍스트 추출
+│   ├── llm/                    #   Anthropic 클라이언트 (API 키 없으면 StubClient 폴백)
+│   ├── extraction/              #   LLM 구조화 추출·정규화·숫자 그라운딩 검증
+│   ├── reconcile/               #   결측값·충돌 탐지, 보완 질문 생성
+│   ├── cashflow/                 #   결정론적 현금흐름 계산 (순수 함수, float 금지)
+│   ├── rules/                    #   YAML 정책 카드 로더 + 3-state 조건 평가기
+│   ├── planning/                 #   7일 행동계획 생성
+│   ├── narrative/                #   설명 생성기 (LLM 서술 + 그라운딩 검증)
+│   ├── safety/                   #   입력/출력 안전 필터 (탈옥·리스크 조언·낙인 탐지)
+│   ├── report/                   #   상담용 요약서 PDF (WeasyPrint)
+│   │   └── templates/
+│   ├── pipeline/                 #   9단계 analyze() 오케스트레이터
+│   ├── api/                      #   세션·문서·분석 라우터
+│   ├── web/                      #   Jinja2 + HTMX 화면 7종
+│   │   ├── templates/
+│   │   └── static/
+│   ├── storage/                  #   세션 저장소, 상태머신
+│   └── main.py                   #   FastAPI 앱 팩토리
+├── config/
+│   ├── config.yaml                #   설정 (allow_unverified_cards 등)
+│   ├── policy_cards/v2026-08-13/  #   YAML 정책 카드 6개 (전부 verified: false)
+│   └── safety/                    #   인젝션 패턴, 금지 문구 YAML
+├── data/
+│   ├── cases/                     #   테스트용 시나리오 케이스
+│   ├── redteam/                   #   레드팀 공격 샘플 (attacks.yaml)
+│   └── synthetic/                 #   합성 신용정보조회서 PDF + 라벨
+├── eval/                          #   평가 하네스 E1~E6 + report_builder
+├── tools/synth/                   #   합성 데이터 생성 스크립트
+├── tests/
+│   ├── unit/ integration/ golden/ fixtures/
+├── reports/                       #   metrics_summary.md 등 평가 결과 산출물
+├── scripts/smoke.sh               #   데모 시나리오 curl 스모크 테스트
+├── Dockerfile, docker-compose.yml #   배포 아티팩트 (빌드 미검증, §진행상황 참고)
+├── ARCHITECTURE.md                #   시스템 아키텍처, 불변식, 모듈 설계
+├── AGENTS.md                      #   코딩 에이전트 작업 규약 (절대 규칙 10개)
+├── CODEX_TASKS.md                 #   T00~T23 순차 구현 지시서
+└── docs/기획서.md                  #   서비스 기획서 (원본)
+```
+
 ## 시작하기
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env          # ANTHROPIC_API_KEY 설정
+cp .env.example .env          # ANTHROPIC_API_KEY 설정 (없어도 StubClient로 동작함 — 아래 참고)
 uvicorn dn.main:app --reload --app-dir src
 ```
 
 API 서버가 실행되면 `http://127.0.0.1:8000/docs`에서 OpenAPI 문서를 확인할 수 있다.
 
-## 현재 구현 범위
+### ANTHROPIC_API_KEY 없이 개발하기
 
-- PDF 업로드, 텍스트 추출, PII 마스킹과 프롬프트 인젝션 감지
-- LLM 기반 구조화 추출과 결과 검증
-- 결측값·충돌 탐지 및 보완 질문 생성
-- 결정론적 현금흐름과 소득 감소 시나리오 계산
-- YAML 정책 카드 로더와 3-state 조건 평가
-
-상세한 구현 순서와 남은 작업은 [`CODEX_TASKS.md`](CODEX_TASKS.md)를 기준으로 관리한다.
+`ANTHROPIC_API_KEY`가 설정되지 않으면 `get_llm_client()`가 자동으로
+`StubClient`로 폴백하고 `dev_mode`가 켜진다 (`src/dn/llm/client.py`). 즉
+**API 키 없이도 서버 기동·전체 화면 흐름·PDF 다운로드까지 앱 자체는
+정상 동작**한다 — 다만 LLM이 실제로 문서에서 정보를 추출하지 않으므로
+추출 결과는 항상 비어 있고(`{"debts": []}`), `eval/E1`·`E2`(추출 정확도
+평가)는 `[STUB_MODE]`로 표시된 자리표시자 결과만 나온다.
 
 ## 팀 개발 흐름
 
@@ -53,14 +145,17 @@ ruff format --check src tests eval
 | `CODEX_TASKS.md` | T00~T23 순차 구현 지시서 |
 | `docs/기획서.md` | 서비스 기획서 (원본) |
 | `CONTRIBUTING.md` | 브랜치, 커밋, PR, 테스트 규칙 |
+| `reports/metrics_summary.md` | E1~E6 평가 결과 (기획서 14.3 지표 10개) |
 
 ## 배포 전 체크리스트
 
 - [ ] `config/config.yaml: rules.allow_unverified_cards` 를 `false` 로 변경
-- [ ] 모든 정책 카드의 `verified: true` 및 `source.url` 기입 완료
-- [ ] `eval/E1~E6` 전량 실행, `reports/metrics_summary.md` 생성
+- [ ] 모든 정책 카드의 `verified: true` 및 `source.url` 기입 완료 (현재 6개 전부 TODO)
+- [ ] 실제 `ANTHROPIC_API_KEY`로 `eval/E1~E6` 재실행, `reports/metrics_summary.md` STUB_MODE 라벨 해소
 - [ ] `data/redteam/attacks.yaml` 전량 통과
 - [ ] 업로드 원본 TTL 삭제 동작 확인
+- [ ] Docker 빌드/`docker compose up` 실제 환경에서 검증 (현재 샌드박스 권한 문제로 미검증)
+- [ ] T19 화면 7종 실제 브라우저(375px 포함)로 수동 워크스루
 
 ## 유의사항
 
