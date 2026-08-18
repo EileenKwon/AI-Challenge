@@ -20,7 +20,7 @@
       업로드하신 문서에서 채무 정보를 추출하는 과정에서 개인정보가 마스킹 처리됩니다.
       마스킹 처리 방식과 보관 기간에 동의해야 다음 단계로 진행할 수 있습니다.
     </p>
-    <form method="post" action="/api/session/{{ session_id }}/consent" class="space-y-3">
+    <form id="consent-form" class="space-y-3">
       <label class="flex items-start gap-2 text-sm">
         <input type="checkbox" name="agree_pii" required class="mt-1" />
         <span>개인정보 처리 방침과 문서 자동 삭제 정책에 동의합니다.</span>
@@ -41,4 +41,21 @@
     </p>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('consent-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await dnPost('/api/session/{{ session_id }}/consent');
+    location.href = '/web/session/{{ session_id }}/upload';
+  } catch (err) {
+    dnShowError(btn, err.message);
+    btn.disabled = false;
+  }
+});
+</script>
 {% endblock %}

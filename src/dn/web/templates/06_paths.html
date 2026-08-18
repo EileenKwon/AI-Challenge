@@ -69,9 +69,25 @@
   </details>
   {% endif %}
 
-  <a href="/web/session/{{ session_id }}/plan"
+  <button type="button" id="to-plan-btn"
      class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3">
     7일 계획 보기
-  </a>
+  </button>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('to-plan-btn').addEventListener('click', async (e) => {
+  const btn = e.target;
+  btn.disabled = true;
+  try {
+    await dnPost('/api/session/{{ session_id }}/plan');
+    location.href = '/web/session/{{ session_id }}/plan';
+  } catch (err) {
+    dnShowError(btn, err.message);
+    btn.disabled = false;
+  }
+});
+</script>
 {% endblock %}

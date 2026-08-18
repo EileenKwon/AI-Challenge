@@ -15,6 +15,7 @@ from dn.domain.models import (
     HouseholdProfile,
     IncomeProfile,
     ReportOptions,
+    SituationFlags,
 )
 from dn.domain.provenance import Tracked
 from dn.llm.client import LLMClient
@@ -53,6 +54,15 @@ def get_gaps(session_id: str, store: SessionStore = Depends(get_session_store)) 
     }
 
 
+class DebtFinancialUpdate(BaseModel):
+    """04 화면의 채무별 금리·월상환액 입력 — 조회서에 없는 보완 입력 대상(기획서 2.2)."""
+
+    debt_index: int
+    interest_rate_percent: Decimal | None = None  # 사용자 입력은 %, 저장은 0~1 비율로 환산
+    monthly_payment: Decimal | None = None
+    skip: bool = False
+
+
 class SupplementRequest(BaseModel):
     monthly_net_income: Decimal | None = None
     support_income: Decimal | None = None
@@ -62,6 +72,10 @@ class SupplementRequest(BaseModel):
     medical_care_cost: Decimal | None = None
     other_fixed_cost: Decimal | None = None
     dependents: int | None = None
+    has_collateral_asset: bool | None = None  # C1_COLLATERAL
+    under_collection_contact: bool | None = None  # C2_COLLECTION
+    income_drop_occurred: bool | None = None  # C3_INCOME_DROP
+    debts: list[DebtFinancialUpdate] | None = None
 
 
 def _apply_supplement_income(income: IncomeProfile, body: SupplementRequest) -> IncomeProfile:
@@ -90,6 +104,49 @@ def _apply_supplement_household(
     return household.model_copy(update=update) if update else household
 
 
+def _apply_supplement_debts(
+    extraction: ExtractionResult, body: SupplementRequest
+) -> ExtractionResult:
+    if not body.debts:
+        return extraction
+    debts = list(extraction.debts)
+    for item in body.debts:
+        if item.skip or item.debt_index >= len(debts):
+            continue
+        debt = debts[item.debt_index]
+        update = {}
+        if item.interest_rate_percent is not None:
+            update["interest_rate"] = Tracked(
+                value=item.interest_rate_percent / Decimal("100"),
+                source=FieldSource.USER_INPUT,
+            )
+        if item.monthly_payment is not None:
+            update["monthly_payment"] = Tracked(
+                value=item.monthly_payment, source=FieldSource.USER_INPUT
+            )
+        if update:
+            debts[item.debt_index] = debt.model_copy(update=update)
+    return extraction.model_copy(update={"debts": tuple(debts)})
+
+
+def _apply_supplement_flags(flags: SituationFlags, body: SupplementRequest) -> SituationFlags:
+    update = {}
+    if body.has_collateral_asset is not None:
+        tracked = Tracked(value=body.has_collateral_asset, source=FieldSource.USER_INPUT)
+        update["has_real_estate"] = tracked
+        update["has_vehicle"] = tracked
+        update["has_lease_deposit"] = tracked
+    if body.under_collection_contact is not None:
+        update["under_collection_contact"] = Tracked(
+            value=body.under_collection_contact, source=FieldSource.USER_INPUT
+        )
+    if body.income_drop_occurred is not None:
+        tracked = Tracked(value=body.income_drop_occurred, source=FieldSource.USER_INPUT)
+        update["recent_job_loss"] = tracked
+        update["business_closed"] = tracked
+    return flags.model_copy(update=update) if update else flags
+
+
 @router.post("/{session_id}/supplement")
 def supplement(
     session_id: str,
@@ -99,10 +156,18 @@ def supplement(
     state = get_session_or_404(session_id, store)
     income = _apply_supplement_income(state.income, body)
     household = _apply_supplement_household(state.household, body)
+    extraction = _apply_supplement_debts(state.extraction or ExtractionResult(), body)
+    flags = _apply_supplement_flags(state.flags, body)
 
     new_state = transition(state, SessionStage.S4_SUPPLEMENTED)
     new_state = new_state.model_copy(
-        update={"income": income, "household": household, "updated_at": datetime.now()}
+        update={
+            "income": income,
+            "household": household,
+            "extraction": extraction,
+            "flags": flags,
+            "updated_at": datetime.now(),
+        }
     )
     store.save(new_state)
     return {"session_id": new_state.session_id, "stage": new_state.stage.value}

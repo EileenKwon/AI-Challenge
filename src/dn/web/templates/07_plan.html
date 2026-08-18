@@ -20,7 +20,7 @@
     {% endfor %}
   </ol>
 
-  <form method="post" action="/api/session/{{ session_id }}/report" class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+  <form id="report-form" class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
     <h3 class="font-semibold text-sm">상담용 요약서 PDF</h3>
     <p class="text-xs text-slate-500">포함할 항목을 선택해 주세요.</p>
 
@@ -49,4 +49,49 @@
     제도 검토 결과는 자격 확정이 아니며 최종 자격은 공식 상담을 통해 확인해야 합니다.
   </p>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('report-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  const options = {
+    include_creditor_names: form.include_creditor_names.checked,
+    include_income: form.include_income.checked,
+    include_paths: form.include_paths.checked,
+    include_questions: form.include_questions.checked,
+  };
+
+  btn.disabled = true;
+  btn.textContent = '생성 중...';
+  try {
+    const res = await fetch('/api/session/{{ session_id }}/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).detail || ''; } catch (e2) {}
+      throw new Error(detail || ('요청이 실패했습니다 (' + res.status + ')'));
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'debt_recovery_summary.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    dnShowError(btn, err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'PDF 다운로드';
+  }
+});
+</script>
 {% endblock %}

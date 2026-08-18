@@ -10,7 +10,7 @@
     아는 만큼만 입력해 주세요. <span class="font-medium">모르면 건너뛰어도 됩니다.</span>
   </p>
 
-  <form method="post" action="/api/session/{{ session_id }}/supplement" class="space-y-4">
+  <form id="supplement-form" class="space-y-4">
     <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
       <h3 class="font-semibold text-sm">채무별 금리·월상환액 일괄 입력</h3>
       {% for debt in debts %}
@@ -82,4 +82,71 @@
     </button>
   </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DN_DEBT_COUNT = {{ debts|length }};
+// config/questions.yaml qid → SupplementRequest 필드명. Q5_RECENT_DEBT는 아직
+// 대응하는 저장 필드가 없어 화면에는 표시하되 전송하지 않는다(알려진 제약).
+const DN_QUESTION_FIELD_MAP = {
+  Q1_INCOME: { field: 'monthly_net_income', kind: 'money' },
+  Q2_LIVING_COST: { field: 'essential_living_cost', kind: 'money' },
+  Q3_INCOME_PROOF: { field: 'income_proof_available', kind: 'bool' },
+  Q4_DEPENDENTS: { field: 'dependents', kind: 'int' },
+};
+const DN_FLAG_FIELD_MAP = {
+  C1_COLLATERAL: 'has_collateral_asset',
+  C2_COLLECTION: 'under_collection_contact',
+  C3_INCOME_DROP: 'income_drop_occurred',
+};
+
+document.getElementById('supplement-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  const fd = new FormData(form);
+  const body = {};
+
+  const debts = [];
+  for (let i = 0; i < DN_DEBT_COUNT; i++) {
+    if (fd.get('skip_' + i) === 'on') continue;
+    const rate = fd.get('rate_' + i);
+    const payment = fd.get('payment_' + i);
+    if (rate || payment) {
+      debts.push({
+        debt_index: i,
+        interest_rate_percent: rate || null,
+        monthly_payment: payment || null,
+      });
+    }
+  }
+  if (debts.length) body.debts = debts;
+
+  for (const [qid, spec] of Object.entries(DN_QUESTION_FIELD_MAP)) {
+    if (fd.get('skip_' + qid) === 'on') continue;
+    const raw = fd.get(qid);
+    if (raw === null || raw === '') continue;
+    body[spec.field] = spec.kind === 'bool' ? (raw === 'true') : raw;
+  }
+
+  for (const [qid, field] of Object.entries(DN_FLAG_FIELD_MAP)) {
+    const raw = fd.get(qid);
+    if (raw === null) continue;
+    body[field] = raw === 'true';
+  }
+
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+  try {
+    await dnPost('/api/session/{{ session_id }}/supplement', body);
+    await dnPost('/api/session/{{ session_id }}/analyze');
+    location.href = '/web/session/{{ session_id }}/result';
+  } catch (err) {
+    dnShowError(btn, err.message);
+    btn.disabled = false;
+    btn.textContent = '입력 완료하고 결과 보기';
+  }
+});
+</script>
 {% endblock %}

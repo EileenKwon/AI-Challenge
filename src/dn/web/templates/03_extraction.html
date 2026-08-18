@@ -9,7 +9,7 @@
     다음 단계로 진행됩니다.
   </p>
 
-  <form method="post" action="/api/session/{{ session_id }}/confirm" class="space-y-3">
+  <form id="confirm-form" class="space-y-3">
     {% for debt in debts %}
     <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
       <div class="flex items-center justify-between">
@@ -51,4 +51,21 @@
     </button>
   </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('confirm-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await dnPost('/api/session/{{ session_id }}/confirm');
+    location.href = '/web/session/{{ session_id }}/supplement';
+  } catch (err) {
+    dnShowError(btn, err.message);
+    btn.disabled = false;
+  }
+});
+</script>
 {% endblock %}
