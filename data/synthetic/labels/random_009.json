@@ -1,0 +1,76 @@
+{
+  "case_id": "random_009",
+  "pdf_file": "random_009.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "가자저축은행",
+      "product_type": "guarantee",
+      "balance": 37170000,
+      "executed_at": "2022-04-12",
+      "overdue_days": 74,
+      "is_secured": true
+    },
+    {
+      "creditor": "나코파이낸스",
+      "product_type": "card_loan",
+      "balance": 39120000,
+      "executed_at": "2019-05-27",
+      "overdue_days": 79,
+      "is_secured": false
+    },
+    {
+      "creditor": "가모은행",
+      "product_type": "revolving",
+      "balance": 31540000,
+      "executed_at": "2019-08-27",
+      "overdue_days": 8,
+      "is_secured": true
+    },
+    {
+      "creditor": "사사캐피탈",
+      "product_type": "card_loan",
+      "balance": 42860000,
+      "executed_at": "2025-11-01",
+      "overdue_days": 73,
+      "is_secured": true
+    },
+    {
+      "creditor": "자모신용조합",
+      "product_type": "credit_loan",
+      "balance": 1260000,
+      "executed_at": "2020-01-25",
+      "overdue_days": 0,
+      "is_secured": false
+    },
+    {
+      "creditor": "호조신용조합",
+      "product_type": "card_loan",
+      "balance": 15100000,
+      "executed_at": "2019-10-17",
+      "overdue_days": 80,
+      "is_secured": false
+    },
+    {
+      "creditor": "호토은행",
+      "product_type": "secured_loan",
+      "balance": 42460000,
+      "executed_at": "2019-09-22",
+      "overdue_days": 66,
+      "is_secured": true
+    },
+    {
+      "creditor": "파바은행",
+      "product_type": "credit_loan",
+      "balance": 35170000,
+      "executed_at": "2024-06-02",
+      "overdue_days": 47,
+      "is_secured": true
+    }
+  ]
+}

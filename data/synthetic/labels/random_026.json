@@ -1,0 +1,52 @@
+{
+  "case_id": "random_026",
+  "pdf_file": "random_026.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "오호신용조합",
+      "product_type": "cash_advance",
+      "balance": 13450000,
+      "executed_at": "2022-02-25",
+      "overdue_days": 23,
+      "is_secured": true
+    },
+    {
+      "creditor": "도토신용조합",
+      "product_type": "credit_loan",
+      "balance": 18710000,
+      "executed_at": "2022-06-27",
+      "overdue_days": 69,
+      "is_secured": true
+    },
+    {
+      "creditor": "조라저축은행",
+      "product_type": "cash_advance",
+      "balance": 11600000,
+      "executed_at": "2020-04-15",
+      "overdue_days": 48,
+      "is_secured": false
+    },
+    {
+      "creditor": "다코은행",
+      "product_type": "secured_loan",
+      "balance": 17970000,
+      "executed_at": "2023-04-23",
+      "overdue_days": 36,
+      "is_secured": false
+    },
+    {
+      "creditor": "소초파이낸스",
+      "product_type": "cash_advance",
+      "balance": 37190000,
+      "executed_at": "2023-02-18",
+      "overdue_days": 78,
+      "is_secured": false
+    }
+  ]
+}

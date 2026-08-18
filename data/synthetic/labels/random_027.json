@@ -1,0 +1,20 @@
+{
+  "case_id": "random_027",
+  "pdf_file": "random_027.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "사라파이낸스",
+      "product_type": "card_loan",
+      "balance": 33840000,
+      "executed_at": "2025-02-17",
+      "overdue_days": 65,
+      "is_secured": false
+    }
+  ]
+}

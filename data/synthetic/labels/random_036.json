@@ -1,0 +1,76 @@
+{
+  "case_id": "random_036",
+  "pdf_file": "random_036.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "모바신용조합",
+      "product_type": "guarantee",
+      "balance": 7980000,
+      "executed_at": "2021-07-15",
+      "overdue_days": 77,
+      "is_secured": true
+    },
+    {
+      "creditor": "초마파이낸스",
+      "product_type": "guarantee",
+      "balance": 34410000,
+      "executed_at": "2024-05-13",
+      "overdue_days": 32,
+      "is_secured": true
+    },
+    {
+      "creditor": "나조저축은행",
+      "product_type": "revolving",
+      "balance": 3650000,
+      "executed_at": "2019-12-10",
+      "overdue_days": 71,
+      "is_secured": true
+    },
+    {
+      "creditor": "바토저축은행",
+      "product_type": "installment",
+      "balance": 15070000,
+      "executed_at": "2024-10-06",
+      "overdue_days": 60,
+      "is_secured": true
+    },
+    {
+      "creditor": "아아신용조합",
+      "product_type": "credit_loan",
+      "balance": 20470000,
+      "executed_at": "2019-07-27",
+      "overdue_days": 43,
+      "is_secured": true
+    },
+    {
+      "creditor": "조로캐피탈",
+      "product_type": "cash_advance",
+      "balance": 8500000,
+      "executed_at": "2019-06-05",
+      "overdue_days": 87,
+      "is_secured": true
+    },
+    {
+      "creditor": "소파카드",
+      "product_type": "revolving",
+      "balance": 33250000,
+      "executed_at": "2021-05-20",
+      "overdue_days": 56,
+      "is_secured": false
+    },
+    {
+      "creditor": "고차저축은행",
+      "product_type": "card_loan",
+      "balance": 5440000,
+      "executed_at": "2022-08-26",
+      "overdue_days": 64,
+      "is_secured": true
+    }
+  ]
+}

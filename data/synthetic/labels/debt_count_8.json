@@ -1,0 +1,76 @@
+{
+  "case_id": "debt_count_8",
+  "pdf_file": "debt_count_8.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "마사카드",
+      "product_type": "credit_loan",
+      "balance": 1880000,
+      "executed_at": "2020-12-01",
+      "overdue_days": 64,
+      "is_secured": true
+    },
+    {
+      "creditor": "토보파이낸스",
+      "product_type": "revolving",
+      "balance": 21430000,
+      "executed_at": "2019-04-14",
+      "overdue_days": 18,
+      "is_secured": true
+    },
+    {
+      "creditor": "다소파이낸스",
+      "product_type": "credit_loan",
+      "balance": 22250000,
+      "executed_at": "2024-01-20",
+      "overdue_days": 11,
+      "is_secured": true
+    },
+    {
+      "creditor": "호자은행",
+      "product_type": "installment",
+      "balance": 25910000,
+      "executed_at": "2025-01-11",
+      "overdue_days": 62,
+      "is_secured": false
+    },
+    {
+      "creditor": "포토캐피탈",
+      "product_type": "credit_loan",
+      "balance": 30240000,
+      "executed_at": "2025-07-08",
+      "overdue_days": 52,
+      "is_secured": false
+    },
+    {
+      "creditor": "소라파이낸스",
+      "product_type": "cash_advance",
+      "balance": 1310000,
+      "executed_at": "2023-11-03",
+      "overdue_days": 91,
+      "is_secured": false
+    },
+    {
+      "creditor": "소조캐피탈",
+      "product_type": "installment",
+      "balance": 32080000,
+      "executed_at": "2023-03-26",
+      "overdue_days": 74,
+      "is_secured": true
+    },
+    {
+      "creditor": "자초카드",
+      "product_type": "secured_loan",
+      "balance": 23680000,
+      "executed_at": "2019-08-03",
+      "overdue_days": 22,
+      "is_secured": false
+    }
+  ]
+}

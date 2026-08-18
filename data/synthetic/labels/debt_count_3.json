@@ -1,0 +1,36 @@
+{
+  "case_id": "debt_count_3",
+  "pdf_file": "debt_count_3.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "호모캐피탈",
+      "product_type": "cash_advance",
+      "balance": 21470000,
+      "executed_at": "2022-07-22",
+      "overdue_days": 77,
+      "is_secured": false
+    },
+    {
+      "creditor": "다다파이낸스",
+      "product_type": "secured_loan",
+      "balance": 35140000,
+      "executed_at": "2020-05-01",
+      "overdue_days": 43,
+      "is_secured": true
+    },
+    {
+      "creditor": "포마캐피탈",
+      "product_type": "revolving",
+      "balance": 25280000,
+      "executed_at": "2020-11-14",
+      "overdue_days": 42,
+      "is_secured": false
+    }
+  ]
+}

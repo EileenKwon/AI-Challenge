@@ -1,0 +1,44 @@
+{
+  "case_id": "random_011",
+  "pdf_file": "random_011.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "토하은행",
+      "product_type": "credit_loan",
+      "balance": 48690000,
+      "executed_at": "2022-09-11",
+      "overdue_days": 12,
+      "is_secured": true
+    },
+    {
+      "creditor": "로타파이낸스",
+      "product_type": "revolving",
+      "balance": 20630000,
+      "executed_at": "2020-02-09",
+      "overdue_days": 60,
+      "is_secured": true
+    },
+    {
+      "creditor": "초사신용조합",
+      "product_type": "revolving",
+      "balance": 30470000,
+      "executed_at": "2021-02-12",
+      "overdue_days": 30,
+      "is_secured": true
+    },
+    {
+      "creditor": "하하은행",
+      "product_type": "card_loan",
+      "balance": 5660000,
+      "executed_at": "2019-04-12",
+      "overdue_days": 54,
+      "is_secured": false
+    }
+  ]
+}

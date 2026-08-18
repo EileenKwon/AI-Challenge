@@ -1,0 +1,28 @@
+{
+  "case_id": "random_007",
+  "pdf_file": "random_007.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "소토파이낸스",
+      "product_type": "secured_loan",
+      "balance": 32090000,
+      "executed_at": "2023-09-10",
+      "overdue_days": 25,
+      "is_secured": true
+    },
+    {
+      "creditor": "자마신용조합",
+      "product_type": "card_loan",
+      "balance": 5220000,
+      "executed_at": "2021-07-09",
+      "overdue_days": 88,
+      "is_secured": true
+    }
+  ]
+}

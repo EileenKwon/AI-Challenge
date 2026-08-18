@@ -1,0 +1,68 @@
+{
+  "case_id": "random_030",
+  "pdf_file": "random_030.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "바노저축은행",
+      "product_type": "cash_advance",
+      "balance": 37830000,
+      "executed_at": "2020-08-17",
+      "overdue_days": 64,
+      "is_secured": true
+    },
+    {
+      "creditor": "아오파이낸스",
+      "product_type": "guarantee",
+      "balance": 8330000,
+      "executed_at": "2024-10-16",
+      "overdue_days": 39,
+      "is_secured": true
+    },
+    {
+      "creditor": "가조캐피탈",
+      "product_type": "installment",
+      "balance": 21970000,
+      "executed_at": "2022-12-01",
+      "overdue_days": 38,
+      "is_secured": true
+    },
+    {
+      "creditor": "모타은행",
+      "product_type": "revolving",
+      "balance": 23970000,
+      "executed_at": "2019-10-25",
+      "overdue_days": 14,
+      "is_secured": false
+    },
+    {
+      "creditor": "보바신용조합",
+      "product_type": "guarantee",
+      "balance": 49190000,
+      "executed_at": "2025-04-05",
+      "overdue_days": 86,
+      "is_secured": false
+    },
+    {
+      "creditor": "코소저축은행",
+      "product_type": "guarantee",
+      "balance": 32640000,
+      "executed_at": "2020-05-13",
+      "overdue_days": 36,
+      "is_secured": false
+    },
+    {
+      "creditor": "모소저축은행",
+      "product_type": "secured_loan",
+      "balance": 47530000,
+      "executed_at": "2022-02-21",
+      "overdue_days": 54,
+      "is_secured": false
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "random_005",
+  "pdf_file": "random_005.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "가도캐피탈",
+      "product_type": "installment",
+      "balance": 34280000,
+      "executed_at": "2020-02-16",
+      "overdue_days": 49,
+      "is_secured": true
+    },
+    {
+      "creditor": "고하카드",
+      "product_type": "revolving",
+      "balance": 7810000,
+      "executed_at": "2024-12-22",
+      "overdue_days": 88,
+      "is_secured": true
+    }
+  ]
+}

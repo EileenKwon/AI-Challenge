@@ -1,0 +1,20 @@
+{
+  "case_id": "random_017",
+  "pdf_file": "random_017.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "조파저축은행",
+      "product_type": "installment",
+      "balance": 48110000,
+      "executed_at": "2019-07-20",
+      "overdue_days": 62,
+      "is_secured": false
+    }
+  ]
+}

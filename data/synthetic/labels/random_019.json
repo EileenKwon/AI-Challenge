@@ -1,0 +1,36 @@
+{
+  "case_id": "random_019",
+  "pdf_file": "random_019.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "고차파이낸스",
+      "product_type": "secured_loan",
+      "balance": 45220000,
+      "executed_at": "2020-05-24",
+      "overdue_days": 28,
+      "is_secured": true
+    },
+    {
+      "creditor": "라아저축은행",
+      "product_type": "guarantee",
+      "balance": 43450000,
+      "executed_at": "2023-06-11",
+      "overdue_days": 17,
+      "is_secured": true
+    },
+    {
+      "creditor": "파소캐피탈",
+      "product_type": "secured_loan",
+      "balance": 27140000,
+      "executed_at": "2019-09-10",
+      "overdue_days": 94,
+      "is_secured": true
+    }
+  ]
+}

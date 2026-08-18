@@ -1,0 +1,52 @@
+{
+  "case_id": "random_016",
+  "pdf_file": "random_016.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "타호신용조합",
+      "product_type": "revolving",
+      "balance": 31910000,
+      "executed_at": "2022-02-01",
+      "overdue_days": 37,
+      "is_secured": false
+    },
+    {
+      "creditor": "바아은행",
+      "product_type": "revolving",
+      "balance": 46440000,
+      "executed_at": "2019-05-09",
+      "overdue_days": 65,
+      "is_secured": false
+    },
+    {
+      "creditor": "도노은행",
+      "product_type": "cash_advance",
+      "balance": 14620000,
+      "executed_at": "2021-04-04",
+      "overdue_days": 16,
+      "is_secured": true
+    },
+    {
+      "creditor": "호조저축은행",
+      "product_type": "guarantee",
+      "balance": 24390000,
+      "executed_at": "2022-08-20",
+      "overdue_days": 93,
+      "is_secured": true
+    },
+    {
+      "creditor": "소아신용조합",
+      "product_type": "revolving",
+      "balance": 39310000,
+      "executed_at": "2023-11-14",
+      "overdue_days": 43,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "case_id": "boundary_overdue_30",
+  "pdf_file": "boundary_overdue_30.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "호소파이낸스",
+      "product_type": "credit_loan",
+      "balance": 36150000,
+      "executed_at": "2020-02-15",
+      "overdue_days": 30,
+      "is_secured": true
+    }
+  ]
+}

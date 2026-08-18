@@ -1,0 +1,44 @@
+{
+  "case_id": "debt_count_4",
+  "pdf_file": "debt_count_4.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "보로저축은행",
+      "product_type": "cash_advance",
+      "balance": 48020000,
+      "executed_at": "2021-03-09",
+      "overdue_days": 8,
+      "is_secured": false
+    },
+    {
+      "creditor": "카토캐피탈",
+      "product_type": "revolving",
+      "balance": 23410000,
+      "executed_at": "2019-05-26",
+      "overdue_days": 25,
+      "is_secured": true
+    },
+    {
+      "creditor": "아소파이낸스",
+      "product_type": "installment",
+      "balance": 37100000,
+      "executed_at": "2025-04-22",
+      "overdue_days": 25,
+      "is_secured": false
+    },
+    {
+      "creditor": "라파파이낸스",
+      "product_type": "card_loan",
+      "balance": 36350000,
+      "executed_at": "2019-06-25",
+      "overdue_days": 29,
+      "is_secured": true
+    }
+  ]
+}

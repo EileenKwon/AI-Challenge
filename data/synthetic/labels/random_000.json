@@ -1,0 +1,52 @@
+{
+  "case_id": "random_000",
+  "pdf_file": "random_000.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "코오저축은행",
+      "product_type": "cash_advance",
+      "balance": 21210000,
+      "executed_at": "2024-08-26",
+      "overdue_days": 11,
+      "is_secured": false
+    },
+    {
+      "creditor": "모포신용조합",
+      "product_type": "card_loan",
+      "balance": 23240000,
+      "executed_at": "2025-06-04",
+      "overdue_days": 50,
+      "is_secured": false
+    },
+    {
+      "creditor": "소초파이낸스",
+      "product_type": "guarantee",
+      "balance": 6150000,
+      "executed_at": "2020-03-27",
+      "overdue_days": 83,
+      "is_secured": false
+    },
+    {
+      "creditor": "마바파이낸스",
+      "product_type": "cash_advance",
+      "balance": 16200000,
+      "executed_at": "2022-08-10",
+      "overdue_days": 87,
+      "is_secured": false
+    },
+    {
+      "creditor": "마마카드",
+      "product_type": "revolving",
+      "balance": 8520000,
+      "executed_at": "2025-12-17",
+      "overdue_days": 43,
+      "is_secured": false
+    }
+  ]
+}

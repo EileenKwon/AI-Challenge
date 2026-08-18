@@ -1,0 +1,28 @@
+{
+  "case_id": "debt_count_2",
+  "pdf_file": "debt_count_2.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "호사카드",
+      "product_type": "cash_advance",
+      "balance": 49640000,
+      "executed_at": "2019-05-12",
+      "overdue_days": 81,
+      "is_secured": false
+    },
+    {
+      "creditor": "초아신용조합",
+      "product_type": "cash_advance",
+      "balance": 22280000,
+      "executed_at": "2020-10-02",
+      "overdue_days": 62,
+      "is_secured": false
+    }
+  ]
+}

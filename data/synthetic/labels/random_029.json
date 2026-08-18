@@ -1,0 +1,28 @@
+{
+  "case_id": "random_029",
+  "pdf_file": "random_029.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "소나캐피탈",
+      "product_type": "revolving",
+      "balance": 7460000,
+      "executed_at": "2023-03-08",
+      "overdue_days": 28,
+      "is_secured": false
+    },
+    {
+      "creditor": "바가은행",
+      "product_type": "revolving",
+      "balance": 12330000,
+      "executed_at": "2023-12-23",
+      "overdue_days": 80,
+      "is_secured": true
+    }
+  ]
+}

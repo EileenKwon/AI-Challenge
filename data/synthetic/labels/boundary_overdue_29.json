@@ -1,0 +1,20 @@
+{
+  "case_id": "boundary_overdue_29",
+  "pdf_file": "boundary_overdue_29.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "파파신용조합",
+      "product_type": "credit_loan",
+      "balance": 5210000,
+      "executed_at": "2019-10-18",
+      "overdue_days": 29,
+      "is_secured": true
+    }
+  ]
+}

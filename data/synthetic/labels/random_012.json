@@ -1,0 +1,52 @@
+{
+  "case_id": "random_012",
+  "pdf_file": "random_012.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "모도저축은행",
+      "product_type": "revolving",
+      "balance": 16490000,
+      "executed_at": "2023-09-15",
+      "overdue_days": 23,
+      "is_secured": true
+    },
+    {
+      "creditor": "파고저축은행",
+      "product_type": "installment",
+      "balance": 18670000,
+      "executed_at": "2021-07-06",
+      "overdue_days": 91,
+      "is_secured": true
+    },
+    {
+      "creditor": "코라신용조합",
+      "product_type": "secured_loan",
+      "balance": 25670000,
+      "executed_at": "2024-09-16",
+      "overdue_days": 69,
+      "is_secured": true
+    },
+    {
+      "creditor": "자고신용조합",
+      "product_type": "cash_advance",
+      "balance": 25210000,
+      "executed_at": "2020-10-07",
+      "overdue_days": 3,
+      "is_secured": false
+    },
+    {
+      "creditor": "초초은행",
+      "product_type": "credit_loan",
+      "balance": 14740000,
+      "executed_at": "2019-01-24",
+      "overdue_days": 53,
+      "is_secured": false
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "case_id": "random_031",
+  "pdf_file": "random_031.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "코코파이낸스",
+      "product_type": "installment",
+      "balance": 5890000,
+      "executed_at": "2024-11-19",
+      "overdue_days": 0,
+      "is_secured": false
+    }
+  ]
+}

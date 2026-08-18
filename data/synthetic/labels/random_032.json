@@ -1,0 +1,44 @@
+{
+  "case_id": "random_032",
+  "pdf_file": "random_032.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "바호신용조합",
+      "product_type": "cash_advance",
+      "balance": 40440000,
+      "executed_at": "2024-06-01",
+      "overdue_days": 68,
+      "is_secured": true
+    },
+    {
+      "creditor": "로자캐피탈",
+      "product_type": "revolving",
+      "balance": 28990000,
+      "executed_at": "2025-08-11",
+      "overdue_days": 55,
+      "is_secured": false
+    },
+    {
+      "creditor": "도포저축은행",
+      "product_type": "installment",
+      "balance": 4310000,
+      "executed_at": "2021-01-17",
+      "overdue_days": 18,
+      "is_secured": false
+    },
+    {
+      "creditor": "오라카드",
+      "product_type": "card_loan",
+      "balance": 16080000,
+      "executed_at": "2021-05-11",
+      "overdue_days": 65,
+      "is_secured": false
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "random_014",
+  "pdf_file": "random_014.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "마보은행",
+      "product_type": "cash_advance",
+      "balance": 41970000,
+      "executed_at": "2024-07-13",
+      "overdue_days": 87,
+      "is_secured": true
+    },
+    {
+      "creditor": "초조신용조합",
+      "product_type": "revolving",
+      "balance": 7930000,
+      "executed_at": "2025-07-06",
+      "overdue_days": 47,
+      "is_secured": false
+    }
+  ]
+}

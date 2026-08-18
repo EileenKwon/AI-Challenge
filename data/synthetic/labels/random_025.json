@@ -1,0 +1,20 @@
+{
+  "case_id": "random_025",
+  "pdf_file": "random_025.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "보초캐피탈",
+      "product_type": "credit_loan",
+      "balance": 14750000,
+      "executed_at": "2022-03-16",
+      "overdue_days": 81,
+      "is_secured": true
+    }
+  ]
+}

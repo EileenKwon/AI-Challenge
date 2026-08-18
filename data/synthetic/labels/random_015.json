@@ -1,0 +1,68 @@
+{
+  "case_id": "random_015",
+  "pdf_file": "random_015.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "초오은행",
+      "product_type": "installment",
+      "balance": 24500000,
+      "executed_at": "2021-04-03",
+      "overdue_days": 44,
+      "is_secured": true
+    },
+    {
+      "creditor": "사토신용조합",
+      "product_type": "credit_loan",
+      "balance": 31970000,
+      "executed_at": "2020-04-05",
+      "overdue_days": 22,
+      "is_secured": false
+    },
+    {
+      "creditor": "호도파이낸스",
+      "product_type": "installment",
+      "balance": 1680000,
+      "executed_at": "2021-03-14",
+      "overdue_days": 7,
+      "is_secured": false
+    },
+    {
+      "creditor": "초로저축은행",
+      "product_type": "revolving",
+      "balance": 20930000,
+      "executed_at": "2020-11-23",
+      "overdue_days": 63,
+      "is_secured": true
+    },
+    {
+      "creditor": "소카파이낸스",
+      "product_type": "installment",
+      "balance": 44170000,
+      "executed_at": "2024-08-02",
+      "overdue_days": 32,
+      "is_secured": true
+    },
+    {
+      "creditor": "고오파이낸스",
+      "product_type": "secured_loan",
+      "balance": 19120000,
+      "executed_at": "2024-04-14",
+      "overdue_days": 47,
+      "is_secured": false
+    },
+    {
+      "creditor": "라초캐피탈",
+      "product_type": "cash_advance",
+      "balance": 29560000,
+      "executed_at": "2025-04-16",
+      "overdue_days": 47,
+      "is_secured": true
+    }
+  ]
+}

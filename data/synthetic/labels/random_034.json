@@ -1,0 +1,60 @@
+{
+  "case_id": "random_034",
+  "pdf_file": "random_034.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "사아은행",
+      "product_type": "cash_advance",
+      "balance": 16320000,
+      "executed_at": "2022-11-03",
+      "overdue_days": 72,
+      "is_secured": false
+    },
+    {
+      "creditor": "다호저축은행",
+      "product_type": "guarantee",
+      "balance": 18380000,
+      "executed_at": "2025-10-25",
+      "overdue_days": 90,
+      "is_secured": true
+    },
+    {
+      "creditor": "포자카드",
+      "product_type": "installment",
+      "balance": 21830000,
+      "executed_at": "2019-05-04",
+      "overdue_days": 9,
+      "is_secured": true
+    },
+    {
+      "creditor": "타노저축은행",
+      "product_type": "card_loan",
+      "balance": 5000000,
+      "executed_at": "2024-09-17",
+      "overdue_days": 24,
+      "is_secured": false
+    },
+    {
+      "creditor": "카도저축은행",
+      "product_type": "secured_loan",
+      "balance": 37250000,
+      "executed_at": "2020-02-24",
+      "overdue_days": 28,
+      "is_secured": true
+    },
+    {
+      "creditor": "라오은행",
+      "product_type": "secured_loan",
+      "balance": 3110000,
+      "executed_at": "2021-11-11",
+      "overdue_days": 19,
+      "is_secured": true
+    }
+  ]
+}

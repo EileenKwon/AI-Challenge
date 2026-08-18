@@ -1,0 +1,36 @@
+{
+  "case_id": "random_020",
+  "pdf_file": "random_020.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "라라저축은행",
+      "product_type": "card_loan",
+      "balance": 49880000,
+      "executed_at": "2024-05-15",
+      "overdue_days": 81,
+      "is_secured": true
+    },
+    {
+      "creditor": "카하신용조합",
+      "product_type": "card_loan",
+      "balance": 25340000,
+      "executed_at": "2024-08-02",
+      "overdue_days": 32,
+      "is_secured": false
+    },
+    {
+      "creditor": "나차카드",
+      "product_type": "installment",
+      "balance": 1860000,
+      "executed_at": "2019-05-03",
+      "overdue_days": 28,
+      "is_secured": false
+    }
+  ]
+}

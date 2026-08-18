@@ -1,0 +1,28 @@
+{
+  "case_id": "conflicting_total",
+  "pdf_file": "conflicting_total.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": true
+  },
+  "debts": [
+    {
+      "creditor": "노파저축은행",
+      "product_type": "credit_loan",
+      "balance": 28860000,
+      "executed_at": "2023-04-22",
+      "overdue_days": 3,
+      "is_secured": false
+    },
+    {
+      "creditor": "모모캐피탈",
+      "product_type": "card_loan",
+      "balance": 42890000,
+      "executed_at": "2020-02-12",
+      "overdue_days": 53,
+      "is_secured": false
+    }
+  ]
+}

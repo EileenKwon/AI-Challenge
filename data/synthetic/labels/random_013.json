@@ -1,0 +1,44 @@
+{
+  "case_id": "random_013",
+  "pdf_file": "random_013.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "나소신용조합",
+      "product_type": "credit_loan",
+      "balance": 22390000,
+      "executed_at": "2020-09-09",
+      "overdue_days": 78,
+      "is_secured": true
+    },
+    {
+      "creditor": "보마카드",
+      "product_type": "revolving",
+      "balance": 33750000,
+      "executed_at": "2024-05-11",
+      "overdue_days": 11,
+      "is_secured": true
+    },
+    {
+      "creditor": "다호캐피탈",
+      "product_type": "secured_loan",
+      "balance": 21790000,
+      "executed_at": "2021-07-26",
+      "overdue_days": 29,
+      "is_secured": true
+    },
+    {
+      "creditor": "오카신용조합",
+      "product_type": "revolving",
+      "balance": 17340000,
+      "executed_at": "2023-02-20",
+      "overdue_days": 1,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "missing_fields",
+  "pdf_file": "missing_fields.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "토자카드",
+      "product_type": "installment",
+      "balance": 34440000,
+      "executed_at": "2024-11-11",
+      "overdue_days": null,
+      "is_secured": false
+    },
+    {
+      "creditor": "가조파이낸스",
+      "product_type": "guarantee",
+      "balance": 39230000,
+      "executed_at": null,
+      "overdue_days": 63,
+      "is_secured": null
+    }
+  ]
+}

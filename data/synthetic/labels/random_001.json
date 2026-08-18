@@ -1,0 +1,52 @@
+{
+  "case_id": "random_001",
+  "pdf_file": "random_001.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "바마파이낸스",
+      "product_type": "credit_loan",
+      "balance": 22030000,
+      "executed_at": "2019-09-02",
+      "overdue_days": 56,
+      "is_secured": true
+    },
+    {
+      "creditor": "초자신용조합",
+      "product_type": "installment",
+      "balance": 37060000,
+      "executed_at": "2023-10-11",
+      "overdue_days": 83,
+      "is_secured": true
+    },
+    {
+      "creditor": "하바신용조합",
+      "product_type": "card_loan",
+      "balance": 12170000,
+      "executed_at": "2024-07-02",
+      "overdue_days": 23,
+      "is_secured": true
+    },
+    {
+      "creditor": "아나은행",
+      "product_type": "cash_advance",
+      "balance": 46360000,
+      "executed_at": "2022-12-12",
+      "overdue_days": 49,
+      "is_secured": true
+    },
+    {
+      "creditor": "다나캐피탈",
+      "product_type": "guarantee",
+      "balance": 34770000,
+      "executed_at": "2019-02-23",
+      "overdue_days": 9,
+      "is_secured": true
+    }
+  ]
+}

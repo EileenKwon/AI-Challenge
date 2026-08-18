@@ -1,0 +1,20 @@
+{
+  "case_id": "income_proof_difficult",
+  "pdf_file": "income_proof_difficult.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": true,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "카다캐피탈",
+      "product_type": "credit_loan",
+      "balance": 39980000,
+      "executed_at": "2021-04-25",
+      "overdue_days": 17,
+      "is_secured": false
+    }
+  ]
+}

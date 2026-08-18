@@ -1,0 +1,28 @@
+{
+  "case_id": "random_028",
+  "pdf_file": "random_028.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "호아은행",
+      "product_type": "guarantee",
+      "balance": 1810000,
+      "executed_at": "2024-07-04",
+      "overdue_days": 52,
+      "is_secured": true
+    },
+    {
+      "creditor": "라도신용조합",
+      "product_type": "credit_loan",
+      "balance": 44130000,
+      "executed_at": "2023-08-11",
+      "overdue_days": 39,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "random_023",
+  "pdf_file": "random_023.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "초라저축은행",
+      "product_type": "cash_advance",
+      "balance": 39090000,
+      "executed_at": "2021-01-02",
+      "overdue_days": 5,
+      "is_secured": true
+    },
+    {
+      "creditor": "호자캐피탈",
+      "product_type": "cash_advance",
+      "balance": 12290000,
+      "executed_at": "2023-06-06",
+      "overdue_days": 39,
+      "is_secured": false
+    },
+    {
+      "creditor": "타코은행",
+      "product_type": "credit_loan",
+      "balance": 6440000,
+      "executed_at": "2019-04-04",
+      "overdue_days": 48,
+      "is_secured": false
+    },
+    {
+      "creditor": "타파저축은행",
+      "product_type": "secured_loan",
+      "balance": 23890000,
+      "executed_at": "2022-01-09",
+      "overdue_days": 79,
+      "is_secured": true
+    },
+    {
+      "creditor": "도사신용조합",
+      "product_type": "installment",
+      "balance": 43300000,
+      "executed_at": "2020-03-09",
+      "overdue_days": 64,
+      "is_secured": false
+    },
+    {
+      "creditor": "사포캐피탈",
+      "product_type": "credit_loan",
+      "balance": 25240000,
+      "executed_at": "2020-09-09",
+      "overdue_days": 43,
+      "is_secured": true
+    },
+    {
+      "creditor": "도나카드",
+      "product_type": "credit_loan",
+      "balance": 2000000,
+      "executed_at": "2023-03-05",
+      "overdue_days": 87,
+      "is_secured": false
+    }
+  ]
+}

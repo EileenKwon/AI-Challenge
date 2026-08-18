@@ -1,0 +1,68 @@
+{
+  "case_id": "random_002",
+  "pdf_file": "random_002.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "호자파이낸스",
+      "product_type": "revolving",
+      "balance": 39190000,
+      "executed_at": "2024-11-07",
+      "overdue_days": 59,
+      "is_secured": true
+    },
+    {
+      "creditor": "라초저축은행",
+      "product_type": "cash_advance",
+      "balance": 26190000,
+      "executed_at": "2023-10-20",
+      "overdue_days": 91,
+      "is_secured": true
+    },
+    {
+      "creditor": "카보저축은행",
+      "product_type": "card_loan",
+      "balance": 14050000,
+      "executed_at": "2024-06-22",
+      "overdue_days": 5,
+      "is_secured": false
+    },
+    {
+      "creditor": "타도카드",
+      "product_type": "cash_advance",
+      "balance": 19000000,
+      "executed_at": "2022-06-05",
+      "overdue_days": 47,
+      "is_secured": false
+    },
+    {
+      "creditor": "카바파이낸스",
+      "product_type": "card_loan",
+      "balance": 15540000,
+      "executed_at": "2024-04-12",
+      "overdue_days": 75,
+      "is_secured": true
+    },
+    {
+      "creditor": "하오카드",
+      "product_type": "installment",
+      "balance": 27230000,
+      "executed_at": "2023-11-24",
+      "overdue_days": 91,
+      "is_secured": true
+    },
+    {
+      "creditor": "조노저축은행",
+      "product_type": "secured_loan",
+      "balance": 32010000,
+      "executed_at": "2022-08-06",
+      "overdue_days": 6,
+      "is_secured": false
+    }
+  ]
+}

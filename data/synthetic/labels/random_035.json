@@ -1,0 +1,76 @@
+{
+  "case_id": "random_035",
+  "pdf_file": "random_035.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "토소은행",
+      "product_type": "cash_advance",
+      "balance": 13960000,
+      "executed_at": "2021-02-07",
+      "overdue_days": 16,
+      "is_secured": true
+    },
+    {
+      "creditor": "타나캐피탈",
+      "product_type": "card_loan",
+      "balance": 13010000,
+      "executed_at": "2023-03-18",
+      "overdue_days": 83,
+      "is_secured": true
+    },
+    {
+      "creditor": "코소캐피탈",
+      "product_type": "installment",
+      "balance": 27010000,
+      "executed_at": "2019-11-16",
+      "overdue_days": 68,
+      "is_secured": false
+    },
+    {
+      "creditor": "마나신용조합",
+      "product_type": "credit_loan",
+      "balance": 44510000,
+      "executed_at": "2021-03-08",
+      "overdue_days": 0,
+      "is_secured": true
+    },
+    {
+      "creditor": "하파저축은행",
+      "product_type": "cash_advance",
+      "balance": 27290000,
+      "executed_at": "2021-07-08",
+      "overdue_days": 78,
+      "is_secured": false
+    },
+    {
+      "creditor": "라바신용조합",
+      "product_type": "credit_loan",
+      "balance": 24610000,
+      "executed_at": "2021-02-10",
+      "overdue_days": 79,
+      "is_secured": true
+    },
+    {
+      "creditor": "노포카드",
+      "product_type": "card_loan",
+      "balance": 13400000,
+      "executed_at": "2020-02-11",
+      "overdue_days": 83,
+      "is_secured": false
+    },
+    {
+      "creditor": "토가카드",
+      "product_type": "guarantee",
+      "balance": 30790000,
+      "executed_at": "2021-02-05",
+      "overdue_days": 6,
+      "is_secured": false
+    }
+  ]
+}

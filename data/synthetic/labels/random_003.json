@@ -1,0 +1,28 @@
+{
+  "case_id": "random_003",
+  "pdf_file": "random_003.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "도보저축은행",
+      "product_type": "guarantee",
+      "balance": 46020000,
+      "executed_at": "2024-01-06",
+      "overdue_days": 12,
+      "is_secured": true
+    },
+    {
+      "creditor": "로소저축은행",
+      "product_type": "credit_loan",
+      "balance": 26630000,
+      "executed_at": "2023-08-03",
+      "overdue_days": 88,
+      "is_secured": true
+    }
+  ]
+}

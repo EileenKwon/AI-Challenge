@@ -1,0 +1,60 @@
+{
+  "case_id": "random_010",
+  "pdf_file": "random_010.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "초파은행",
+      "product_type": "secured_loan",
+      "balance": 36990000,
+      "executed_at": "2022-08-03",
+      "overdue_days": 5,
+      "is_secured": false
+    },
+    {
+      "creditor": "보고신용조합",
+      "product_type": "secured_loan",
+      "balance": 30960000,
+      "executed_at": "2019-04-03",
+      "overdue_days": 48,
+      "is_secured": false
+    },
+    {
+      "creditor": "나사신용조합",
+      "product_type": "installment",
+      "balance": 35760000,
+      "executed_at": "2019-08-01",
+      "overdue_days": 39,
+      "is_secured": false
+    },
+    {
+      "creditor": "바카신용조합",
+      "product_type": "revolving",
+      "balance": 23460000,
+      "executed_at": "2021-02-21",
+      "overdue_days": 51,
+      "is_secured": true
+    },
+    {
+      "creditor": "도파은행",
+      "product_type": "card_loan",
+      "balance": 47350000,
+      "executed_at": "2020-08-24",
+      "overdue_days": 51,
+      "is_secured": false
+    },
+    {
+      "creditor": "보아저축은행",
+      "product_type": "installment",
+      "balance": 47080000,
+      "executed_at": "2021-07-15",
+      "overdue_days": 15,
+      "is_secured": false
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "case_id": "boundary_overdue_89",
+  "pdf_file": "boundary_overdue_89.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "초노캐피탈",
+      "product_type": "credit_loan",
+      "balance": 23070000,
+      "executed_at": "2024-08-11",
+      "overdue_days": 89,
+      "is_secured": false
+    }
+  ]
+}

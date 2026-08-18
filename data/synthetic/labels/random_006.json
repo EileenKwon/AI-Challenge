@@ -1,0 +1,20 @@
+{
+  "case_id": "random_006",
+  "pdf_file": "random_006.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "다하저축은행",
+      "product_type": "secured_loan",
+      "balance": 21510000,
+      "executed_at": "2024-02-20",
+      "overdue_days": 87,
+      "is_secured": true
+    }
+  ]
+}

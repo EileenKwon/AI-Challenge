@@ -1,0 +1,68 @@
+{
+  "case_id": "debt_count_7",
+  "pdf_file": "debt_count_7.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "로자저축은행",
+      "product_type": "installment",
+      "balance": 45370000,
+      "executed_at": "2021-03-26",
+      "overdue_days": 24,
+      "is_secured": true
+    },
+    {
+      "creditor": "고나카드",
+      "product_type": "installment",
+      "balance": 48490000,
+      "executed_at": "2025-03-05",
+      "overdue_days": 94,
+      "is_secured": false
+    },
+    {
+      "creditor": "초코카드",
+      "product_type": "guarantee",
+      "balance": 6680000,
+      "executed_at": "2025-02-21",
+      "overdue_days": 49,
+      "is_secured": false
+    },
+    {
+      "creditor": "차모캐피탈",
+      "product_type": "cash_advance",
+      "balance": 44420000,
+      "executed_at": "2021-01-21",
+      "overdue_days": 8,
+      "is_secured": true
+    },
+    {
+      "creditor": "가포신용조합",
+      "product_type": "card_loan",
+      "balance": 2560000,
+      "executed_at": "2024-05-08",
+      "overdue_days": 11,
+      "is_secured": false
+    },
+    {
+      "creditor": "소바캐피탈",
+      "product_type": "revolving",
+      "balance": 36270000,
+      "executed_at": "2024-11-05",
+      "overdue_days": 83,
+      "is_secured": false
+    },
+    {
+      "creditor": "호오카드",
+      "product_type": "guarantee",
+      "balance": 25460000,
+      "executed_at": "2020-04-09",
+      "overdue_days": 47,
+      "is_secured": false
+    }
+  ]
+}

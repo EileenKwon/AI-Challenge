@@ -1,0 +1,36 @@
+{
+  "case_id": "random_033",
+  "pdf_file": "random_033.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "사바은행",
+      "product_type": "installment",
+      "balance": 37920000,
+      "executed_at": "2019-12-20",
+      "overdue_days": 55,
+      "is_secured": true
+    },
+    {
+      "creditor": "바호카드",
+      "product_type": "installment",
+      "balance": 26570000,
+      "executed_at": "2021-04-13",
+      "overdue_days": 5,
+      "is_secured": false
+    },
+    {
+      "creditor": "나가캐피탈",
+      "product_type": "credit_loan",
+      "balance": 48000000,
+      "executed_at": "2022-04-04",
+      "overdue_days": 23,
+      "is_secured": true
+    }
+  ]
+}

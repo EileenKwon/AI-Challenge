@@ -1,0 +1,44 @@
+{
+  "case_id": "random_008",
+  "pdf_file": "random_008.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "소마저축은행",
+      "product_type": "guarantee",
+      "balance": 46870000,
+      "executed_at": "2024-05-04",
+      "overdue_days": 34,
+      "is_secured": true
+    },
+    {
+      "creditor": "카모신용조합",
+      "product_type": "credit_loan",
+      "balance": 36170000,
+      "executed_at": "2023-06-04",
+      "overdue_days": 80,
+      "is_secured": true
+    },
+    {
+      "creditor": "초코저축은행",
+      "product_type": "credit_loan",
+      "balance": 6970000,
+      "executed_at": "2021-02-08",
+      "overdue_days": 45,
+      "is_secured": true
+    },
+    {
+      "creditor": "가다캐피탈",
+      "product_type": "secured_loan",
+      "balance": 41440000,
+      "executed_at": "2019-09-15",
+      "overdue_days": 40,
+      "is_secured": false
+    }
+  ]
+}

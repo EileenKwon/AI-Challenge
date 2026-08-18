@@ -1,0 +1,28 @@
+{
+  "case_id": "random_004",
+  "pdf_file": "random_004.pdf",
+  "format_variant": "B",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "조타저축은행",
+      "product_type": "installment",
+      "balance": 39340000,
+      "executed_at": "2025-12-05",
+      "overdue_days": 94,
+      "is_secured": true
+    },
+    {
+      "creditor": "아소저축은행",
+      "product_type": "credit_loan",
+      "balance": 5650000,
+      "executed_at": "2025-12-03",
+      "overdue_days": 49,
+      "is_secured": true
+    }
+  ]
+}

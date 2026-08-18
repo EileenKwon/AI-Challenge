@@ -1,0 +1,20 @@
+{
+  "case_id": "boundary_overdue_31",
+  "pdf_file": "boundary_overdue_31.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "파고캐피탈",
+      "product_type": "credit_loan",
+      "balance": 9940000,
+      "executed_at": "2022-02-23",
+      "overdue_days": 31,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "case_id": "debt_count_6",
+  "pdf_file": "debt_count_6.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "아하파이낸스",
+      "product_type": "installment",
+      "balance": 22610000,
+      "executed_at": "2024-01-03",
+      "overdue_days": 89,
+      "is_secured": false
+    },
+    {
+      "creditor": "조아신용조합",
+      "product_type": "cash_advance",
+      "balance": 27700000,
+      "executed_at": "2023-07-13",
+      "overdue_days": 49,
+      "is_secured": true
+    },
+    {
+      "creditor": "카초은행",
+      "product_type": "guarantee",
+      "balance": 27590000,
+      "executed_at": "2022-04-01",
+      "overdue_days": 13,
+      "is_secured": false
+    },
+    {
+      "creditor": "모모은행",
+      "product_type": "card_loan",
+      "balance": 12940000,
+      "executed_at": "2022-04-03",
+      "overdue_days": 62,
+      "is_secured": true
+    },
+    {
+      "creditor": "자라저축은행",
+      "product_type": "guarantee",
+      "balance": 48780000,
+      "executed_at": "2024-12-21",
+      "overdue_days": 21,
+      "is_secured": false
+    },
+    {
+      "creditor": "노카카드",
+      "product_type": "secured_loan",
+      "balance": 23540000,
+      "executed_at": "2019-02-15",
+      "overdue_days": 76,
+      "is_secured": true
+    }
+  ]
+}

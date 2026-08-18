@@ -1,0 +1,76 @@
+{
+  "case_id": "random_018",
+  "pdf_file": "random_018.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "자초파이낸스",
+      "product_type": "guarantee",
+      "balance": 37740000,
+      "executed_at": "2019-12-05",
+      "overdue_days": 60,
+      "is_secured": false
+    },
+    {
+      "creditor": "나고파이낸스",
+      "product_type": "guarantee",
+      "balance": 24990000,
+      "executed_at": "2019-02-09",
+      "overdue_days": 83,
+      "is_secured": true
+    },
+    {
+      "creditor": "호사캐피탈",
+      "product_type": "credit_loan",
+      "balance": 39890000,
+      "executed_at": "2025-06-09",
+      "overdue_days": 61,
+      "is_secured": false
+    },
+    {
+      "creditor": "조아신용조합",
+      "product_type": "installment",
+      "balance": 41300000,
+      "executed_at": "2020-07-15",
+      "overdue_days": 22,
+      "is_secured": false
+    },
+    {
+      "creditor": "나카은행",
+      "product_type": "guarantee",
+      "balance": 34080000,
+      "executed_at": "2019-05-26",
+      "overdue_days": 72,
+      "is_secured": true
+    },
+    {
+      "creditor": "코소파이낸스",
+      "product_type": "cash_advance",
+      "balance": 40240000,
+      "executed_at": "2023-10-01",
+      "overdue_days": 36,
+      "is_secured": false
+    },
+    {
+      "creditor": "로사신용조합",
+      "product_type": "installment",
+      "balance": 1220000,
+      "executed_at": "2025-03-03",
+      "overdue_days": 90,
+      "is_secured": true
+    },
+    {
+      "creditor": "가오캐피탈",
+      "product_type": "revolving",
+      "balance": 44880000,
+      "executed_at": "2020-09-15",
+      "overdue_days": 58,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "case_id": "random_021",
+  "pdf_file": "random_021.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "파타신용조합",
+      "product_type": "guarantee",
+      "balance": 48150000,
+      "executed_at": "2023-11-10",
+      "overdue_days": 71,
+      "is_secured": true
+    },
+    {
+      "creditor": "차토캐피탈",
+      "product_type": "card_loan",
+      "balance": 28460000,
+      "executed_at": "2022-12-08",
+      "overdue_days": 30,
+      "is_secured": true
+    },
+    {
+      "creditor": "호소카드",
+      "product_type": "revolving",
+      "balance": 31370000,
+      "executed_at": "2025-04-15",
+      "overdue_days": 62,
+      "is_secured": false
+    },
+    {
+      "creditor": "자차카드",
+      "product_type": "card_loan",
+      "balance": 18000000,
+      "executed_at": "2021-11-07",
+      "overdue_days": 83,
+      "is_secured": false
+    },
+    {
+      "creditor": "아조저축은행",
+      "product_type": "secured_loan",
+      "balance": 32110000,
+      "executed_at": "2020-01-16",
+      "overdue_days": 41,
+      "is_secured": true
+    },
+    {
+      "creditor": "도모카드",
+      "product_type": "secured_loan",
+      "balance": 33900000,
+      "executed_at": "2022-12-27",
+      "overdue_days": 85,
+      "is_secured": false
+    },
+    {
+      "creditor": "마노카드",
+      "product_type": "credit_loan",
+      "balance": 21930000,
+      "executed_at": "2024-06-05",
+      "overdue_days": 62,
+      "is_secured": false
+    },
+    {
+      "creditor": "포파은행",
+      "product_type": "credit_loan",
+      "balance": 46960000,
+      "executed_at": "2025-10-14",
+      "overdue_days": 91,
+      "is_secured": true
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "job_loss",
+  "pdf_file": "job_loss.pdf",
+  "format_variant": "C",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": true,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "차사저축은행",
+      "product_type": "card_loan",
+      "balance": 33820000,
+      "executed_at": "2019-09-13",
+      "overdue_days": 89,
+      "is_secured": false
+    },
+    {
+      "creditor": "보다카드",
+      "product_type": "cash_advance",
+      "balance": 38620000,
+      "executed_at": "2020-10-18",
+      "overdue_days": 79,
+      "is_secured": false
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "case_id": "random_024",
+  "pdf_file": "random_024.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "가마은행",
+      "product_type": "revolving",
+      "balance": 31380000,
+      "executed_at": "2025-03-23",
+      "overdue_days": 45,
+      "is_secured": false
+    }
+  ]
+}

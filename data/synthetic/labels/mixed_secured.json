@@ -1,0 +1,36 @@
+{
+  "case_id": "mixed_secured",
+  "pdf_file": "mixed_secured.pdf",
+  "format_variant": "A",
+  "meta_flags": {
+    "income_proof_difficult": false,
+    "job_loss_or_business_closed": false,
+    "has_conflict": false
+  },
+  "debts": [
+    {
+      "creditor": "차나신용조합",
+      "product_type": "secured_loan",
+      "balance": 22830000,
+      "executed_at": "2020-10-19",
+      "overdue_days": 84,
+      "is_secured": true
+    },
+    {
+      "creditor": "바카캐피탈",
+      "product_type": "card_loan",
+      "balance": 25390000,
+      "executed_at": "2023-10-21",
+      "overdue_days": 4,
+      "is_secured": false
+    },
+    {
+      "creditor": "보토파이낸스",
+      "product_type": "revolving",
+      "balance": 18960000,
+      "executed_at": "2022-02-21",
+      "overdue_days": 91,
+      "is_secured": false
+    }
+  ]
+}
