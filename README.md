@@ -17,6 +17,33 @@ cp .env.example .env          # ANTHROPIC_API_KEY 설정
 uvicorn dn.main:app --reload --app-dir src
 ```
 
+API 서버가 실행되면 `http://127.0.0.1:8000/docs`에서 OpenAPI 문서를 확인할 수 있다.
+
+## 현재 구현 범위
+
+- PDF 업로드, 텍스트 추출, PII 마스킹과 프롬프트 인젝션 감지
+- LLM 기반 구조화 추출과 결과 검증
+- 결측값·충돌 탐지 및 보완 질문 생성
+- 결정론적 현금흐름과 소득 감소 시나리오 계산
+- YAML 정책 카드 로더와 3-state 조건 평가
+
+상세한 구현 순서와 남은 작업은 [`CODEX_TASKS.md`](CODEX_TASKS.md)를 기준으로 관리한다.
+
+## 팀 개발 흐름
+
+1. Issue에서 작업 범위와 완료 조건을 확정한다.
+2. `main`을 기준으로 `feat/<issue>-<topic>` 또는 `fix/<issue>-<topic>` 브랜치를 만든다.
+3. 코드와 테스트를 같이 작성하고 로컬 품질 검사를 통과시킨다.
+4. PR 템플릿을 채워 리뷰를 요청하고, CI와 리뷰가 완료된 뒤 병합한다.
+
+```bash
+pytest -q
+ruff check src tests eval tools
+ruff format --check src tests eval tools
+```
+
+세부 규칙은 [`CONTRIBUTING.md`](CONTRIBUTING.md)와 [`AGENTS.md`](AGENTS.md)를 따른다.
+
 ## 문서
 
 | 파일 | 내용 |
@@ -25,6 +52,7 @@ uvicorn dn.main:app --reload --app-dir src
 | `AGENTS.md` | 코딩 에이전트 작업 규약 (절대 규칙 10개) |
 | `CODEX_TASKS.md` | T00~T23 순차 구현 지시서 |
 | `docs/기획서.md` | 서비스 기획서 (원본) |
+| `CONTRIBUTING.md` | 브랜치, 커밋, PR, 테스트 규칙 |
 
 ## 배포 전 체크리스트
 

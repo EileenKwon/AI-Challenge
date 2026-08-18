@@ -293,6 +293,13 @@ class RuleEngineResult(Base):
 # ===========================================================================
 
 
+class GroundingReport(Base):
+    """숫자 그라운딩 검증 결과 (T14). 허용 집합에 없는 숫자가 있으면 grounded=False."""
+
+    grounded: bool
+    ungrounded_tokens: tuple[str, ...] = ()
+
+
 class NarrativeSection(Base):
     section: SectionKind
     text: str

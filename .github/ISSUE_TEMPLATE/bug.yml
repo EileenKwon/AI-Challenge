@@ -1,0 +1,30 @@
+name: 버그 보고
+description: 재현 가능한 문제를 보고합니다.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 현상
+      description: 개인정보를 제거한 실제 결과를 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 합성 데이터를 사용한 최소 재현 절차를 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: OS, Python 버전, 관련 커밋을 적어주세요.
