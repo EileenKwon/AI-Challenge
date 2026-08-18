@@ -1,0 +1,44 @@
+{# 재사용 부분 템플릿 — 확정 숫자/후보 표현의 시각적 구분, 출처 배지, 툴팁. #}
+
+{% macro confirmed_box(label, value) %}
+<div class="rounded-lg bg-emerald-50 border-2 border-emerald-400 p-4 my-2">
+  <div class="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
+    <span aria-hidden="true">✓</span><span>확정 숫자</span>
+  </div>
+  <div class="text-slate-600 text-sm mt-1">{{ label }}</div>
+  <div class="text-2xl font-extrabold text-emerald-800">{{ value }}</div>
+</div>
+{% endmacro %}
+
+{% macro candidate_box(name, agency, status_label) %}
+<div class="rounded-lg bg-amber-50 border-2 border-dashed border-amber-400 p-4 my-2">
+  <div class="flex items-center gap-2 text-amber-700 text-sm font-semibold">
+    <span aria-hidden="true">?</span><span>검토 후보 (확정 아님)</span>
+  </div>
+  <div class="text-lg font-bold text-amber-900">{{ name }}</div>
+  <div class="text-slate-600 text-sm">{{ agency }} · {{ status_label }}</div>
+</div>
+{% endmacro %}
+
+{% macro source_badge(source) %}
+  {% if source == 'document' %}
+  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">문서</span>
+  {% elif source == 'user_input' %}
+  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">입력</span>
+  {% elif source == 'user_edit' %}
+  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">수정</span>
+  {% else %}
+  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">미확인</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro tooltip(term, explanation) %}
+<span tabindex="0" role="button" aria-label="{{ term }} 설명: {{ explanation }}" title="{{ explanation }}"
+      class="underline decoration-dotted decoration-slate-400 cursor-help">{{ term }}</span>
+{% endmacro %}
+
+{% macro low_confidence_warning() %}
+<span class="inline-flex items-center gap-1 text-xs text-amber-700" role="alert">
+  <span aria-hidden="true">⚠</span> 확인 필요(신뢰도 낮음)
+</span>
+{% endmacro %}

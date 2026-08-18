@@ -1,0 +1,54 @@
+{% extends "_layout.html" %}
+{% import "_macros.html" as m %}
+{% block title %}추출 확인{% endblock %}
+{% block content %}
+<section class="space-y-4 pt-2">
+  <h2 class="text-xl font-bold">추출된 채무 정보를 확인해 주세요</h2>
+  <p class="text-sm text-slate-600">
+    AI가 문서에서 추출한 값입니다. 틀린 부분은 수정하고, 확인 버튼을 눌러야
+    다음 단계로 진행됩니다.
+  </p>
+
+  <form method="post" action="/api/session/{{ session_id }}/confirm" class="space-y-3">
+    {% for debt in debts %}
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-sm">채무 {{ loop.index }}</h3>
+        {% if debt.low_confidence %}{{ m.low_confidence_warning() }}{% endif %}
+      </div>
+
+      <dl class="text-sm space-y-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <dt class="text-slate-500">채권자</dt>
+          <dd class="flex items-center gap-2">{{ debt.creditor }} {{ m.source_badge(debt.creditor_source) }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <dt class="text-slate-500">채무유형</dt>
+          <dd class="flex items-center gap-2">{{ debt.product_type }} {{ m.source_badge(debt.product_type_source) }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <dt class="text-slate-500">잔액</dt>
+          <dd class="flex items-center gap-2">{{ debt.balance }} {{ m.source_badge(debt.balance_source) }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <dt class="text-slate-500">연체일수</dt>
+          <dd class="flex items-center gap-2">{{ debt.overdue_days }} {{ m.source_badge(debt.overdue_days_source) }}</dd>
+        </div>
+      </dl>
+
+      <label class="flex items-center gap-2 text-sm pt-1 border-t border-slate-100 mt-2">
+        <input type="checkbox" name="confirm_{{ loop.index0 }}" checked class="rounded" />
+        <span>이 채무 정보가 정확함을 확인했습니다.</span>
+      </label>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-500">추출된 채무가 없습니다.</p>
+    {% endfor %}
+
+    <button type="submit"
+            class="w-full rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700">
+      전체 확인 완료
+    </button>
+  </form>
+</section>
+{% endblock %}

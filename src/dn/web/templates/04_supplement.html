@@ -1,0 +1,85 @@
+{% extends "_layout.html" %}
+{% import "_macros.html" as m %}
+{% block title %}보완 입력{% endblock %}
+{% block content %}
+<section class="space-y-4 pt-2">
+  <h2 class="text-xl font-bold">추가로 확인이 필요합니다</h2>
+  <p class="text-sm text-slate-600">
+    신용정보조회서에는 {{ m.tooltip("금리", "채무에 적용되는 연 이자율입니다.") }}와
+    {{ m.tooltip("월상환액", "매달 정기적으로 갚아야 하는 금액입니다.") }}이 없습니다.
+    아는 만큼만 입력해 주세요. <span class="font-medium">모르면 건너뛰어도 됩니다.</span>
+  </p>
+
+  <form method="post" action="/api/session/{{ session_id }}/supplement" class="space-y-4">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+      <h3 class="font-semibold text-sm">채무별 금리·월상환액 일괄 입력</h3>
+      {% for debt in debts %}
+      <div class="border-t border-slate-100 pt-2 first:border-0 first:pt-0">
+        <p class="text-sm font-medium">{{ debt.creditor }}</p>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <label class="text-xs text-slate-500">
+            금리(%)
+            <input type="number" step="0.1" name="rate_{{ loop.index0 }}"
+                   class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            월상환액(원)
+            <input type="number" name="payment_{{ loop.index0 }}"
+                   class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+          </label>
+        </div>
+        <label class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+          <input type="checkbox" name="skip_{{ loop.index0 }}" />
+          <span>모름 (건너뛰기 — 이 채무는 월상환액 합계에서 제외됩니다)</span>
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+      <h3 class="font-semibold text-sm">기본 질문 (5문항)</h3>
+      {% for q in fixed_questions %}
+      <div>
+        <label class="text-sm font-medium block">{{ loop.index }}. {{ q.text }}</label>
+        {% if q.kind == "money" %}
+        <input type="number" name="{{ q.qid }}" class="mt-1 block w-full rounded border-slate-300 text-sm" />
+        {% elif q.kind == "bool" %}
+        <div class="flex gap-3 mt-1 text-sm">
+          <label><input type="radio" name="{{ q.qid }}" value="true" /> 예</label>
+          <label><input type="radio" name="{{ q.qid }}" value="false" /> 아니오</label>
+        </div>
+        {% else %}
+        <input type="number" name="{{ q.qid }}" class="mt-1 block w-full rounded border-slate-300 text-sm" />
+        {% endif %}
+        {% if q.skippable %}
+        <label class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+          <input type="checkbox" name="skip_{{ q.qid }}" />
+          <span>모름 — {{ q.skip_impact }}</span>
+        </label>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if conditional_questions %}
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+      <h3 class="font-semibold text-sm">추가 질문 (해당 시)</h3>
+      {% for q in conditional_questions %}
+      <div>
+        <label class="text-sm font-medium block">{{ q.text }}</label>
+        <div class="flex gap-3 mt-1 text-sm">
+          <label><input type="radio" name="{{ q.qid }}" value="true" /> 예</label>
+          <label><input type="radio" name="{{ q.qid }}" value="false" /> 아니오</label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <button type="submit"
+            class="w-full rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700">
+      입력 완료하고 결과 보기
+    </button>
+  </form>
+</section>
+{% endblock %}

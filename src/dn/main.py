@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from dn.api import routes_analysis, routes_document, routes_session
 from dn.domain.errors import DomainError, StateTransitionError
 from dn.settings import get_settings
+from dn.web import routes as web_routes
 
 
 def create_app() -> FastAPI:
@@ -32,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_session.router)
     app.include_router(routes_document.router)
     app.include_router(routes_analysis.router)
+    app.include_router(web_routes.router)
 
     return app
 

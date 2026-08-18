@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{{ service_name }} — {% block title %}{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<style>
+  /* 접근성: 큰 글씨 토글 */
+  html.large-text body { font-size: 1.2rem; }
+  html.large-text .text-xs { font-size: 0.95rem; }
+  html.large-text .text-sm { font-size: 1.05rem; }
+</style>
+<script>
+  function toggleLargeText() {
+    document.documentElement.classList.toggle('large-text');
+    localStorage.setItem('dn_large_text', document.documentElement.classList.contains('large-text') ? '1' : '0');
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('dn_large_text') === '1') {
+      document.documentElement.classList.add('large-text');
+    }
+  });
+</script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  {% if dev_mode %}
+  <div class="bg-red-600 text-white text-sm font-semibold text-center py-2 px-3" role="alert">
+    개발 모드 — 미검증(verified: false) 정책 카드가 포함된 결과입니다. 배포용이 아닙니다.
+  </div>
+  {% endif %}
+
+  <header class="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
+    <h1 class="text-base font-bold truncate">{{ service_name }}</h1>
+    <button type="button" onclick="toggleLargeText()"
+            class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
+            aria-label="큰 글씨 보기 전환">가 큰글씨</button>
+  </header>
+
+  {% block stepper %}
+  <nav class="max-w-md mx-auto px-4 pb-2" aria-label="진행 단계">
+    <ol class="flex gap-1">
+      {% for step in ["소개", "업로드", "확인", "보완", "결과", "경로", "계획"] %}
+      <li class="flex-1 h-1.5 rounded-full {{ 'bg-emerald-500' if loop.index0 < current_step else ('bg-slate-300') }}"
+          title="{{ step }}"></li>
+      {% endfor %}
+    </ol>
+  </nav>
+  {% endblock %}
+
+  <main class="max-w-md mx-auto px-4 pb-16">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="max-w-md mx-auto px-4 py-4 text-xs text-slate-400">
+    정책 기준일: {{ policy_base_date or "확인되지 않음" }} · 진행 상황은 자동 저장됩니다.
+  </footer>
+</body>
+</html>

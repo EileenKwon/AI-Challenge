@@ -1,0 +1,83 @@
+{% extends "_layout.html" %}
+{% import "_macros.html" as m %}
+{% block title %}결과{% endblock %}
+{% block content %}
+<section class="space-y-4 pt-2">
+  <h2 class="text-xl font-bold">현금흐름 결과</h2>
+
+  {{ m.confirmed_box("월 부족액" if cashflow.shortfall_is_positive else "월 여유자금", cashflow.monthly_shortfall) }}
+
+  <div class="grid grid-cols-2 gap-2">
+    {{ m.confirmed_box("총 채무액", cashflow.total_debt) }}
+    {{ m.confirmed_box("월 가용재원", cashflow.monthly_available) }}
+    {{ m.confirmed_box("월 예정 상환액", cashflow.monthly_total_payment) }}
+    {{ m.confirmed_box("부담률", cashflow.dti_ratio) }}
+  </div>
+
+  {% if narrative_cashflow_text %}
+  <p class="text-sm text-slate-700 bg-white rounded-lg border border-slate-200 p-3">
+    {{ narrative_cashflow_text }}
+  </p>
+  {% endif %}
+
+  <div class="rounded-lg border border-slate-200 bg-white p-4">
+    <h3 class="font-semibold text-sm mb-2">채무 비중 (채권자별)</h3>
+    <div class="space-y-1.5" aria-label="채권자별 채무 비중 막대 차트">
+      {% for row in creditor_shares %}
+      <div>
+        <div class="flex justify-between text-xs text-slate-500">
+          <span>{{ row.creditor }}</span><span>{{ row.percent }}%</span>
+        </div>
+        <div class="h-3 rounded bg-slate-100 overflow-hidden">
+          <div class="h-3 bg-sky-500" style="width: {{ row.percent }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-4">
+    <h3 class="font-semibold text-sm mb-2">가용재원 대비 상환액</h3>
+    <div class="space-y-1.5" aria-label="가용재원 대비 상환액 막대 차트">
+      <div>
+        <div class="flex justify-between text-xs text-slate-500"><span>월 가용재원</span></div>
+        <div class="h-4 rounded bg-emerald-200 overflow-hidden">
+          <div class="h-4 bg-emerald-600" style="width: {{ available_ratio }}%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-xs text-slate-500"><span>월 예정 상환액</span></div>
+        <div class="h-4 rounded bg-rose-200 overflow-hidden">
+          <div class="h-4 bg-rose-600" style="width: {{ payment_ratio }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details class="rounded-lg border border-slate-200 bg-white p-4">
+    <summary class="font-semibold text-sm cursor-pointer">이 숫자는 어디서 왔나요? (계산 과정 펼치기)</summary>
+    <ol class="mt-2 space-y-2 text-sm">
+      {% for step in trace %}
+      <li class="border-t border-slate-100 pt-2 first:border-0 first:pt-0">
+        <p class="font-medium">{{ step.label }}</p>
+        <p class="text-slate-500 text-xs">{{ step.formula }} = {{ step.output }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+  </details>
+
+  {% if unknowns %}
+  <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+    <h3 class="font-semibold text-sm text-amber-800 mb-1">미확인 항목</h3>
+    <ul class="text-sm text-amber-800 list-disc pl-5">
+      {% for u in unknowns %}<li>{{ u }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <a href="/web/session/{{ session_id }}/paths"
+     class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3">
+    검토 경로 보기
+  </a>
+</section>
+{% endblock %}
