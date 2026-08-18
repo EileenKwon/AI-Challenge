@@ -131,6 +131,40 @@ def get_result(session_id: str, store: SessionStore = Depends(get_session_store)
     return state.analysis.model_dump(mode="json")
 
 
+@router.get("/{session_id}/explain")
+def explain_session(session_id: str, store: SessionStore = Depends(get_session_store)) -> dict:
+    """설명가능성 번들 (기획서 10.1 (4) 8개 항목)을 반환한다."""
+    state = get_session_or_404(session_id, store)
+    if state.analysis is None:
+        raise HTTPException(status_code=404, detail="아직 분석 결과가 없습니다.")
+    a = state.analysis
+    return {
+        "사용자_입력값": {
+            "income": a.income.model_dump(mode="json"),
+            "household": a.household.model_dump(mode="json"),
+        },
+        "AI_추출값": a.extraction.model_dump(mode="json"),
+        "사용자_수정_이력": a.edit_history,
+        "적용된_규칙과_버전": {
+            "rule_version": a.rules.rule_version if a.rules else None,
+            "dev_mode": a.dev_mode,
+            "paths": [
+                {
+                    "path_id": p.path_id,
+                    "policy_ref": (p.policy_ref.model_dump(mode="json") if p.policy_ref else None),
+                }
+                for p in (a.rules.paths if a.rules else ())
+            ],
+        },
+        "계산_trace": [step.model_dump() for step in (a.cashflow.trace if a.cashflow else ())],
+        "LLM_생성문": a.narrative.model_dump(mode="json") if a.narrative else None,
+        "공식_근거와_기준일": {
+            "policy_base_date": a.policy_base_date.isoformat() if a.policy_base_date else None,
+        },
+        "미확인_항목": [g.model_dump() for g in a.gaps.gaps],
+    }
+
+
 @router.post("/{session_id}/plan")
 def create_plan(session_id: str, store: SessionStore = Depends(get_session_store)) -> dict:
     state = get_session_or_404(session_id, store)

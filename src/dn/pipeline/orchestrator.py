@@ -18,10 +18,11 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime
 
 from dn.cashflow.calculator import compute as compute_cashflow
-from dn.domain.enums import SectionKind, SessionStage, TriageDecision
+from dn.domain.enums import FieldSource, SectionKind, SessionStage, TriageDecision
 from dn.domain.errors import PolicyCardError
 from dn.domain.models import (
     AnalysisResult,
@@ -41,8 +42,20 @@ from dn.rules.engine import evaluate as evaluate_rules
 from dn.rules.facts import build_facts
 from dn.rules.policy_card import load_usable_cards
 from dn.rules.triage import evaluate as evaluate_triage
+from dn.safety.audit import redact
 from dn.safety.output_filter import check as check_output
 from dn.settings import Settings, get_settings
+
+logger = logging.getLogger(__name__)
+
+_DEBT_FIELD_NAMES = (
+    "creditor",
+    "product_type",
+    "balance",
+    "executed_at",
+    "overdue_days",
+    "is_secured",
+)
 
 
 def _load_rules_result(
@@ -57,8 +70,24 @@ def _load_rules_result(
             undetermined_reasons=(f"정책 카드를 불러올 수 없습니다: {exc}",),
         )
     return evaluate_rules(
-        facts, cards, dev_mode=dev_mode, has_unresolved_conflicts=has_unresolved_conflicts
+        facts,
+        cards,
+        dev_mode=dev_mode,
+        has_unresolved_conflicts=has_unresolved_conflicts,
+        rule_version=settings.config.paths.policy_card_version,
     )
+
+
+def _build_edit_history(extraction: ExtractionResult) -> tuple[str, ...]:
+    """`USER_EDIT` 출처를 가진 필드를 모아 설명가능성 번들의 수정 이력을 만든다."""
+    entries: list[str] = []
+    for i, debt in enumerate(extraction.debts):
+        for field_name in _DEBT_FIELD_NAMES:
+            tracked = getattr(debt, field_name)
+            if tracked.source == FieldSource.USER_EDIT:
+                edited_at = tracked.edited_at.isoformat() if tracked.edited_at else "시각 미상"
+                entries.append(f"debt_{i}.{field_name} 사용자 수정 ({edited_at})")
+    return tuple(entries)
 
 
 def _filtered_section(section: NarrativeSection, *, cashflow, paths) -> NarrativeSection:
@@ -121,13 +150,14 @@ def analyze(
     else:
         policy_base_date = date.fromisoformat(settings.config.meta.policy_base_date)
 
-    return AnalysisResult(  # 9
+    result = AnalysisResult(  # 9
         session_id=state.session_id,
         analyzed_at=now or datetime.now(),
         extraction=extraction,
         income=state.income,
         household=state.household,
         flags=state.flags,
+        edit_history=_build_edit_history(extraction),
         cashflow=cashflow,
         triage=triage_result,
         rules=rules_result,
@@ -137,3 +167,16 @@ def analyze(
         policy_base_date=policy_base_date,
         dev_mode=rules_result.dev_mode if rules_result is not None else False,
     )
+
+    logger.info(
+        "analysis_completed",
+        extra=redact(
+            {
+                "session_id": state.session_id,
+                "triage_decision": triage_result.decision.value,
+                "dev_mode": result.dev_mode,
+                "field_count": len(debts),
+            }
+        ),
+    )
+    return result

@@ -118,6 +118,17 @@ def compute(
 
     trace: list[CalcStep] = [
         CalcStep(
+            label="총 채무액",
+            formula=" + ".join(_fmt(d.balance.value) for d in debts if d.balance.value is not None)
+            or "0",
+            inputs={
+                f"debt_{i}.balance": _fmt(d.balance.value)
+                for i, d in enumerate(debts)
+                if d.balance.value is not None
+            },
+            output=_fmt(total_debt),
+        ),
+        CalcStep(
             label="월 총 예정 상환액",
             formula=" + ".join(
                 _fmt(d.monthly_payment.value) for d in debts if d.monthly_payment.value is not None
