@@ -1,0 +1,41 @@
+# 기획서 6단계 "7일 실행계획" — 기본 액션 템플릿.
+# 액션 항목 자체는 여기서만 나온다. LLM 은 문구 다듬기에만 관여하며
+# 새 액션을 만들 수 없다(T16 세부 규칙).
+
+items:
+  - id: check_debt_list
+    timing: today
+    order: 1
+    text: 추출된 채무 목록과 연체일수 확인
+  - id: check_autopay
+    timing: today
+    order: 2
+    text: 자동이체 예정금액과 잔액 부족 여부 확인
+  - id: prepare_documents
+    timing: d1
+    order: 3
+    text: 소득증빙서류와 임대차 관련 서류 준비
+  - id: book_consultation
+    timing: d2
+    order: 4
+    text: 신용회복위원회 상담 예약
+  - id: check_recent_secured_debt
+    timing: before_consult
+    order: 5
+    text: 최근 신규채무 및 담보채무 포함 여부 확인
+  - id: ask_creditor_terms
+    timing: before_consult
+    order: 6
+    text: 금융회사에 상환유예·만기연장·상환방식 변경 가능 여부 질문
+  - id: update_after_consult
+    timing: after_consult
+    order: 7
+    text: 공식 상담 결과를 반영해 채무회복 계획 업데이트
+
+# 조건부 추가 액션 (우선순위 조정 규칙 4번째: 실직·폐업 → 복합지원 상담 추가)
+conditional_items:
+  - id: complex_support_referral
+    trigger: income_drop_signal
+    timing: before_consult
+    text: 고용센터·복지·법률구조공단 등 복합지원 상담 연계 확인
+    related_agency: 고용센터·복지·법률구조공단
