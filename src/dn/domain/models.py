@@ -300,6 +300,22 @@ class GroundingReport(Base):
     ungrounded_tokens: tuple[str, ...] = ()
 
 
+class FilterResult(Base):
+    """출력(생성문) 안전 필터 검사 결과 (T15)."""
+
+    passed: bool
+    matched_categories: tuple[str, ...] = ()
+    matched_phrases: tuple[str, ...] = ()
+
+
+class InputFilterResult(Base):
+    """입력(사용자 질의) 안전 필터 검사 결과 (T15)."""
+
+    blocked: bool
+    matched_categories: tuple[str, ...] = ()
+    matched_phrases: tuple[str, ...] = ()
+
+
 class NarrativeSection(Base):
     section: SectionKind
     text: str
