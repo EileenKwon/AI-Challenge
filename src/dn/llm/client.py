@@ -82,9 +82,16 @@ class AnthropicClient:
 
 
 def get_llm_client(settings: Settings | None = None) -> LLMClient:
-    """설정에 따라 `AnthropicClient` 또는 `StubClient` 를 반환한다."""
+    """설정에 따라 `AnthropicClient` 또는 `StubClient` 를 반환한다.
+
+    폴백 스텁의 응답은 `'{"debts": []}'` 로 고정한다 — 추출 스키마(`debts`
+    필수)를 만족하는 최소 응답이라 T06 추출 파이프라인이 스키마 검증
+    실패로 크래시하지 않는다. 설명 생성 쪽에서 이 텍스트를 받아도
+    그라운딩 검증에 실패해 결정론적 템플릿으로 대체될 뿐 크래시하지
+    않는다(T14).
+    """
     settings = settings or get_settings()
     if not settings.env.anthropic_api_key:
         logger.warning("anthropic_api_key_missing_fallback_to_stub")
-        return StubClient()
+        return StubClient(response='{"debts": []}')
     return AnthropicClient(settings)
