@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from dn.api.deps import get_session_or_404, get_session_store
+from dn.api.routes_session import create_session
 from dn.cashflow.formatting import format_ratio, format_won
 from dn.domain.models import ExtractionResult, SessionState
 from dn.reconcile.questions import (
@@ -25,6 +26,7 @@ from dn.settings import get_settings
 from dn.storage.session_store import SessionStore
 
 router = APIRouter(prefix="/web/session", tags=["web"])
+landing_router = APIRouter(tags=["web"])
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -93,6 +95,25 @@ def _debt_view(debt) -> dict[str, Any]:
 def render_page(template_name: str, context: dict[str, Any]) -> HTMLResponse:
     template = _env().get_template(template_name)
     return HTMLResponse(template.render(**context))
+
+
+@landing_router.get("/", response_class=HTMLResponse)
+def landing_page() -> HTMLResponse:
+    settings = get_settings()
+    return render_page(
+        "00_landing.html",
+        {
+            "service_name": settings.config.meta.service_name,
+            "policy_base_date": settings.config.meta.policy_base_date,
+            "dev_mode": settings.config.rules.allow_unverified_cards,
+        },
+    )
+
+
+@landing_router.get("/start")
+def start_session(store: SessionStore = Depends(get_session_store)) -> RedirectResponse:
+    created = create_session(store=store)
+    return RedirectResponse(url=f"/web/session/{created.session_id}/intro", status_code=303)
 
 
 @router.get("/{session_id}/intro", response_class=HTMLResponse)

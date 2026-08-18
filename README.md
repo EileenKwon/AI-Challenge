@@ -21,7 +21,7 @@
 | 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
 | 평가 하네스 (E1~E6) | ✅ 실행 완료 — 단, 아래 한계 참고 |
 | Docker 빌드 검증 | ⚠️ 샌드박스에 Docker 권한 없어 미검증 (Dockerfile/compose는 작성 완료, 로컬 uvicorn 기준 스모크 테스트로 대체 검증) |
-| 브라우저 수동 워크스루 (T19, 375px 무가로스크롤 등) | ⚠️ 브라우저 도구 미보유로 서버 렌더링만 확인, 육안 검증 미완료 |
+| 브라우저 수동 워크스루 (T19) | ❌ 실제 클릭 테스트 결과 화면 전환 버그 발견 — 아래 [브라우저 화면 흐름 알려진 문제](#anthropic_api_key-없이-개발하기) 참고, 수정 필요 |
 | 정책 카드 공식 출처 검증 | ⚠️ 6개 카드 모두 `verified: false` / `source.url: TODO` — 배포 전 필수 확인 항목 |
 | 실제 LLM(E1/E2 추출 정확도) 평가 | ⚠️ `ANTHROPIC_API_KEY` 미설정 상태라 `StubClient` 기반 `[STUB_MODE]` 결과만 존재 |
 
@@ -112,14 +112,25 @@ uvicorn dn.main:app --reload --app-dir src
 
 API 서버가 실행되면 `http://127.0.0.1:8000/docs`에서 OpenAPI 문서를 확인할 수 있다.
 
+**브라우저로 화면을 보려면** 루트 경로(`http://127.0.0.1:8000/`)에 접속한다.
+랜딩 페이지에서 "새 세션 시작하기"를 누르면 세션이 만들어지며 소개·동의
+화면(`/web/session/{session_id}/intro`)으로 이동한다. (세션 없이 화면
+경로로 직접 들어가면 `404 Not Found`가 뜬다 — 반드시 `/`부터 시작한다.)
+
 ### ANTHROPIC_API_KEY 없이 개발하기
 
 `ANTHROPIC_API_KEY`가 설정되지 않으면 `get_llm_client()`가 자동으로
-`StubClient`로 폴백하고 `dev_mode`가 켜진다 (`src/dn/llm/client.py`). 즉
-**API 키 없이도 서버 기동·전체 화면 흐름·PDF 다운로드까지 앱 자체는
-정상 동작**한다 — 다만 LLM이 실제로 문서에서 정보를 추출하지 않으므로
-추출 결과는 항상 비어 있고(`{"debts": []}`), `eval/E1`·`E2`(추출 정확도
-평가)는 `[STUB_MODE]`로 표시된 자리표시자 결과만 나온다.
+`StubClient`로 폴백하고 `dev_mode`가 켜진다 (`src/dn/llm/client.py`). API
+자체는 키 없이도 정상 동작하며(`eval/E1`·`E2`만 `[STUB_MODE]` 자리표시자
+결과), `scripts/smoke.sh`·`tests/integration/test_smoke_flow.py`가 API를
+직접 순서대로 호출하는 흐름은 키 없이도 끝까지(PDF 다운로드까지) 통과한다.
+
+> ⚠️ 다만 **브라우저에서 화면을 클릭만으로 끝까지 진행하는 것은 아직 안 된다.**
+> 각 화면의 HTML 폼이 JSON API를 직접 호출한 뒤 다음 화면으로 자동 이동하지
+> 않고, 특히 보완입력(04) 화면은 API가 기대하는 JSON 스키마와 폼 필드명이
+> 맞지 않으며 분석(`/analyze`)·계획(`/plan`) 단계를 트리거하는 화면도 아직
+> 없다. API 기반 스모크 흐름은 T23에서 검증됐지만 브라우저 클릭 흐름
+> 자체(T19)는 아직 수동 검증·수정이 끝나지 않은 상태다.
 
 ## 팀 개발 흐름
 

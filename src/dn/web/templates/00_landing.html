@@ -1,0 +1,17 @@
+{% extends "_layout.html" %}
+{% block title %}시작{% endblock %}
+{% block stepper %}{% endblock %}
+{% block content %}
+<section class="space-y-4 pt-6 text-center">
+  <h2 class="text-xl font-bold">저신용·다중채무자를 위한<br />AI 채무회복 실행 코파일럿</h2>
+  <p class="text-sm text-slate-600 text-left">
+    신용정보조회서를 업로드하면 상환여력(현금흐름)을 결정론적으로 계산하고,
+    검토 가능한 채무조정 제도 후보를 근거·미확인 조건과 함께 안내합니다.
+    제도 적합성은 판정하지 않으며, 최종 자격은 공식 상담을 통해 확인해야 합니다.
+  </p>
+  <a href="/start"
+     class="block w-full text-center rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700">
+    새 세션 시작하기
+  </a>
+</section>
+{% endblock %}

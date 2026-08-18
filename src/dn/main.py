@@ -33,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_session.router)
     app.include_router(routes_document.router)
     app.include_router(routes_analysis.router)
+    app.include_router(web_routes.landing_router)
     app.include_router(web_routes.router)
 
     return app
