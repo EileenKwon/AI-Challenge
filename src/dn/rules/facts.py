@@ -32,4 +32,7 @@ def build_facts(
         "has_guarantee_debt": flags.has_guarantee_debt.value,
         "has_tax_debt": flags.has_tax_debt.value,
         "has_private_debt": flags.has_private_debt.value,
+        "legal_dispute": flags.legal_dispute.value,
+        # T13 트리아지의 "상환여력 사실상 없음" 신호에 쓰인다.
+        "monthly_available": cashflow.monthly_available,
     }
