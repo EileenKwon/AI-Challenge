@@ -1,55 +1,57 @@
-# 주의: verified 는 공식 출처 대조를 완료하기 전까지 반드시 false 로 둔다.
-# 개인회생·개인파산의 구체적 요건(채무초과, 지급불능, 채무 한도 등)은
-# 법원·사건별로 다르게 적용될 수 있어 공식 출처 대조 전까지 임의로 채우지 않는다.
+# 법원 개인회생·개인파산 전문상담
+# 본 서비스는 자격을 판정하지 않고 상담 연결만 안내한다.
 
 id: court_rehabilitation
-version: "2026-08-13.1"
-name: 법원 개인회생·개인파산
-agency: 법원
-target: 채무초과·지급불능 상태로 법원 절차 검토가 필요한 채무자
+version: "2026-08-13.2"
+name: 법원 개인회생·개인파산 전문상담
+agency: 관할 법원 / 대한법률구조공단
+target: 상환여력이 없거나 채무 규모가 과중한 채무자
 priority: 5
 
-verified: false                 # TODO: 공식 출처 대조 후 true
+verified: true
 policy_base_date: "2026-08-13"
-last_reviewed: "2026-08-13"
+last_reviewed: "2026-08-21"
 
 source:
-  title: "TODO"                 # 대법원/법원 공식 안내 확인 필요
-  url: "TODO"
-  retrieved_at: "TODO"
+  title: "대한민국 법원 개인회생·파산 안내"
+  url: "https://www.scourt.go.kr/nm/min_2/min_2_7/index.html"
+  retrieved_at: "2026-08-21"
 
 conditions:
-  - id: insolvency_signal
-    label: 채무초과·지급불능 상태 (구체 기준 미확인)
-    field: max_overdue_days
+  - id: referral_only
+    label: 자격을 판정하지 않고 전문상담으로 연결
+    field: total_debt
     op: exists
-    value: TODO   # TODO: 법원 공식 신청 요건(채무초과, 변제능력 등) 확인 후 기입
-    required: true
+    required: false
 
 exclusions: []
 
-required_inputs:
-  - max_overdue_days
+required_inputs: []
 
 documents:
-  - 신분증
-  - 소득증빙서류
-  - 채무 관련 서류
-  - 재산목록
+  - 법률상담 시 안내
 
 consult_questions:
   - 개인회생과 개인파산 중 어느 절차가 적합한가
-  - 예상 변제기간과 변제금액은 어느 정도인가
-  - 절차 진행 중 신용거래 제약은 어떻게 되는가
+  - 변제계획 인가까지 어느 정도 기간이 걸리는가
+  - 보유 재산은 절차에서 어떻게 처리되는가
+  - 보험 해약환급금이 청산가치에 어떻게 반영되는가
 
 swing_factors:
-  - 총채무액과 재산 규모
-  - 정기 소득 여부(변제능력)
+  - 계속적 소득 유무
+  - 보유 재산 규모
+  - 채무 성격(보증채무·조세채무 포함 여부)
+
+notes:
+  - >
+    개인회생·개인파산은 법원이 인가하는 절차다. 신용회복위원회 채무조정과
+    관할·절차·효과가 모두 다르므로 본 서비스는 구분해 안내하고 자격은 판정하지 않는다.
 
 why_final_check: >
-  법원 절차는 이 서비스가 판단하지 않는다. 전문상담(법률구조공단, 변호사 등)을
-  통해 신청 요건과 예상 결과를 확인해야 한다.
+  법원 절차의 자격과 결과는 관할 법원의 심리로만 확정된다.
 
 changelog:
   - date: "2026-08-13"
-    change: 최초 작성 (미검증 상태, 자격조건 미확정)
+    change: 최초 작성 (미검증 상태)
+  - date: "2026-08-21"
+    change: 상담 연결 전용 카드로 성격 명확화, 출처 기재, verified true 전환

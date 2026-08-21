@@ -102,9 +102,16 @@ def test_kimhaneul_narrative_is_generated() -> None:
     assert len(result.narrative.sections) >= 1
 
 
-def test_kimhaneul_rules_use_verified_false_cards_in_dev_mode() -> None:
+def test_dev_mode_flags_remaining_unverified_card() -> None:
+    """미검증 카드가 하나라도 남아 있으면 dev_mode 로 표시된다.
+
+    2026-08-21 대조로 6개 중 5개가 verified 로 전환되었고, 개인워크아웃만
+    총채무액 한도 출처 충돌로 미검증 상태다. dev_mode 는 그 사실을 드러내는
+    신호이므로 '전부 미검증'이 아니라 '하나라도 미검증'을 검사한다.
+    """
     cards, dev_mode = load_usable_cards()
-    assert all(c.verified is False for c in cards)
+    unverified = [c.id for c in cards if not c.verified]
+    assert unverified == ["personal_workout"], f"예상과 다른 미검증 카드: {unverified}"
     assert dev_mode is True
 
     result = analyze(_kimhaneul_state())
@@ -115,15 +122,36 @@ def test_kimhaneul_rules_use_verified_false_cards_in_dev_mode() -> None:
 # --- 정책 카드 전부 verified:false 여도 현금흐름은 반환된다 ---------------------
 
 
-def test_cashflow_returned_even_when_no_usable_policy_cards() -> None:
-    """allow_unverified_cards 를 꺼서 verified:false 카드 6개가 전부 제외되는 상황을 만든다.
+def test_cashflow_returned_even_when_no_usable_policy_cards(tmp_path) -> None:
+    """사용 가능한 정책 카드가 0개인 상황에서도 현금흐름은 반환되어야 한다.
 
-    이 경우 load_usable_cards() 는 PolicyCardError 를 던진다. 오케스트레이터는
-    이를 삼키지 않고 undetermined=True 로 강등하되, cashflow 는 그대로 반환해야 한다.
+    이전에는 카드 6개가 전부 미검증이라 allow_unverified_cards 를 끄는 것만으로
+    0개 상황을 만들 수 있었다. 대조 완료 후 5개가 verified 이므로, 빈 카드
+    디렉터리를 가리켜 같은 상황을 재현한다.
+
+    핵심 불변조건은 그대로다 — 제도 판정이 불가능해도 상환여력 계산 결과는
+    독립적인 가치를 가지므로 반드시 제공된다(기획서 7.3).
     """
+    import shutil
+
     base_settings = get_settings()
+    src_dir = base_settings.resolve(base_settings.config.paths.policy_card_dir)
+    version = base_settings.config.paths.policy_card_version
+
+    empty_root = tmp_path / "policy_cards"
+    (empty_root / version).mkdir(parents=True)
+    # 스키마 파일은 로더가 요구하므로 그대로 복사하고 카드만 비운다.
+    shutil.copy(src_dir / "_schema.yaml", empty_root / "_schema.yaml")
+    if (src_dir / version / "_schema.yaml").exists():
+        shutil.copy(src_dir / version / "_schema.yaml", empty_root / version / "_schema.yaml")
+
     disabled_rules = base_settings.config.rules.model_copy(update={"allow_unverified_cards": False})
-    disabled_config = base_settings.config.model_copy(update={"rules": disabled_rules})
+    disabled_paths = base_settings.config.paths.model_copy(
+        update={"policy_card_dir": str(empty_root)}
+    )
+    disabled_config = base_settings.config.model_copy(
+        update={"rules": disabled_rules, "paths": disabled_paths}
+    )
     disabled_settings = base_settings.model_copy(update={"config": disabled_config})
 
     with pytest.raises(PolicyCardError):

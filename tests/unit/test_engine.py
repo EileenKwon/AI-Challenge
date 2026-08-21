@@ -20,6 +20,11 @@ def _base_facts(**overrides):
     facts = {
         "max_overdue_days": 0,
         "total_debt": Decimal("10000000"),
+        # 신복위 제도는 총액과 별도로 담보/무담보 한도를 규정하므로 함께 채운다.
+        "unsecured_debt": Decimal("10000000"),
+        "secured_debt": Decimal("0"),
+        # 최근 6개월 신규채무 원금 비율 — 제도 공통 조건(30% 미만).
+        "recent_debt_ratio": Decimal("0.10"),
         "has_continuous_income": True,
         "income_proof_available": True,
         "has_secured_debt": False,
