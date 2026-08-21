@@ -81,10 +81,38 @@ def test_all_six_real_policy_cards_pass_schema_validation() -> None:
     }
 
 
-def test_real_cards_are_all_unverified_by_design() -> None:
-    """공식 출처 대조 전이므로 6개 전부 verified: false 여야 한다."""
+def test_verified_cards_have_real_sources() -> None:
+    """verified: true 카드는 반드시 실제 출처 URL과 조회일자를 가져야 한다.
+
+    이 테스트의 원래 의도는 "공식 출처 대조 없이 verified 로 올리지 않는다"였다.
+    2026-08-21 대조 완료로 카드 상태가 바뀌었으므로, 상태를 고정하는 대신
+    그 의도 자체를 불변조건으로 검사한다.
+    """
     cards = load_all_cards()
-    assert all(c.verified is False for c in cards)
+    verified = [c for c in cards if c.verified]
+    assert verified, "검증된 카드가 하나도 없습니다 — 대조 결과가 반영되지 않았습니다."
+    for c in verified:
+        url = c.source.get("url")
+        retrieved = c.source.get("retrieved_at")
+        assert url and url != "TODO", f"{c.id}: 출처 URL 미기재"
+        assert url.startswith("http"), f"{c.id}: 출처 URL 형식 오류 — {url!r}"
+        assert retrieved and retrieved != "TODO", f"{c.id}: 조회일자 미기재"
+
+
+def test_unverified_cards_are_explicitly_documented() -> None:
+    """미검증 카드는 이유가 문서화되어 있어야 한다.
+
+    개인워크아웃은 총채무액 한도가 공식 출처 간 상이하여 확정 인코딩을 보류한 상태다.
+    미검증 상태를 방치가 아니라 '기록된 판단'으로 유지하는 것이 이 테스트의 목적이다.
+    """
+    import yaml
+
+    cards = load_all_cards()
+    unverified = [c for c in cards if not c.verified]
+    root = Path(__file__).resolve().parents[2] / "config" / "policy_cards" / "v2026-08-13"
+    for c in unverified:
+        raw = yaml.safe_load((root / f"{c.id}.yaml").read_text(encoding="utf-8"))
+        assert raw.get("unresolved"), f"{c.id}: 미검증 사유(unresolved)가 기록되지 않았습니다."
 
 
 # --- 스키마 위반 카드 거부 ------------------------------------------------------

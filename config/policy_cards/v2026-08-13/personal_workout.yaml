@@ -1,22 +1,45 @@
-# 주의: verified 는 공식 출처 대조를 완료하기 전까지 반드시 false 로 둔다.
-#       연체일수 구간 외의 조건(총채무액 한도, 소득 요건 등)은
-#       근거를 확인하기 전에 임의로 채우지 않는다. value: TODO 로 남긴다.
+# 개인워크아웃
+# 공식 출처 대조 완료 — 2026-08-21
+#
+# ⚠️ 총 채무액 한도는 공식 출처 간 값이 상이하여 확정 인코딩을 보류한다. 아래 unresolved 참고.
 
 id: personal_workout
-version: "2026-08-13.1"
+version: "2026-08-13.2"
 name: 개인워크아웃
 agency: 신용회복위원회
-target: 연체 90일 이상 채무자
-priority: 4
+target: 연체 90일 이상의 채무자
+priority: 3
 
-verified: false                 # TODO: 공식 출처 대조 후 true
+# 연체구간 조건은 검증되었으나 총채무액 한도가 미해결이므로 카드 전체를 verified 로 올리지 않는다.
+verified: false
 policy_base_date: "2026-08-13"
-last_reviewed: "2026-08-13"
+last_reviewed: "2026-08-21"
 
 source:
-  title: "신용회복위원회 채무조정 제도 안내"
-  url: "TODO"                   # 추측해서 채우지 말 것
-  retrieved_at: "TODO"
+  title: "신용회복위원회 채무조정 제도 안내 — 개인워크아웃"
+  url: "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=1930"
+  retrieved_at: "2026-08-21"
+
+# 공식 출처 간 값이 충돌하는 항목. 확인 전까지 조건으로 인코딩하지 않는다.
+unresolved:
+  - id: total_debt_cap
+    label: 채권금융회사 총 채무액 한도
+    reason: >
+      신용회복위원회 웹사이트 내 두 페이지가 서로 다른 값을 제시한다.
+      어느 쪽이 최신인지 확인되지 않아 규칙으로 인코딩하지 않는다.
+      유리한 쪽으로 추정하지 않으며, 확인 전까지 사용자에게 '확인 필요'로 표시한다.
+    conflicting_values:
+      - source: "제도 상세 페이지 (MENU_ID=1930)"
+        url: "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=1930"
+        total: 1500000000
+        unsecured: 500000000
+        secured: 1000000000
+      - source: "제도 비교 페이지 (MENU_ID=490)"
+        url: "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=490"
+        total: 2500000000
+        unsecured: 1000000000
+        secured: 1500000000
+    action_required: "신용회복위원회(1600-5500)에 직접 확인 후 조건으로 승격한다."
 
 conditions:
   - id: overdue_range
@@ -25,21 +48,15 @@ conditions:
     op: gte
     value: 90
     required: true
+    source_quote: "연체기간 90일 이상"
 
-  - id: income_continuity
-    label: 계속적·반복적 소득 존재
-    field: has_continuous_income
-    op: is_true
+  - id: recent_debt_ratio
+    label: 최근 6개월 이내 신규채무 원금이 총 채무원금의 30% 미만
+    field: recent_debt_ratio
+    op: lt
+    value: 0.30
     required: true
-
-  - id: income_proof
-    label: 소득증빙 가능 여부
-    field: income_proof_available
-    op: is_true
-    required: true
-
-  # TODO: 총채무액 한도, 채권금융회사 협약 여부 등
-  #       공식 출처에서 확인한 조건만 추가한다.
+    source_quote: "최근 6개월 내 새로 생긴 채무 원금이 총 채무원금의 30% 미만"
 
 exclusions:
   - id: court_proceeding
@@ -49,7 +66,6 @@ exclusions:
 
 required_inputs:
   - max_overdue_days
-  - has_continuous_income
 
 documents:
   - 신분증
@@ -57,19 +73,26 @@ documents:
   - 채무 관련 서류
 
 consult_questions:
-  - 보유한 채무가 모두 조정 대상에 포함되는가
-  - 예상 상환기간과 감면 범위는 어느 정도인가
-  - 보증채무나 담보채무는 별도로 어떻게 처리되는가
+  - 총 채무액 한도 기준이 현재 어떻게 적용되는가
+  - 원금 감면은 어느 범위까지 가능한가
+  - 신청 이후 추심은 언제부터 중단되는가
 
 swing_factors:
+  - 총 채무액이 한도 기준에 근접하는지 여부
   - 최근 6개월 이내 신규채무의 금액과 비율
-  - 소득증빙 가능 여부
-  - 보유 재산과 임차보증금
+  - 상각채권 여부에 따른 원금 감면율 차이
+
+notes:
+  - "지원 내용: 연체이자·이자 전액 감면, 원금 감면(미상각 최대 30%, 상각 20~70%), 무담보 최장 8년 분할, 주택담보 최장 35년, 신청 다음날부터 추심 중단."
 
 why_final_check: >
-  신청 가능 여부와 조정 조건은 신용회복위원회의 상담과 심사를 통해 확정된다.
-  본 서비스의 결과는 상담 준비를 위한 1차 검토다.
+  연체 90일 이상은 본 서비스가 자동 판정하지 않고 전문기관 상담으로 연결하는 구간이다.
+  최종 자격과 감면 범위는 신용회복위원회의 상담과 심사로 확정된다.
 
 changelog:
   - date: "2026-08-13"
     change: 최초 작성 (미검증 상태)
+  - date: "2026-08-21"
+    change: >
+      연체구간·신규채무 비율 조건 공식 출처 대조 완료.
+      총채무액 한도는 출처 간 값 충돌로 unresolved 에 보존하고 조건 인코딩 보류.
