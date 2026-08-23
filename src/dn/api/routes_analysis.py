@@ -67,6 +67,7 @@ class SupplementRequest(BaseModel):
     monthly_net_income: Decimal | None = None
     support_income: Decimal | None = None
     income_proof_available: bool | None = None
+    has_continuous_income: bool | None = None  # Q6_CONTINUOUS_INCOME
     essential_living_cost: Decimal | None = None
     housing_cost: Decimal | None = None
     medical_care_cost: Decimal | None = None
@@ -80,7 +81,12 @@ class SupplementRequest(BaseModel):
 
 def _apply_supplement_income(income: IncomeProfile, body: SupplementRequest) -> IncomeProfile:
     update = {}
-    for field_name in ("monthly_net_income", "support_income", "income_proof_available"):
+    for field_name in (
+        "monthly_net_income",
+        "support_income",
+        "income_proof_available",
+        "has_continuous_income",
+    ):
         value = getattr(body, field_name)
         if value is not None:
             update[field_name] = Tracked(value=value, source=FieldSource.USER_INPUT)

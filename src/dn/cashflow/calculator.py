@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 from decimal import Decimal
 
 from dn.domain.models import CalcStep, CashflowResult, Debt, HouseholdProfile, IncomeProfile
@@ -80,10 +81,67 @@ def _core_field_ratio(
     return (Decimal(known) / Decimal(len(core_flags))).quantize(Decimal("0.001"))
 
 
+def _secured_ratio(debts: tuple[Debt, ...], total_debt: Decimal) -> Decimal | None:
+    """담보채무 비중. 잔액이나 담보 여부가 하나라도 미확인이면 None."""
+    if not debts or total_debt <= _ZERO:
+        return None
+    secured = _ZERO
+    for d in debts:
+        if d.balance.value is None or d.is_secured.value is None:
+            return None
+        if d.is_secured.value:
+            secured += d.balance.value
+    return secured / total_debt
+
+
+def _rate_stats(debts: tuple[Debt, ...]) -> tuple[Decimal | None, Decimal | None]:
+    """(가중평균금리, 최고금리). 금리가 확인된 채무만으로 계산하고, 하나도 없으면 (None, None)."""
+    rated = [d for d in debts if d.interest_rate.value is not None and d.balance.value is not None]
+    if not rated:
+        return None, None
+    weight = _sum_known([d.balance.value for d in rated])
+    if weight <= _ZERO:
+        return None, max(d.interest_rate.value for d in rated)
+    weighted = _sum_known([d.balance.value * d.interest_rate.value for d in rated]) / weight
+    return weighted, max(d.interest_rate.value for d in rated)
+
+
+def _recent_debt_ratio(
+    debts: tuple[Debt, ...], total_debt: Decimal, *, as_of: date | None
+) -> Decimal | None:
+    """최근 6개월 이내 실행된 채무 원금의 비중.
+
+    신용회복위원회 제도 공통 조건("최근 6개월 이내 새로 생긴 채무 원금이 총 채무원금의
+    30% 미만")을 평가하려면 이 값이 필요하다.
+
+    기준일(`as_of`)이 없거나 실행일이 하나라도 미확인이면 `None` 을 돌려준다 —
+    일부만으로 비율을 내면 "모른다"가 "충족"으로 둔갑한다. 이 모듈은 현재 시각을
+    참조하지 않으므로(AGENTS.md 절대 규칙 10) 기준일은 반드시 인자로 받는다.
+    """
+    if as_of is None or not debts or total_debt <= _ZERO:
+        return None
+    cutoff = as_of - timedelta(days=182)  # 6개월
+    recent = _ZERO
+    for d in debts:
+        if d.balance.value is None or d.executed_at.value is None:
+            return None
+        if d.executed_at.value >= cutoff:
+            recent += d.balance.value
+    return recent / total_debt
+
+
 def compute(
-    debts: tuple[Debt, ...], income: IncomeProfile, household: HouseholdProfile
+    debts: tuple[Debt, ...],
+    income: IncomeProfile,
+    household: HouseholdProfile,
+    *,
+    as_of: date | None = None,
 ) -> CashflowResult:
-    """채무·소득·가구 정보로부터 확정 현금흐름 숫자를 산출한다."""
+    """채무·소득·가구 정보로부터 확정 현금흐름 숫자를 산출한다.
+
+    `as_of` 는 "최근 6개월 신규채무 비율" 계산의 기준일이다. 이 모듈은 현재 시각을
+    참조하지 않으므로 호출부가 넘겨야 하며, 넘기지 않으면 해당 비율은 `None`(미확인)이 된다.
+    """
     assumptions: list[str] = []
 
     total_debt, balance_excluded = _split_debt_field(
@@ -184,6 +242,8 @@ def compute(
             )
         )
 
+    weighted_avg_rate, max_rate = _rate_stats(debts)
+
     return CashflowResult(
         total_debt=total_debt,
         monthly_total_payment=monthly_total_payment,
@@ -191,6 +251,10 @@ def compute(
         monthly_shortfall=monthly_shortfall,
         dti_ratio=dti_ratio,
         max_overdue_days=_max_overdue_days(debts),
+        secured_ratio=_secured_ratio(debts, total_debt),
+        weighted_avg_rate=weighted_avg_rate,
+        max_rate=max_rate,
+        recent_debt_ratio=_recent_debt_ratio(debts, total_debt, as_of=as_of),
         trace=tuple(trace),
         assumptions=tuple(assumptions),
         excluded_items=excluded_items,
