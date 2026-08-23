@@ -114,7 +114,13 @@ def analyze(
     extraction = state.extraction or ExtractionResult()
     debts = extraction.debts
 
-    cashflow = compute_cashflow(debts, state.income, state.household)  # 2
+    # `as_of` 는 "최근 6개월 신규채무 비율"의 기준일이다. 계산 모듈은 현재 시각을
+    # 참조하지 않으므로(순수 함수) 오케스트레이터가 분석 시각을 넘긴다.
+    # 주입된 `now` 를 그대로 쓰므로 테스트에서 결과가 결정론적으로 재현된다.
+    analyzed_at = now or datetime.now()
+    cashflow = compute_cashflow(  # 2
+        debts, state.income, state.household, as_of=analyzed_at.date()
+    )
 
     gaps = detect_gaps(debts, state.income)
     conflicts = detect_conflicts(extraction, state.household, settings=settings)
@@ -152,7 +158,7 @@ def analyze(
 
     result = AnalysisResult(  # 9
         session_id=state.session_id,
-        analyzed_at=now or datetime.now(),
+        analyzed_at=analyzed_at,
         extraction=extraction,
         income=state.income,
         household=state.household,

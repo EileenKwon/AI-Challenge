@@ -24,9 +24,9 @@
   });
 
   // 화면 폼 → API 순서 호출 공통 헬퍼. 화면 7종의 각 스크립트 블록에서 사용한다.
-  async function dnPost(url, body) {
+  async function dnSend(url, body, method) {
     const res = await fetch(url, {
-      method: 'POST',
+      method: method || 'POST',
       headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -37,6 +37,9 @@
     }
     try { return await res.json(); } catch (e) { return {}; }
   }
+
+  async function dnPost(url, body) { return dnSend(url, body, 'POST'); }
+  async function dnPatch(url, body) { return dnSend(url, body, 'PATCH'); }
 
   function dnShowError(anchorEl, message) {
     let box = document.getElementById('dn-error-box');

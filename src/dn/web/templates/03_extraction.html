@@ -55,11 +55,32 @@
 
 {% block scripts %}
 <script>
+// S2 → S3 전이는 추출된 모든 필드가 user_confirmed 여야 허용된다(pipeline/stages.py).
+// 화면의 체크 상태를 서버에 먼저 반영하지 않으면 채무가 1건이라도 있을 때
+// /confirm 이 409 로 막힌다. 확인 상태를 PATCH 로 보낸 뒤 전이를 요청한다.
+const DN_CONFIRM_FIELDS = ['creditor', 'product_type', 'balance', 'overdue_days', 'is_secured'];
+
 document.getElementById('confirm-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]');
   btn.disabled = true;
   try {
+    const boxes = Array.from(document.querySelectorAll('input[type="checkbox"][name^="confirm_"]'));
+    const unchecked = boxes.filter((b) => !b.checked);
+    if (unchecked.length > 0) {
+      throw new Error('확인하지 않은 채무가 ' + unchecked.length + '건 있습니다. '
+        + '내용이 실제와 다르면 화면을 새로 고친 뒤 다시 확인해 주세요.');
+    }
+    const confirmations = [];
+    boxes.forEach((box) => {
+      const idx = Number(box.name.replace('confirm_', ''));
+      DN_CONFIRM_FIELDS.forEach((field) => {
+        confirmations.push({ debt_index: idx, field_name: field, user_confirmed: true });
+      });
+    });
+    if (confirmations.length > 0) {
+      await dnPatch('/api/session/{{ session_id }}/extraction', confirmations);
+    }
     await dnPost('/api/session/{{ session_id }}/confirm');
     location.href = '/web/session/{{ session_id }}/supplement';
   } catch (err) {
