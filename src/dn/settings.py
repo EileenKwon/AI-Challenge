@@ -69,8 +69,31 @@ class ExtractionConfig(_StrictModel):
 
 
 class ReconcileConfig(_StrictModel):
-    living_cost_floor_per_person: int
+    living_cost_floor_by_household: dict[int, int]
     living_cost_check_enabled: bool
+
+    def living_cost_floor(self, household_size: int) -> int | None:
+        """가구원수에 해당하는 필수생활비 하한을 돌려준다.
+
+        공식 기준표는 6인까지만 고시되므로, 그보다 큰 가구는 마지막 두 구간의
+        증가분(6인 − 5인)을 더해 외삽한다. 표가 비어 있으면 `None` 을 돌려
+        호출부가 검사를 건너뛰게 한다.
+        """
+        table = self.living_cost_floor_by_household
+        if not table or household_size < 1:
+            return None
+        if household_size in table:
+            return table[household_size]
+        max_size = max(table)
+        if household_size <= max_size:
+            # 표에 구멍이 있으면 가장 가까운 하위 구간을 쓴다.
+            lower = max(k for k in table if k < household_size)
+            return table[lower]
+        if len(table) < 2:
+            return table[max_size]
+        prev = max(k for k in table if k < max_size)
+        step = table[max_size] - table[prev]
+        return table[max_size] + step * (household_size - max_size)
 
 
 class CashflowConfig(_StrictModel):

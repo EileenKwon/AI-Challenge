@@ -29,20 +29,48 @@ _EVAL_CONFIG_PATH = _ROOT / "eval" / "config.yaml"
 def expected_top_path(facts: dict) -> str | None:
     """rules.engine 을 전혀 참조하지 않는 독립 오라클.
 
-    신용회복위원회 공식 비교 기준(기획서 5단계 원문)만 그대로 재구현한다:
-    연체 30일 이하 → 신속채무조정, 31~89일 → 사전채무조정, 90일 이상 → 개인워크아웃.
-    법원 절차 진행 중이면 committee 프로그램 대상에서 제외되고 법원 경로가 된다.
+    신용회복위원회 공식 기준만 그대로 재구현한다.
+
+    1) 법원 절차 진행 중이면 위원회 제도 대상이 아니라 법원 경로다.
+    2) 연체구간: 30일 이하 → 신속채무조정, 31~89일 → 사전채무조정, 90일 이상 → 개인워크아웃.
+    3) 위원회 제도 공통 배제 조건 — 어느 하나라도 걸리면 해당 제도가 아니라
+       금융회사 개별 협의가 남는다:
+         · 총 채무액 15억원 초과 (무담보 5억 / 담보 10억 각각의 한도 포함)
+         · 최근 6개월 이내 신규채무 원금이 총 채무원금의 30% 이상
+       (개인워크아웃의 총채무액 한도는 공식 출처 간 값이 상이해 확정되지 않았으므로
+        한도 판정에서 제외하고 신규채무 비율만 적용한다.)
+    4) 판정에 필요한 값이 미확인이면 배제하지 않는다 — "모른다"는 "아니다"가 아니다.
     """
     if facts.get("court_proceeding_ongoing"):
         return "court_rehabilitation"
     days = facts.get("max_overdue_days")
     if days is None:
         return None
+
     if days <= 30:
-        return "sinsok_debt_adjustment"
-    if days <= 89:
-        return "pre_debt_adjustment"
-    return "personal_workout"
+        program = "sinsok_debt_adjustment"
+    elif days <= 89:
+        program = "pre_debt_adjustment"
+    else:
+        program = "personal_workout"
+
+    ratio = facts.get("recent_debt_ratio")
+    if ratio is not None and ratio >= 0.30:
+        return "creditor_negotiation"
+
+    if program != "personal_workout":
+        total = facts.get("total_debt")
+        unsecured = facts.get("unsecured_debt")
+        secured = facts.get("secured_debt")
+        over_cap = (
+            (total is not None and total > 1_500_000_000)
+            or (unsecured is not None and unsecured > 500_000_000)
+            or (secured is not None and secured > 1_000_000_000)
+        )
+        if over_cap:
+            return "creditor_negotiation"
+
+    return program
 
 
 def _base_facts(rng: np.random.Generator, **overrides) -> dict:
@@ -63,6 +91,16 @@ def _base_facts(rng: np.random.Generator, **overrides) -> dict:
         "monthly_available": int(rng.integers(-500_000, 2_000_000)),
     }
     facts.update(overrides)
+
+    # 담보/무담보 분해 — 신복위 제도는 총액과 별도로 각각의 한도를 규정한다.
+    # has_secured_debt 신호와 모순되지 않도록 총액에서 나눈다.
+    total = facts["total_debt"]
+    secured = int(total * float(rng.uniform(0.3, 0.7))) if facts["has_secured_debt"] else 0
+    facts.setdefault("secured_debt", secured)
+    facts.setdefault("unsecured_debt", total - secured)
+
+    # 최근 6개월 신규채무 원금 비율 — 제도 공통 조건(30% 미만) 평가에 필요하다.
+    facts.setdefault("recent_debt_ratio", round(float(rng.uniform(0.0, 0.45)), 4))
     return facts
 
 

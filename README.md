@@ -11,7 +11,7 @@
 
 ## 현재 진행 상황 (2026-08-21 기준)
 
-**`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 테스트 324개
+**`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 테스트 327개
 전량 통과(`pytest -q`), `ruff check` / `ruff format --check` 클린.
 
 | 항목 | 상태 |
@@ -19,7 +19,7 @@
 | 태스크 구현 (T00~T23) | ✅ 23/23 완료 |
 | 단위·통합 테스트 | ✅ 323 passed |
 | 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
-| 평가 하네스 (E1~E6) | ✅ 실행 완료 — 단, 아래 한계 참고 |
+| 평가 하네스 (E1~E6) | ✅ 실행 완료 · 결과를 `docs/평가결과.md` 에 고정. E3 누락률 0.10 → **0.00**(정렬 결함 수정) |
 | Docker 빌드 검증 | ⚠️ 샌드박스에 Docker 권한 없어 미검증 (Dockerfile/compose는 작성 완료, 로컬 uvicorn 기준 스모크 테스트로 대체 검증) |
 | 브라우저 수동 워크스루 (T19) | ✅ 화면 7종 전환 버그 수정, API 흐름과 동일한 순서로 curl 검증 완료 — 단, 실기기 375px 육안 검증은 아직 (남은 한계는 아래 참고) |
 | 정책 카드 공식 출처 검증 | 🟡 **6개 중 5개 `verified: true`** (2026-08-21 대조 완료). 개인워크아웃 1개만 미검증 — 총채무액 한도가 공식 출처 간 상이하여 `unresolved` 에 보존하고 인코딩 보류 |
@@ -168,11 +168,11 @@ ruff format --check src tests eval
 
 ## 배포 전 체크리스트
 
-- [ ] `config/config.yaml: rules.allow_unverified_cards` 를 `false` 로 변경
-- [ ] 모든 정책 카드의 `verified: true` 및 `source.url` 기입 완료 (현재 6개 전부 TODO)
+- [ ] `config/config.yaml: rules.allow_unverified_cards` 를 `false` 로 변경 — 개인워크아웃 한도 확인 후
+- [x] 정책 카드 `verified: true` 및 `source.url` 기입 — **6개 중 5개 완료(2026-08-21)**. 개인워크아웃 1개는 총채무액 한도 출처 충돌로 `unresolved` 보존
 - [ ] 실제 `ANTHROPIC_API_KEY`로 `eval/E1~E6` 재실행, `reports/metrics_summary.md` STUB_MODE 라벨 해소
 - [ ] `data/redteam/attacks.yaml` 전량 통과
-- [ ] 업로드 원본 TTL 삭제 동작 확인
+- [x] 업로드 원본 TTL 삭제 동작 확인 — **TTL 스위퍼를 앱 lifespan 에 배선(2026-08-23)**. 이전에는 정의만 되어 있고 호출부가 없었다
 - [ ] Docker 빌드/`docker compose up` 실제 환경에서 검증 (현재 샌드박스 권한 문제로 미검증)
 - [ ] T19 화면 7종 실제 브라우저(375px 포함)로 수동 워크스루
 

@@ -65,13 +65,16 @@ def _detect_implied_living_cost_conflict(
     household: HouseholdProfile, *, settings: Settings
 ) -> Conflict | None:
     cfg = settings.config.reconcile
-    if not cfg.living_cost_check_enabled or cfg.living_cost_floor_per_person <= 0:
+    if not cfg.living_cost_check_enabled:
         return None
     cost = household.essential_living_cost.value
     if cost is None:
         return None
     household_size = (household.dependents.value or 0) + 1
-    floor = Decimal(cfg.living_cost_floor_per_person) * household_size
+    floor_won = cfg.living_cost_floor(household_size)
+    if floor_won is None or floor_won <= 0:
+        return None
+    floor = Decimal(floor_won)
     if cost >= floor:
         return None
     return Conflict(

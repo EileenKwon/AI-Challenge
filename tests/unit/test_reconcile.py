@@ -161,19 +161,39 @@ def test_conf_overdue_absent_when_consistent() -> None:
 # --- IMPL_LIVING_COST ----------------------------------------------------------
 
 
-def test_impl_living_cost_disabled_by_default_never_fires() -> None:
+def test_impl_living_cost_is_a_warning_not_a_blocker() -> None:
+    """비현실적으로 낮은 생활비는 경고하되 결과를 차단하지 않는다.
+
+    원래 이 테스트는 "근거 확인 전이므로 검사가 꺼져 있어야 한다"는 상태를 고정했다.
+    2026년 생계급여 선정기준을 근거로 검사를 활성화했으므로, 상태 대신 원래 의도인
+    '경고이지 차단이 아니다'를 검사한다.
+    """
     settings = get_settings()
-    assert settings.config.reconcile.living_cost_check_enabled is False
+    assert settings.config.reconcile.living_cost_check_enabled is True
     household = HouseholdProfile(essential_living_cost=_known(Decimal("1")), dependents=_known(0))
-    extraction = ExtractionResult(debts=())
-    report = detect_conflicts(extraction, household, settings=settings)
+    report = detect_conflicts(ExtractionResult(debts=()), household, settings=settings)
+
+    fired = [c for c in report.conflicts if c.rule_id == "IMPL_LIVING_COST"]
+    assert fired, "1원짜리 생활비는 재확인 대상이어야 한다."
+    # resolved=False 는 '사용자 확인 필요' 표시이며, 결과 산출을 막지 않는다.
+    assert fired[0].resolved is False
+    assert fired[0].resolution is None
+
+
+def test_impl_living_cost_silent_when_cost_unknown() -> None:
+    """생활비 미입력은 '모른다'이므로 경고 대상이 아니다."""
+    household = HouseholdProfile(dependents=_known(0))
+    report = detect_conflicts(ExtractionResult(debts=()), household)
     assert not any(c.rule_id == "IMPL_LIVING_COST" for c in report.conflicts)
 
 
 def test_impl_living_cost_fires_when_enabled_and_below_floor() -> None:
     base = get_settings()
     enabled_reconcile = base.config.reconcile.model_copy(
-        update={"living_cost_check_enabled": True, "living_cost_floor_per_person": 1_000_000}
+        update={
+            "living_cost_check_enabled": True,
+            "living_cost_floor_by_household": {1: 1_000_000, 2: 1_600_000},
+        }
     )
     enabled_config = base.config.model_copy(update={"reconcile": enabled_reconcile})
     enabled_settings = base.model_copy(update={"config": enabled_config})
@@ -184,6 +204,34 @@ def test_impl_living_cost_fires_when_enabled_and_below_floor() -> None:
     extraction = ExtractionResult(debts=())
     report = detect_conflicts(extraction, household, settings=enabled_settings)
     assert any(c.rule_id == "IMPL_LIVING_COST" for c in report.conflicts)
+
+
+def test_living_cost_floor_uses_official_table_not_linear_scaling() -> None:
+    """가구원수별 공식 기준표를 그대로 조회한다.
+
+    1인 값에 가구원수를 곱하는 선형 계산은 2인 가구부터 기준을 22% 높여
+    정상 입력에도 경고를 띄운다(거짓 양성). 표 조회로 이를 막는다.
+    """
+    cfg = get_settings().config.reconcile
+    assert cfg.living_cost_floor(1) == 820_556
+    assert cfg.living_cost_floor(2) == 1_343_773
+    # 선형이었다면 2인 기준이 1,641,112 였을 것이다.
+    assert cfg.living_cost_floor(2) < cfg.living_cost_floor(1) * 2
+    # 표 범위(6인)를 넘는 가구는 마지막 증가분으로 외삽한다.
+    step = cfg.living_cost_floor(6) - cfg.living_cost_floor(5)
+    assert cfg.living_cost_floor(7) == cfg.living_cost_floor(6) + step
+
+
+def test_two_person_household_with_official_minimum_does_not_warn() -> None:
+    """2인 가구가 공식 기준선과 같은 생활비를 적으면 경고가 뜨지 않아야 한다.
+
+    선형 계산 시절에는 이 입력이 거짓 양성으로 걸렸다.
+    """
+    household = HouseholdProfile(
+        essential_living_cost=_known(Decimal("1343773")), dependents=_known(1)
+    )
+    report = detect_conflicts(ExtractionResult(debts=()), household)
+    assert not any(c.rule_id == "IMPL_LIVING_COST" for c in report.conflicts)
 
 
 # --- 기획서 15장 김하늘 사례 (추출 직후, 보완 입력 이전 상태) ---------------------
