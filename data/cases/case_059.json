@@ -14,7 +14,10 @@
     "has_tax_debt": false,
     "has_private_debt": false,
     "legal_dispute": false,
-    "monthly_available": 862511
+    "monthly_available": 862511,
+    "secured_debt": 0,
+    "unsecured_debt": 57272598,
+    "recent_debt_ratio": 0.4489
   },
-  "expected_top_path_id": "personal_workout"
+  "expected_top_path_id": "creditor_negotiation"
 }

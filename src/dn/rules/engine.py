@@ -97,7 +97,16 @@ def evaluate(
         path = _to_path_candidate(card, status, met, unknown, not_met)
         (excluded if status == PathStatus.EXCLUDED else candidates).append(path)
 
-    candidates.sort(key=lambda p: (_STATUS_RANK[p.status], p.priority, len(p.unknown)))
+    # 정렬 기준은 카드의 priority 가 먼저다. status 는 동순위 안에서만 쓴다.
+    #
+    # status 를 먼저 두면 조건이 1개뿐인 보조 경로(금융회사 협의·법원 상담·복합지원)가
+    # 항상 CANDIDATE 로 떠서, 조건이 많아 NEEDS_INFO 가 되기 쉬운 신복위 핵심 제도를
+    # _MAX_PATHS 밖으로 밀어낸다. 실제로 연체 34일 이용자에게 사전채무조정이 아예
+    # 노출되지 않는 사례가 있었다(eval/E3 case_091~100).
+    #
+    # NEEDS_INFO 는 "해당 없음"이 아니라 "무엇을 확인하면 되는지 알려주는 상태"이므로
+    # 연체구간이 맞는 핵심 제도는 미확인 조건이 있어도 화면에 남아야 한다.
+    candidates.sort(key=lambda p: (p.priority, _STATUS_RANK[p.status], len(p.unknown)))
     top = candidates[:_MAX_PATHS]
 
     undetermined_reasons: list[str] = []

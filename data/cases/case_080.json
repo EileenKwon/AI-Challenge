@@ -14,7 +14,10 @@
     "has_tax_debt": false,
     "has_private_debt": false,
     "legal_dispute": false,
-    "monthly_available": 493945
+    "monthly_available": 493945,
+    "secured_debt": 0,
+    "unsecured_debt": 55726190,
+    "recent_debt_ratio": 0.1343
   },
   "expected_top_path_id": "sinsok_debt_adjustment"
 }

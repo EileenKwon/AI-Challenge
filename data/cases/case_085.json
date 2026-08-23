@@ -14,7 +14,10 @@
     "has_tax_debt": false,
     "has_private_debt": false,
     "legal_dispute": false,
-    "monthly_available": -235257
+    "monthly_available": -235257,
+    "secured_debt": 19668552,
+    "unsecured_debt": 18735979,
+    "recent_debt_ratio": 0.0003
   },
   "expected_top_path_id": "court_rehabilitation"
 }
