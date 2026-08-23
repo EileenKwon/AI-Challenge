@@ -166,6 +166,15 @@ ruff format --check src tests eval
 | `CONTRIBUTING.md` | 브랜치, 커밋, PR, 테스트 규칙 |
 | `reports/metrics_summary.md` | E1~E6 평가 결과 (기획서 14.3 지표 10개) |
 
+## 제출물
+
+| 항목 | 파일 | 상태 |
+|---|---|---|
+| 기획서 | `docs/기획서.md` | ✅ |
+| **기능명세서** | `docs/기능명세서.md` | ✅ (2026-08-23 작성) |
+| 평가 결과 | `docs/평가결과.md` | ✅ |
+| 배포 URL | — | ❌ **미배포** |
+
 ## 배포 전 체크리스트
 
 - [ ] `config/config.yaml: rules.allow_unverified_cards` 를 `false` 로 변경 — 개인워크아웃 한도 확인 후
