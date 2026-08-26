@@ -24,7 +24,7 @@
 | 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
 | 검증 패치 PR | 🟡 [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) `feat/verified-policy-cards` → `main`, 리뷰·머지 대기 |
 | 평가 하네스 (E1~E6) | ✅ 실행 완료 · 결과를 `docs/평가결과.md` 에 고정. E3 누락률 0.10 → **0.00**(정렬 결함 수정) |
-| Docker 빌드 검증 | ⚠️ 샌드박스에 Docker 권한 없어 미검증 (Dockerfile/compose는 작성 완료, 로컬 uvicorn 기준 스모크 테스트로 대체 검증) |
+| Docker 빌드 검증 | ⚠️ 정적 검토로 결함 2건 발견·수정(`fontconfig` 누락 · `.dockerignore` 부재) — 단, 이 샌드박스는 Docker 데몬 권한이 없어 **실제 `docker build` 실행 검증은 여전히 못 함** |
 | 브라우저 수동 워크스루 (T19) | ✅ 화면 7종 전환 버그 수정, API 흐름과 동일한 순서로 curl 검증 완료 — 단, 실기기 375px 육안 검증은 아직 (남은 한계는 아래 참고) |
 | 정책 카드 공식 출처 검증 | 🟡 **6개 중 5개 `verified: true`** (2026-08-21 대조 완료). 개인워크아웃 1개만 미검증 — 총채무액 한도가 공식 출처 간 상이하여 `unresolved` 에 보존하고 인코딩 보류 |
 | 실제 LLM(E1/E2 추출 정확도) 평가 | ⚠️ `ANTHROPIC_API_KEY` 미설정 상태라 `StubClient` 기반 `[STUB_MODE]` 결과만 존재 |
@@ -38,7 +38,7 @@
 | 순위 | 할 일 | 비고 |
 |---|---|---|
 | 지금 | [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) 리뷰 후 `main` 병합 | 코드 검증은 완료됨, 팀원 승인만 남음 |
-| P0 | Docker 빌드·`docker compose up` 실제 환경 검증 | WeasyPrint·poppler·Noto CJK 의존성에서 막힐 가능성 — 마감 전 최우선 |
+| P0 | Docker 빌드·`docker compose up` 실제 환경에서 실행 | 정적 검토로 `fontconfig`/`.dockerignore` 결함은 고쳤지만, 실제 빌드는 Docker 권한이 있는 환경에서 아직 아무도 안 돌려봄 — 마감 전 최우선 |
 | P1 | `ANTHROPIC_API_KEY` 주입 후 `eval/E1`·`E2` 재실행 | 현재 STUB_MODE라 추출 성능 지표가 없음 |
 | P1 | 개인워크아웃 총채무액 한도 — 신용회복위원회(1600-5500) 확인 후 `allow_unverified_cards: false` 전환 | 15억(제도 상세)/25억(제도 비교) 출처 불일치 |
 | P1 | 필수생활비 하한 수치(2026년 생계급여 고시) 원문 대조 | `config/config.yaml: living_cost_floor_by_household` |
@@ -201,7 +201,7 @@ ruff format --check src tests eval
 - [ ] 실제 `ANTHROPIC_API_KEY`로 `eval/E1~E6` 재실행, `reports/metrics_summary.md` STUB_MODE 라벨 해소
 - [ ] `data/redteam/attacks.yaml` 전량 통과
 - [x] 업로드 원본 TTL 삭제 동작 확인 — **TTL 스위퍼를 앱 lifespan 에 배선(2026-08-23)**. 이전에는 정의만 되어 있고 호출부가 없었다
-- [ ] Docker 빌드/`docker compose up` 실제 환경에서 검증 (현재 샌드박스 권한 문제로 미검증)
+- [ ] Docker 빌드/`docker compose up` 실제 환경에서 검증 — **정적 검토로 `fontconfig` 누락·`.dockerignore` 부재는 수정(2026-08-26)**, 실제 `docker build` 실행은 이 샌드박스에 Docker 데몬 권한이 없어 여전히 못 함. Docker 권한이 있는 환경에서 `docker compose up --build` 한 번 실행 필요
 - [ ] T19 화면 7종 실제 브라우저(375px 포함)로 수동 워크스루
 - [x] 화면 03 확인 상태 전송 — **채무가 1건이라도 있으면 `/confirm` 이 409 로 막히던 문제 수정(2026-08-23)**. 그동안은 StubClient 가 채무 0건을 반환해 우연히 통과하고 있었다
 
