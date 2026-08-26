@@ -41,7 +41,6 @@
 | P0 | Docker 빌드·`docker compose up` 실제 환경에서 실행 | 정적 검토로 `fontconfig`/`.dockerignore` 결함은 고쳤지만, 실제 빌드는 Docker 권한이 있는 환경에서 아직 아무도 안 돌려봄 — 마감 전 최우선 |
 | P1 | `ANTHROPIC_API_KEY` 주입 후 `eval/E1`·`E2` 재실행 | 현재 STUB_MODE라 추출 성능 지표가 없음 |
 | P1 | 개인워크아웃 총채무액 한도 — 신용회복위원회(1600-5500) 확인 후 `allow_unverified_cards: false` 전환 | 15억(제도 상세)/25억(제도 비교) 출처 불일치 |
-| ~~P1~~ | ~~필수생활비 하한 수치(2026년 생계급여 고시) 원문 대조~~ | ✅ 완료(2026-08-26) — 4·5·6인 값이 고시 대비 낮게 잘못 들어가 있어 정정(`config/config.yaml`) |
 | P2 | 실기기 375px 화면 육안 검증 | 지금까지는 curl로 API 흐름만 재현 검증 |
 | P2 | 세션 저장소 SQLite 배선 | 현재 인메모리라 프로세스 재시작 시 세션 소실 |
 | P2 | 소득 감소 시나리오 배선 | `AnalysisResult.scenario` 항상 `None` |
