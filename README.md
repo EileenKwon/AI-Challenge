@@ -27,8 +27,9 @@
 | Docker 빌드 검증 | ⚠️ 정적 검토로 결함 2건 발견·수정(`fontconfig` 누락 · `.dockerignore` 부재) — 단, 이 샌드박스는 Docker 데몬 권한이 없어 **실제 `docker build` 실행 검증은 여전히 못 함** |
 | 브라우저 수동 워크스루 (T19) | ✅ 화면 7종 전환 버그 수정, API 흐름과 동일한 순서로 curl 검증 완료 — 단, 실기기 375px 육안 검증은 아직 (남은 한계는 아래 참고) |
 | 정책 카드 공식 출처 검증 | 🟡 **6개 중 5개 `verified: true`** (2026-08-21 대조 완료). 개인워크아웃 1개만 미검증 — 총채무액 한도가 공식 출처 간 상이하여 `unresolved` 에 보존하고 인코딩 보류 |
-| 실제 LLM(E1/E2 추출 정확도) 평가 | ⚠️ `ANTHROPIC_API_KEY` 미설정 상태라 `StubClient` 기반 `[STUB_MODE]` 결과만 존재 |
+| 실제 LLM(E1/E2 추출 정확도) 평가 | 🟡 `ANTHROPIC_API_KEY` 대신 로컬 오픈모델(Qwen2.5-7B GGUF, 무료)로 실측 — E1 F1 **0.9975**(목표 0.90) 완료, E2 측정 중. Claude 기준 재측정은 키 확보 시 별도 필요 |
 | 필수생활비 하한 원문 대조 | ✅ 완료(2026-08-26) — 4·5·6인 값이 보건복지부 고시 제2025-135호 대비 낮게(각 13,193/24,415/33,640원) 잘못 들어가 있어 정정 |
+| 무료 로컬 LLM 폴백 | ✅ 완료(2026-08-26) — `ANTHROPIC_API_KEY` 없이 Qwen2.5-7B(GGUF)로 동작. 사용법은 [로컬 LLM으로 무료 실행](#로컬-llm으로-무료-실행-anthropic_api_key-대안) 참고 |
 
 배포 전 남은 작업은 아래 [배포 전 체크리스트](#배포-전-체크리스트)를 따른다.
 
@@ -39,7 +40,7 @@
 | 순위 | 할 일 | 비고 |
 |---|---|---|
 | P0 | Docker 빌드·`docker compose up` 실제 환경에서 실행 | 정적 검토로 `fontconfig`/`.dockerignore` 결함은 고쳤지만, 실제 빌드는 Docker 권한이 있는 환경에서 아직 아무도 안 돌려봄 — 마감 전 최우선 |
-| P1 | `ANTHROPIC_API_KEY` 주입 후 `eval/E1`·`E2` 재실행 | 현재 STUB_MODE라 추출 성능 지표가 없음 |
+| P1 | `ANTHROPIC_API_KEY` 확보 시 `eval/E1`·`E2` Claude 기준으로 재측정 | 현재는 로컬 오픈모델(Qwen2.5-7B) 기준 실측(E1 F1 0.9975)만 있음 — Claude와 성능이 다를 수 있어 비교 필요 |
 | P1 | 개인워크아웃 총채무액 한도 — 신용회복위원회(1600-5500) 확인 후 `allow_unverified_cards: false` 전환 | 15억(제도 상세)/25억(제도 비교) 출처 불일치 |
 | P2 | 실기기 375px 화면 육안 검증 | 지금까지는 curl로 API 흐름만 재현 검증 |
 | P2 | 세션 저장소 SQLite 배선 | 현재 인메모리라 프로세스 재시작 시 세션 소실 |
@@ -157,6 +158,37 @@ API 서버가 실행되면 `http://127.0.0.1:8000/docs`에서 OpenAPI 문서를 
 >   화면에는 남아 있지만 저장할 도메인 필드가 아직 없어 전송되지 않는다.
 > - 375px 등 실기기 화면에서의 육안 검증은 아직 하지 않았다 — 위 내용은
 >   curl로 API 호출 순서를 실제 JS와 동일하게 재현해 검증한 것이다.
+
+### 로컬 LLM으로 무료 실행 (ANTHROPIC_API_KEY 대안)
+
+Anthropic API 자체는 이 프로젝트 규모(합성 문서 55건)면 실비가 $1 안팎으로
+저렴하지만, 키를 아예 안 쓰고 싶다면 `llama-cpp-python` 기반 로컬 오픈모델로
+대체할 수 있다. `get_llm_client()`의 우선순위는 **Anthropic 키 > 로컬 모델 >
+StubClient** 다 — 키가 있으면 로컬 설정은 무시되고 그대로 Anthropic을 쓴다.
+
+```bash
+pip install -e ".[dev,local]"
+mkdir -p models && curl -L -o models/Qwen2.5-7B-Instruct-Q4_K_M.gguf \
+  "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+
+export DN_LOCAL_MODEL_PATH="$(pwd)/models/Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+uvicorn dn.main:app --reload --app-dir src
+```
+
+Docker로 돌릴 때는 `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build`
+(모델은 위 명령으로 미리 `./models`에 받아둔다 — 이미지에는 굽지 않고 볼륨으로 마운트한다).
+
+- **모델**: Qwen2.5-7B-Instruct, Apache-2.0, 한국어 구조화 추출 성능 준수. E1/E2
+  실측치는 `docs/평가결과.md` 참고 — 이 모델 기준이며 Anthropic 사용 시와는
+  다를 수 있다.
+- **CPU 스레드 수를 논리 코어 전체로 두면 안 된다.** 이 프로젝트 실측(Xeon
+  w7-3465X, 56 논리 코어)에서 스레드 56개는 **0.29 tok/s**, 물리 코어
+  근사치인 28개는 **18.5 tok/s**로 64배 차이가 났다 — 과도한 스레드 경합
+  때문이다. `DN_LOCAL_LLM_THREADS`를 지정하지 않으면(`0`) 논리 코어의
+  절반(최대 16)으로 자동 제한하지만, 배포 서버 사양에 따라 물리 코어 수를
+  직접 넣어 튜닝하는 것이 안전하다.
+- GPU 없이도 동작하지만 그만큼 느리다 — 위 튜닝된 스레드 수 기준으로 문서
+  1건 추출에 수 초~수십 초가 걸릴 수 있다(문서 길이·CPU 성능에 따라 다름).
 
 ## 팀 개발 흐름
 

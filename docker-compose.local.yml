@@ -1,0 +1,23 @@
+# ANTHROPIC_API_KEY 없이 무료로 돌리기 위한 오버라이드.
+#
+# 사용법:
+#   1) README "로컬 LLM으로 무료 실행" 안내대로 ./models 에 GGUF 모델을 받는다.
+#   2) docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+#
+# 기본 docker-compose.yml 은 건드리지 않는다 — ANTHROPIC_API_KEY 가 있으면
+# 그쪽이 그대로 우선한다(src/dn/llm/client.py get_llm_client() 우선순위).
+# CPU 전용 추론이라 문서 1건 처리에 수 초~수십 초가 걸릴 수 있다(하드웨어에
+# 따라 다름 — 스레드 과다 사용 시 오히려 느려지므로 DN_LOCAL_LLM_THREADS 로
+# 물리 코어 수 근처 값을 직접 지정하는 것을 권장한다).
+services:
+  app:
+    build:
+      context: .
+      args:
+        DN_EXTRAS: local
+    environment:
+      - ANTHROPIC_API_KEY=
+      - DN_LOCAL_MODEL_PATH=/app/models/Qwen2.5-7B-Instruct-Q4_K_M.gguf
+      - DN_LOCAL_LLM_THREADS=${DN_LOCAL_LLM_THREADS:-0}
+    volumes:
+      - ./models:/app/models:ro

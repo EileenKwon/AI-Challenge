@@ -33,7 +33,16 @@ COPY pyproject.toml ./
 COPY src ./src
 COPY config ./config
 
-RUN pip install --no-cache-dir -e .
+# ANTHROPIC_API_KEY 없이 무료로 돌리고 싶으면 --build-arg DN_EXTRAS=local 로
+# llama-cpp-python 을 같이 설치한다(기본 빌드는 그대로 가볍게 유지). 모델
+# 가중치(수 GB)는 이미지에 넣지 않고 ./models 를 볼륨으로 마운트해 쓴다 —
+# docker-compose.local.yml, README "로컬 LLM으로 무료 실행" 참고.
+ARG DN_EXTRAS=""
+RUN if [ -n "$DN_EXTRAS" ]; then \
+        pip install --no-cache-dir -e ".[$DN_EXTRAS]"; \
+    else \
+        pip install --no-cache-dir -e .; \
+    fi
 
 ENV DN_ENV=production \
     DN_UPLOAD_DIR=/app/uploads \

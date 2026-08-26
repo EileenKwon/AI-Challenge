@@ -27,6 +27,11 @@ dev = [
     "pandas>=2.2",
     "tabulate>=0.9",
 ]
+# ANTHROPIC_API_KEY 없이 오프라인/무료로 돌리기 위한 로컬 LLM 백엔드.
+# CI/기본 배포에는 필요 없어 dev 와 분리했다 — llama-cpp-python 은 C++ 빌드가 있어 설치가 무겁다.
+local = [
+    "llama-cpp-python>=0.3",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

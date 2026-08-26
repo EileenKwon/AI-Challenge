@@ -16,6 +16,9 @@ uploads/
 sessions.db
 data/uploads/
 
+# 로컬 LLM 모델 가중치 (수 GB) — 리포에 커밋하지 않는다. README 참고해 직접 받는다.
+models/
+
 # 평가 산출물
 results/*.csv
 reports/*.md

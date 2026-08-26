@@ -32,6 +32,11 @@ class _Env(BaseSettings):
     dn_secret_key: str = "change-me"
     dn_upload_dir: str = "./uploads"
     dn_session_db: str = "./sessions.db"
+    # ANTHROPIC_API_KEY 가 없을 때의 무료 폴백 — GGUF 파일 경로가 설정되고 실제
+    # 존재하면 get_llm_client() 가 StubClient 대신 이 로컬 모델을 쓴다.
+    dn_local_model_path: str = ""
+    dn_local_llm_threads: int = 0
+    dn_local_llm_ctx: int = 4096
 
 
 class _StrictModel(BaseModel):
