@@ -185,6 +185,10 @@ class Settings(BaseModel):
     def questions_path(self) -> Path:
         return self.resolve(self.config.paths.questions_file)
 
+    @property
+    def session_db_path(self) -> Path:
+        return self.resolve(self.env.dn_session_db)
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -9,13 +9,17 @@ from fastapi import HTTPException
 from dn.domain.models import SessionState
 from dn.llm.client import LLMClient, get_llm_client
 from dn.settings import Settings, get_settings
-from dn.storage.session_store import InMemorySessionStore, SessionStore
+from dn.storage.session_store import SessionStore, SqliteSessionStore
 
 
 @lru_cache(maxsize=1)
 def get_session_store() -> SessionStore:
-    """세션 저장소 싱글턴. 데모/개발 환경은 인메모리로 충분하다."""
-    return InMemorySessionStore()
+    """세션 저장소 싱글턴. `DN_SESSION_DB` 경로에 SQLite로 영속화한다.
+
+    프로세스 재시작(배포 환경의 재배포·재시작 포함)에도 세션이 살아남아야 하므로
+    인메모리 구현은 쓰지 않는다 — 테스트에서만 `InMemorySessionStore` 를 직접 쓴다.
+    """
+    return SqliteSessionStore(get_settings().session_db_path)
 
 
 def get_llm_client_dep(settings: Settings | None = None) -> LLMClient:
