@@ -9,16 +9,20 @@
 > 상환여력은 결정론적 계산 모듈이 확정 숫자로 산출한다.
 > 제도 적합성은 판정하지 않고 근거·미확인 조건과 함께 검토 후보로만 제시한다.
 
-## 현재 진행 상황 (2026-08-21 기준)
+## 현재 진행 상황 (2026-08-26 기준)
 
-**`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 테스트 328개
-전량 통과(`pytest -q`), `ruff check` / `ruff format --check` 클린.
+**`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 이후 팀원이 정책 카드
+공식 출처 검증과 실서비스 결함 3건을 수정한 패치(`feat/verified-policy-cards`)를
+코드 레벨로 대조 검증하고 [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1)로
+올려 리뷰 대기 중이다. 테스트 328개 전량 통과(`pytest -q`), `ruff check` /
+`ruff format --check` 클린.
 
 | 항목 | 상태 |
 |---|---|
 | 태스크 구현 (T00~T23) | ✅ 23/23 완료 |
-| 단위·통합 테스트 | ✅ 323 passed |
+| 단위·통합 테스트 | ✅ **328 passed** (검증 패치 반영, 이전 323) |
 | 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
+| 검증 패치 PR | 🟡 [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) `feat/verified-policy-cards` → `main`, 리뷰·머지 대기 |
 | 평가 하네스 (E1~E6) | ✅ 실행 완료 · 결과를 `docs/평가결과.md` 에 고정. E3 누락률 0.10 → **0.00**(정렬 결함 수정) |
 | Docker 빌드 검증 | ⚠️ 샌드박스에 Docker 권한 없어 미검증 (Dockerfile/compose는 작성 완료, 로컬 uvicorn 기준 스모크 테스트로 대체 검증) |
 | 브라우저 수동 워크스루 (T19) | ✅ 화면 7종 전환 버그 수정, API 흐름과 동일한 순서로 curl 검증 완료 — 단, 실기기 375px 육안 검증은 아직 (남은 한계는 아래 참고) |
@@ -26,6 +30,21 @@
 | 실제 LLM(E1/E2 추출 정확도) 평가 | ⚠️ `ANTHROPIC_API_KEY` 미설정 상태라 `StubClient` 기반 `[STUB_MODE]` 결과만 존재 |
 
 배포 전 남은 작업은 아래 [배포 전 체크리스트](#배포-전-체크리스트)를 따른다.
+
+## 다음 단계 (우선순위)
+
+마감 2026-09-07 (D-day 기준 남은 기간 계산은 각자 확인). 우선순위 순서대로 진행한다.
+
+| 순위 | 할 일 | 비고 |
+|---|---|---|
+| 지금 | [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) 리뷰 후 `main` 병합 | 코드 검증은 완료됨, 팀원 승인만 남음 |
+| P0 | Docker 빌드·`docker compose up` 실제 환경 검증 | WeasyPrint·poppler·Noto CJK 의존성에서 막힐 가능성 — 마감 전 최우선 |
+| P1 | `ANTHROPIC_API_KEY` 주입 후 `eval/E1`·`E2` 재실행 | 현재 STUB_MODE라 추출 성능 지표가 없음 |
+| P1 | 개인워크아웃 총채무액 한도 — 신용회복위원회(1600-5500) 확인 후 `allow_unverified_cards: false` 전환 | 15억(제도 상세)/25억(제도 비교) 출처 불일치 |
+| P1 | 필수생활비 하한 수치(2026년 생계급여 고시) 원문 대조 | `config/config.yaml: living_cost_floor_by_household` |
+| P2 | 실기기 375px 화면 육안 검증 | 지금까지는 curl로 API 흐름만 재현 검증 |
+| P2 | 세션 저장소 SQLite 배선 | 현재 인메모리라 프로세스 재시작 시 세션 소실 |
+| P2 | 소득 감소 시나리오 배선 | `AnalysisResult.scenario` 항상 `None` |
 
 ## 전체 로드맵 (`CODEX_TASKS.md` T00~T23)
 
