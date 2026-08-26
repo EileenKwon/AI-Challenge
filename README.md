@@ -12,9 +12,9 @@
 ## 현재 진행 상황 (2026-08-26 기준)
 
 **`CODEX_TASKS.md`의 T00~T23 전체 23개 태스크 구현 완료.** 이후 팀원이 정책 카드
-공식 출처 검증과 실서비스 결함 3건을 수정한 패치(`feat/verified-policy-cards`)를
-코드 레벨로 대조 검증하고 [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1)로
-올려 리뷰 대기 중이다. 테스트 328개 전량 통과(`pytest -q`), `ruff check` /
+공식 출처 검증과 실서비스 결함 3건을 수정한 패치를 코드 레벨로 대조 검증해
+[PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1)로 `main`에 병합했다
+(2026-08-26). 테스트 328개 전량 통과(`pytest -q`), `ruff check` /
 `ruff format --check` 클린.
 
 | 항목 | 상태 |
@@ -22,7 +22,7 @@
 | 태스크 구현 (T00~T23) | ✅ 23/23 완료 |
 | 단위·통합 테스트 | ✅ **328 passed** (검증 패치 반영, 이전 323) |
 | 린트/포맷 | ✅ `ruff check`, `ruff format --check` 클린 |
-| 검증 패치 PR | 🟡 [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) `feat/verified-policy-cards` → `main`, 리뷰·머지 대기 |
+| 검증 패치 PR | ✅ [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) `feat/verified-policy-cards` → `main`, **머지 완료(2026-08-26)** |
 | 평가 하네스 (E1~E6) | ✅ 실행 완료 · 결과를 `docs/평가결과.md` 에 고정. E3 누락률 0.10 → **0.00**(정렬 결함 수정) |
 | Docker 빌드 검증 | ⚠️ 정적 검토로 결함 2건 발견·수정(`fontconfig` 누락 · `.dockerignore` 부재) — 단, 이 샌드박스는 Docker 데몬 권한이 없어 **실제 `docker build` 실행 검증은 여전히 못 함** |
 | 브라우저 수동 워크스루 (T19) | ✅ 화면 7종 전환 버그 수정, API 흐름과 동일한 순서로 curl 검증 완료 — 단, 실기기 375px 육안 검증은 아직 (남은 한계는 아래 참고) |
@@ -37,7 +37,6 @@
 
 | 순위 | 할 일 | 비고 |
 |---|---|---|
-| 지금 | [PR #1](https://github.com/EileenKwon/AI-Challenge/pull/1) 리뷰 후 `main` 병합 | 코드 검증은 완료됨, 팀원 승인만 남음 |
 | P0 | Docker 빌드·`docker compose up` 실제 환경에서 실행 | 정적 검토로 `fontconfig`/`.dockerignore` 결함은 고쳤지만, 실제 빌드는 Docker 권한이 있는 환경에서 아직 아무도 안 돌려봄 — 마감 전 최우선 |
 | P1 | `ANTHROPIC_API_KEY` 주입 후 `eval/E1`·`E2` 재실행 | 현재 STUB_MODE라 추출 성능 지표가 없음 |
 | P1 | 개인워크아웃 총채무액 한도 — 신용회복위원회(1600-5500) 확인 후 `allow_unverified_cards: false` 전환 | 15억(제도 상세)/25억(제도 비교) 출처 불일치 |
