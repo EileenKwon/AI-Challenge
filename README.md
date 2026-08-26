@@ -229,7 +229,7 @@ ruff format --check src tests eval
 
 - [ ] `config/config.yaml: rules.allow_unverified_cards` 를 `false` 로 변경 — 개인워크아웃 한도 확인 후
 - [x] 정책 카드 `verified: true` 및 `source.url` 기입 — **6개 중 5개 완료(2026-08-21)**. 개인워크아웃 1개는 총채무액 한도 출처 충돌로 `unresolved` 보존
-- [ ] 실제 `ANTHROPIC_API_KEY`로 `eval/E1~E6` 재실행, `reports/metrics_summary.md` STUB_MODE 라벨 해소
+- [x] `eval/E1~E6` 실측 — **로컬 오픈모델(Qwen2.5-7B) 기준으로 STUB_MODE 해소·완료(2026-08-26)**. `ANTHROPIC_API_KEY` 확보 시 Claude 기준으로 재측정해 비교 권장(선택)
 - [ ] `data/redteam/attacks.yaml` 전량 통과
 - [x] 업로드 원본 TTL 삭제 동작 확인 — **TTL 스위퍼를 앱 lifespan 에 배선(2026-08-23)**. 이전에는 정의만 되어 있고 호출부가 없었다
 - [ ] Docker 빌드/`docker compose up` 실제 환경에서 검증 — **정적 검토로 `fontconfig` 누락·`.dockerignore` 부재는 수정(2026-08-26)**, 실제 `docker build` 실행은 이 샌드박스에 Docker 데몬 권한이 없어 여전히 못 함. Docker 권한이 있는 환경에서 `docker compose up --build` 한 번 실행 필요
