@@ -96,6 +96,24 @@ def test_kimhaneul_end_to_end_produces_expected_cashflow() -> None:
     assert result.cashflow.max_overdue_days == 42
 
 
+def test_kimhaneul_income_drop_scenario_is_attached() -> None:
+    result = analyze(_kimhaneul_state())
+
+    assert result.scenario is not None
+    assert result.scenario.scenario_id == "income_drop_20"
+    assert result.scenario.before.monthly_shortfall == Decimal("130000")
+    assert result.scenario.after.monthly_shortfall == Decimal("630000")
+
+
+def test_scenario_stays_attached_even_when_income_unknown() -> None:
+    state = _kimhaneul_state(income=IncomeProfile())
+    result = analyze(state)
+
+    assert result.scenario is not None
+    assert result.scenario.before.dti_ratio is None
+    assert result.scenario.after.dti_ratio is None
+
+
 def test_kimhaneul_narrative_is_generated() -> None:
     result = analyze(_kimhaneul_state())
     assert result.narrative is not None

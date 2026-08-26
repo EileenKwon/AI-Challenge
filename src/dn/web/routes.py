@@ -194,6 +194,18 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
         ctx["trace"] = []
         ctx["creditor_shares"] = []
 
+    scenario = analysis.scenario if analysis else None
+    if scenario is not None and state.income.monthly_net_income.value is not None:
+        ctx["scenario"] = {
+            "label": scenario.label,
+            "before_shortfall": format_won(abs(scenario.before.monthly_shortfall)),
+            "before_is_positive": scenario.before.monthly_shortfall >= 0,
+            "after_shortfall": format_won(abs(scenario.after.monthly_shortfall)),
+            "after_is_positive": scenario.after.monthly_shortfall >= 0,
+        }
+    else:
+        ctx["scenario"] = None
+
     ctx["unknowns"] = [g.label for g in analysis.gaps.gaps] if analysis else []
     ctx["narrative_cashflow_text"] = None
     if analysis and analysis.narrative:

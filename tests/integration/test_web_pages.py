@@ -30,6 +30,7 @@ from dn.domain.models import (
     PathCandidate,
     PolicyRef,
     RuleEngineResult,
+    ScenarioResult,
     SessionState,
     SituationFlags,
 )
@@ -102,6 +103,12 @@ def _full_state(session_id: str) -> SessionState:
             ),
         )
     )
+    scenario = ScenarioResult(
+        scenario_id="income_drop_20",
+        label="소득이 20% 줄어든다면",
+        before=cashflow,
+        after=cashflow.model_copy(update={"monthly_shortfall": Decimal("600000")}),
+    )
     analysis = AnalysisResult(
         session_id=session_id,
         analyzed_at=now,
@@ -114,6 +121,7 @@ def _full_state(session_id: str) -> SessionState:
         narrative=narrative,
         plan=plan,
         gaps=GapReport(),
+        scenario=scenario,
     )
     return SessionState(
         session_id=session_id,
@@ -176,6 +184,14 @@ def test_result_page_shows_confirmed_numbers_and_trace() -> None:
     assert "확정 숫자" in r.text
     assert "20만 원" in r.text
     assert "이 숫자는 어디서 왔나요" in r.text
+
+
+def test_result_page_shows_income_drop_scenario() -> None:
+    client, sid = _client_with_session()
+    r = client.get(f"/web/session/{sid}/result")
+    assert r.status_code == 200
+    assert "소득이 20% 줄어든다면" in r.text
+    assert "60만 원" in r.text
 
 
 def test_paths_page_shows_eleven_item_card() -> None:

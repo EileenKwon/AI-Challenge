@@ -2,7 +2,7 @@
 
 ```
 1. state >= S4 확인                        ← 실패 시 StateTransitionError
-2. cashflow.compute()                      ← 항상 실행, 항상 반환
+2. cashflow.compute()                      ← 항상 실행, 항상 반환 (소득 감소 시나리오도 같이 계산)
 3. triage.evaluate()  REFER→규칙 엔진 생략 / PROCEED→4번으로
 4. policy_card.load(verified_only=True)    카드 0개 → undetermined=True
 5. rules.evaluate() → PathCandidate[]
@@ -22,6 +22,7 @@ import logging
 from datetime import date, datetime
 
 from dn.cashflow.calculator import compute as compute_cashflow
+from dn.cashflow.scenarios import income_drop
 from dn.domain.enums import FieldSource, SectionKind, SessionStage, TriageDecision
 from dn.domain.errors import PolicyCardError
 from dn.domain.models import (
@@ -121,6 +122,7 @@ def analyze(
     cashflow = compute_cashflow(  # 2
         debts, state.income, state.household, as_of=analyzed_at.date()
     )
+    scenario = income_drop(debts, state.income, state.household, as_of=analyzed_at.date())
 
     gaps = detect_gaps(debts, state.income)
     conflicts = detect_conflicts(extraction, state.household, settings=settings)
@@ -170,6 +172,7 @@ def analyze(
         narrative=narrative,
         gaps=gaps,
         conflicts=conflicts,
+        scenario=scenario,
         policy_base_date=policy_base_date,
         dev_mode=rules_result.dev_mode if rules_result is not None else False,
     )
