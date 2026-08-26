@@ -8,9 +8,15 @@
 FROM python:3.11-slim
 
 # WeasyPrint(PDF 렌더링) + pdf2image(스캔본 렌더링) + 한글 폰트 + 헬스체크용 curl.
+#
+# fontconfig 를 명시적으로 넣는 이유: libpango-1.0-0 이 끌어오는 건 런타임
+# 라이브러리(libfontconfig1)뿐이고, fc-cache/트리거 스크립트를 가진 fontconfig
+# 패키지 자체는 아니다. 이게 없으면 fonts-noto-cjk 로 설치된 폰트가 캐시에
+# 제대로 등록된다는 보장이 없어, 컨테이너는 뜨지만 PDF의 한글이 깨질 수 있다.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     fonts-noto-cjk \
+    fontconfig \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libgdk-pixbuf2.0-0 \
@@ -18,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     shared-mime-info \
     curl \
+    && fc-cache -f \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

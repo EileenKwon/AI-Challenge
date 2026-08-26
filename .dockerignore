@@ -1,0 +1,26 @@
+# Dockerfile은 pyproject.toml · src · config만 COPY하지만, .dockerignore가 없으면
+# docker build가 이 디렉토리 전체(.venv 포함 수백MB)를 빌드 컨텍스트로 보낸다.
+.venv/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# 런타임에 필요 없는 개발/평가용 산출물
+data/
+tests/
+eval/
+tools/
+reports/
+results/
+figures/
+uploads/
+docs/
+.github/
+
+# 로컬 산출물 · 시크릿
+.env
+*.db
+*.log
