@@ -129,16 +129,20 @@ def main() -> None:
 
     md_path = reports_dir / "metrics_summary.md"
     with md_path.open("w", encoding="utf-8") as f:
-        f.write("# 평가 지표 요약 (기획서 14.3, 10개 지표)\n\n")
+        # 지표 개수는 세어서 쓴다. 기획서 기준 10개에서 출발했지만 E6 에
+        # 연체일수 경계 항목이 추가되며 늘었고, 숫자를 손으로 적어 두면
+        # 제출 문서의 머리글과 실제 목록이 어긋난다(실제로 어긋났다).
+        total = len(collected) + len(unmeasured)
+        f.write(f"# 평가 지표 요약 (기획서 14.3 기준 10개 + 이후 추가분, 총 {total}개)\n\n")
         f.write(f"측정일: {measured_at}\n\n")
         f.write(
             "측정 원칙: 실제 측정값과 표본 수(n)를 병기한다. "
             "목표치만 적힌 지표는 검증되지 않은 주장으로 간주한다.\n\n"
         )
-        f.write("## 자동 측정 지표 (8개)\n\n")
+        f.write(f"## 자동 측정 지표 ({len(collected)}개)\n\n")
         for line in collected:
             f.write(f"- {line}\n")
-        f.write("\n## 사용자 스터디 필요 지표 (2개, 자동화 불가)\n\n")
+        f.write(f"\n## 사용자 스터디 필요 지표 ({len(unmeasured)}개, 자동화 불가)\n\n")
         for line in unmeasured:
             f.write(f"- {line}\n")
         f.write("\n")
