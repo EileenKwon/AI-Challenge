@@ -378,3 +378,81 @@ def test_manual_debts_rejects_more_than_max() -> None:
     )
     assert r.status_code == 400
     assert str(limit) in r.json()["detail"]
+
+
+# --- 남용 방어: 호출 빈도 제한 --------------------------------------------------
+
+
+def test_document_upload_is_rate_limited_per_ip() -> None:
+    """공개 URL 뒤에 한도·과금이 있는 LLM 이 붙으므로 무제한 호출을 막는다."""
+    from dn.api import ratelimit
+
+    client = TestClient(create_app())
+    limit = get_settings().config.ratelimit.llm_calls_per_ip
+    doc = client.get("/demo-docs/debt_count_3.pdf").content
+
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+
+    ratelimit.reset()
+    statuses = []
+    for _ in range(limit + 2):
+        s2 = client.post("/api/session").json()["session_id"]
+        client.post(f"/api/session/{s2}/consent")
+        r = client.post(
+            f"/api/session/{s2}/document",
+            files={"file": ("d.pdf", doc, "application/pdf")},
+        )
+        statuses.append(r.status_code)
+
+    assert statuses[:limit] == [200] * limit, "한도 안에서는 전부 통과해야 한다"
+    assert statuses[limit:] == [429, 429]
+    ratelimit.reset()
+
+
+def test_manual_entry_is_not_rate_limited() -> None:
+    """직접 입력은 LLM 을 쓰지 않으므로 막을 이유가 없다."""
+    from dn.api import ratelimit
+
+    client = TestClient(create_app())
+    limit = get_settings().config.ratelimit.llm_calls_per_ip
+    ratelimit.reset()
+    for _ in range(limit + 3):
+        sid = client.post("/api/session").json()["session_id"]
+        client.post(f"/api/session/{sid}/consent")
+        r = client.post(
+            f"/api/session/{sid}/manual-debts",
+            json={"debts": [{"creditor": "가나캐피탈", "balance": "1000000"}]},
+        )
+        assert r.status_code == 200, r.text
+    ratelimit.reset()
+
+
+def test_llm_failure_degrades_to_503_with_guidance() -> None:
+    """LLM 장애·한도 초과 때 500 으로 죽지 않고 다른 입력 방식으로 안내한다."""
+    from dn.api.deps import get_llm_client_dep
+
+    def _broken():
+        class _Boom:
+            dev_mode = False
+
+            def complete(self, **_kwargs):
+                raise RuntimeError("rate limit reached")
+
+        return _Boom()
+
+    app = create_app()
+    app.dependency_overrides[get_llm_client_dep] = _broken
+    client = TestClient(app)
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+    doc = client.get("/demo-docs/debt_count_3.pdf").content
+
+    r = client.post(
+        f"/api/session/{sid}/document", files={"file": ("d.pdf", doc, "application/pdf")}
+    )
+    assert r.status_code == 503
+    assert "직접 입력" in r.json()["detail"]
+
+    # 세션은 S1 에 남아 있어야 다른 방식으로 다시 시도할 수 있다
+    assert client.get(f"/api/session/{sid}/extraction").json()["debts"] == []

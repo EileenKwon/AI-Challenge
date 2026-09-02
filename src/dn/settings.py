@@ -44,6 +44,11 @@ class _Env(BaseSettings):
     dn_session_db: str = "./sessions.db"
     # ANTHROPIC_API_KEY 가 없을 때의 무료 폴백 — GGUF 파일 경로가 설정되고 실제
     # 존재하면 get_llm_client() 가 StubClient 대신 이 로컬 모델을 쓴다.
+    # OpenAI 호환 Chat Completions 백엔드(Groq · Gemini · Upstage 등).
+    # 세 값이 모두 있어야 활성화된다. 무료 티어로 배포할 때 쓰는 경로다.
+    dn_openai_base_url: str = ""
+    dn_openai_api_key: str = ""
+    dn_openai_model: str = ""
     dn_local_model_path: str = ""
     dn_local_llm_threads: int = 0
     dn_local_llm_ctx: int = 4096
@@ -111,6 +116,12 @@ class ReconcileConfig(_StrictModel):
         return table[max_size] + step * (household_size - max_size)
 
 
+class RateLimitConfig(_StrictModel):
+    enabled: bool
+    llm_calls_per_ip: int
+    window_seconds: int
+
+
 class CashflowConfig(_StrictModel):
     currency_unit: str
     dti_warn_ratio: float
@@ -147,6 +158,7 @@ class AppConfig(_StrictModel):
     ingest: IngestConfig
     extraction: ExtractionConfig
     reconcile: ReconcileConfig
+    ratelimit: RateLimitConfig
     cashflow: CashflowConfig
     rules: RulesConfig
     narrative: NarrativeConfig

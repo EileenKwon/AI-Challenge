@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from dn.api import ratelimit
 from dn.api.deps import get_session_store
 from dn.settings import get_settings
 
@@ -21,6 +22,10 @@ def _isolated_session_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("DN_SESSION_DB", str(tmp_path / "sessions.db"))
     get_settings.cache_clear()
     get_session_store.cache_clear()
+    # IP 단위 호출 카운터도 비운다. 프로세스 전역이라 비우지 않으면 앞선 테스트가
+    # 쓴 횟수가 쌓여서, 테스트를 추가할수록 뒤쪽 테스트가 429 로 깨진다.
+    ratelimit.reset()
     yield
+    ratelimit.reset()
     get_session_store.cache_clear()
     get_settings.cache_clear()

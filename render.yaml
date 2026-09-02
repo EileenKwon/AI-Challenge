@@ -1,0 +1,30 @@
+# Render 배포 명세 (Blueprint).
+#
+# 사용법: Render 대시보드 → New → Blueprint → 이 저장소 선택.
+# DN_OPENAI_API_KEY 만 대시보드에서 직접 입력한다(sync: false) — 키를 저장소에
+# 남기지 않기 위해서다.
+#
+# 무료 플랜은 15분 무트래픽 시 잠들고 다음 요청에서 30~60초 만에 깨어난다.
+# 심사 기간(2026-09-07 11:00 ~ 09-11 23:59)에는 외부 핑으로 깨워 두는 것을
+# 전제로 한다 — docs/배포.md 참고.
+services:
+  - type: web
+    name: debt-recovery-navigator
+    runtime: docker
+    plan: free
+    region: singapore # 한국에서 지연시간이 가장 낮은 리전
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: DN_ENV
+        value: production
+      - key: DN_SECRET_KEY
+        generateValue: true
+      # LLM 백엔드 — 무료 티어(Groq). 유료 전환 시 ANTHROPIC_API_KEY 를 넣으면
+      # get_llm_client() 우선순위에 따라 그쪽이 자동으로 이긴다.
+      - key: DN_OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: DN_OPENAI_MODEL
+        value: qwen/qwen3.8-27b
+      - key: DN_OPENAI_API_KEY
+        sync: false

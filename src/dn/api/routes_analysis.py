@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from dn.api import ratelimit
 from dn.api.deps import get_llm_client_dep, get_session_or_404, get_session_store
 from dn.domain.enums import FieldSource, SessionStage
 from dn.domain.models import (
@@ -31,6 +32,7 @@ from dn.reconcile.questions import (
     select_active_questions,
 )
 from dn.report.summary_pdf import render as render_summary
+from dn.settings import get_settings
 from dn.storage.session_store import SessionStore
 
 router = APIRouter(prefix="/api/session", tags=["analysis"])
@@ -187,10 +189,18 @@ def supplement(
 @router.post("/{session_id}/analyze")
 def analyze_session(
     session_id: str,
+    request: Request,
     store: SessionStore = Depends(get_session_store),
     client: LLMClient = Depends(get_llm_client_dep),
 ) -> dict:
     state = get_session_or_404(session_id, store)
+    rl = get_settings().config.ratelimit
+    if rl.enabled:
+        ratelimit.check(
+            ratelimit.client_key(request),
+            limit=rl.llm_calls_per_ip,
+            window_sec=rl.window_seconds,
+        )
     analysis = run_analysis(state, client=client)
 
     new_state = transition(state, SessionStage.S5_ANALYZED)

@@ -6,13 +6,15 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
+from dn.api import ratelimit
 from dn.api.deps import get_llm_client_dep, get_session_or_404, get_session_store
 from dn.domain.enums import FieldSource, ProductType, SessionStage
 from dn.domain.errors import DomainError
@@ -29,18 +31,27 @@ from dn.pipeline.stages import transition
 from dn.settings import get_settings
 from dn.storage.session_store import SessionStore
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/session", tags=["document"])
 
 
 @router.post("/{session_id}/document")
 async def upload_document(
     session_id: str,
+    request: Request,
     file: UploadFile,
     store: SessionStore = Depends(get_session_store),
     client: LLMClient = Depends(get_llm_client_dep),
 ) -> dict:
     state = get_session_or_404(session_id, store)
     settings = get_settings()
+    if settings.config.ratelimit.enabled:
+        ratelimit.check(
+            ratelimit.client_key(request),
+            limit=settings.config.ratelimit.llm_calls_per_ip,
+            window_sec=settings.config.ratelimit.window_seconds,
+        )
 
     content_bytes = await file.read()
     try:
@@ -74,7 +85,20 @@ async def upload_document(
         cleaned_pages.append(page.model_copy(update={"text": masked_text}))
     document = document.model_copy(update={"pages": tuple(cleaned_pages)})
 
-    debts = extract(document, client=client)
+    try:
+        debts = extract(document, client=client)
+    except Exception as exc:
+        # LLM 백엔드 장애·한도 초과로 추출이 막혀도 서비스 전체가 죽으면 안 된다.
+        # 세션은 S1 에 그대로 두고 503 으로 돌려주면, 화면 02 의 기존 오류 표시가
+        # 이 문구를 그대로 띄우고 사용자는 다른 입력 방식으로 넘어갈 수 있다.
+        logger.warning("extraction_failed", extra={"error": type(exc).__name__})
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI 문서 추출을 일시적으로 사용할 수 없습니다. "
+                '아래 "문서 없이 직접 입력"으로 진행해 주세요.'
+            ),
+        ) from exc
     extraction = ExtractionResult(debts=tuple(debts))
 
     new_state = transition(state, SessionStage.S2_EXTRACTED)

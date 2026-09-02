@@ -71,6 +71,8 @@ USER app
 EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-    CMD curl -fsS http://localhost:8000/healthz || exit 1
+    CMD curl -fsS "http://localhost:${PORT:-8000}/healthz" || exit 1
 
-CMD ["uvicorn", "dn.main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+# PORT 를 존중한다 — 여러 PaaS(Render 등)가 포트를 환경변수로 주입하고 그 포트로만
+# 트래픽을 보낸다. 값이 없으면 8000 이라 docker compose 는 그대로 동작한다.
+CMD ["sh", "-c", "exec uvicorn dn.main:app --app-dir src --host 0.0.0.0 --port ${PORT:-8000}"]
