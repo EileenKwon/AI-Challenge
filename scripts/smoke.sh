@@ -42,6 +42,27 @@ curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/document" \
 echo "  [OK] document uploaded"
 
 echo "  [STAGE] 추출 확인"
+# S2 → S3 전이는 추출된 모든 필드가 user_confirmed 여야 허용된다(pipeline/stages.py).
+# 확인 상태를 PATCH 로 먼저 보내지 않으면 채무가 1건이라도 있을 때 /confirm 이
+# 409 로 막힌다. 화면 03 이 하는 것과 같은 순서다.
+#
+# 이 단계가 오래 빠져 있었는데도 통과했던 이유: LLM 백엔드가 없으면 StubClient 가
+# 채무 0건을 돌려줘 확인할 필드가 없었기 때문이다. 실제 백엔드를 붙이는 순간
+# 깨진다 — 배포 검증 스크립트가 배포 환경에서만 깨지고 있었다.
+DEBT_COUNT=$(curl -fsS "$BASE_URL/api/session/$SESSION_ID/extraction" \
+  | python3 -c "import sys, json; print(len(json.load(sys.stdin)['debts']))")
+echo "  [INFO] 추출된 채무 ${DEBT_COUNT}건"
+if [ "$DEBT_COUNT" -gt 0 ]; then
+  CONFIRMATIONS=$(python3 -c "
+import json, sys
+fields = ['creditor', 'product_type', 'balance', 'overdue_days', 'is_secured']
+n = int(sys.argv[1])
+print(json.dumps([{'debt_index': i, 'field_name': f, 'user_confirmed': True}
+                  for i in range(n) for f in fields]))
+" "$DEBT_COUNT")
+  curl -fsS -X PATCH "$BASE_URL/api/session/$SESSION_ID/extraction" \
+    -H "Content-Type: application/json" -d "$CONFIRMATIONS" > /dev/null
+fi
 curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/confirm" > /dev/null
 echo "  [OK] confirm"
 
