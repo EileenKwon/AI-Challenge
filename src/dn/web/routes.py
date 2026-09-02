@@ -49,6 +49,43 @@ _TIMING_LABEL = {
     "after_consult": "상담 후",
 }
 
+# 02 화면 "데모용 합성 문서 선택" 드롭다운. data/synthetic/pdf 에 있는 55건 중
+# 시나리오가 서로 구분되는 것만 골라 사람이 읽을 이름을 붙였다 (random_* 는 제외 —
+# 이름만으로 무엇을 보여주는 케이스인지 알 수 없어 데모에 쓸모가 없다).
+_DEMO_CASE_LABELS = {
+    "debt_count_3": "채무 3건 · 연체 42~77일 — 기본 데모",
+    "boundary_overdue_29": "연체 29일 — 신속채무조정 구간",
+    "boundary_overdue_30": "연체 30일 — 신속채무조정 경계",
+    "boundary_overdue_31": "연체 31일 — 사전채무조정 경계",
+    "boundary_overdue_89": "연체 89일 — 사전채무조정 구간 끝",
+    "boundary_overdue_90": "연체 90일 — 개인워크아웃 경계(전문상담 연결)",
+    "mixed_secured": "담보·무담보 혼재 · 채무 3건",
+    "missing_fields": "연체일수·담보여부 미기재 · 채무 2건",
+    "conflicting_total": "총액 불일치(모순 탐지) · 채무 2건",
+    "income_proof_difficult": "소득증빙 곤란 · 채무 1건",
+    "job_loss": "실직·폐업 신호 · 채무 2건",
+    "debt_count_1": "채무 1건",
+    "debt_count_8": "채무 8건 — 다중채무 최대 사례",
+}
+
+
+def _demo_cases(settings) -> list[dict[str, str]]:
+    """실제로 파일이 있는 데모 케이스만 돌려준다.
+
+    합성 문서는 `tools/synth/gen_credit_report.py` 산출물이라 디렉터리가 통째로
+    없을 수 있다. 그때는 빈 목록을 돌려 화면이 그 선택지를 잠그게 한다 — 없는
+    파일을 고르게 해놓고 업로드 단계에서 404 를 내는 것보다 낫다.
+    """
+    pdf_dir = settings.synthetic_dir / "pdf"
+    if not pdf_dir.is_dir():
+        return []
+    return [
+        {"id": case_id, "label": label}
+        for case_id, label in _DEMO_CASE_LABELS.items()
+        if (pdf_dir / f"{case_id}.pdf").is_file()
+    ]
+
+
 _STATUS_LABEL = {
     "candidate": "우선 검토 가능",
     "needs_info": "추가 확인 필요",
@@ -126,7 +163,7 @@ def intro_page(session_id: str, store: SessionStore = Depends(get_session_store)
 def upload_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
-    ctx["synthetic_cases"] = []
+    ctx["synthetic_cases"] = _demo_cases(get_settings())
     return render_page("02_upload.html", ctx)
 
 

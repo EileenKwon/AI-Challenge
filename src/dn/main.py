@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from dn.api import routes_analysis, routes_document, routes_session
 from dn.api.deps import get_session_store
@@ -69,6 +70,15 @@ def create_app() -> FastAPI:
     @app.exception_handler(DomainError)
     async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    # 데모용 합성 신용정보조회서. 02 화면의 "데모용 합성 문서 선택"이 여기서 파일을
+    # 받아 일반 업로드 API 로 그대로 보낸다 — 업로드 검증·PII 마스킹·인젝션 스캔을
+    # 우회하는 별도 경로를 만들지 않기 위해서다. 전부 생성 문서이며 실제 개인정보가 아니다.
+    demo_dir = settings.synthetic_dir / "pdf"
+    if demo_dir.is_dir():
+        app.mount("/demo-docs", StaticFiles(directory=demo_dir), name="demo-docs")
+    else:
+        logger.warning("demo_documents_missing", extra={"path": str(demo_dir)})
 
     app.include_router(routes_session.router)
     app.include_router(routes_document.router)

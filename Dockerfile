@@ -32,6 +32,10 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY src ./src
 COPY config ./config
+# 데모용 합성 신용정보조회서 (약 8MB). 02 화면의 "데모용 합성 문서 선택"이
+# 런타임에 /demo-docs 로 서빙한다 — 이게 빠지면 조회서 없는 사용자는
+# 화면 흐름을 전혀 체험할 수 없다.
+COPY data/synthetic/pdf ./data/synthetic/pdf
 
 # ANTHROPIC_API_KEY 없이 무료로 돌리고 싶으면 --build-arg DN_EXTRAS=local 로
 # llama-cpp-python 을 같이 설치한다(기본 빌드는 그대로 가볍게 유지). 모델

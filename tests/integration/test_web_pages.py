@@ -36,6 +36,7 @@ from dn.domain.models import (
 )
 from dn.domain.provenance import Tracked
 from dn.main import create_app
+from dn.settings import get_settings
 
 
 def _known(value):
@@ -212,8 +213,29 @@ def test_plan_page_shows_plan_and_pdf_download() -> None:
     assert "포함할 항목을 선택" in r.text
 
 
-def test_dev_mode_banner_shown_when_allow_unverified_cards_enabled() -> None:
+def test_dev_mode_banner_hidden_under_deploy_config() -> None:
+    """배포 기준 설정(allow_unverified_cards: false)에서는 개발 모드 배너가 없다."""
     client, sid = _client_with_session()
+    r = client.get(f"/web/session/{sid}/result")
+    assert "개발 모드" not in r.text
+
+
+def test_dev_mode_banner_shown_when_allow_unverified_cards_enabled(monkeypatch) -> None:
+    """설정을 되돌리면 배너가 다시 뜬다 — 배너 렌더링 자체를 고정한다."""
+    from dn.web import routes as web_routes
+
+    base = get_settings()
+    relaxed = base.model_copy(
+        update={
+            "config": base.config.model_copy(
+                update={
+                    "rules": base.config.rules.model_copy(update={"allow_unverified_cards": True})
+                }
+            )
+        }
+    )
+    client, sid = _client_with_session()
+    monkeypatch.setattr(web_routes, "get_settings", lambda: relaxed)
     r = client.get(f"/web/session/{sid}/result")
     assert "개발 모드" in r.text
 
@@ -229,3 +251,50 @@ def test_all_seven_screens_render_without_500() -> None:
     for path in ("intro", "upload", "extraction", "supplement", "result", "paths", "plan"):
         r = client.get(f"/web/session/{sid}/{path}")
         assert r.status_code == 200, f"{path} 화면 렌더링 실패"
+
+
+# --- 02 화면 데모용 합성 문서 ---------------------------------------------------
+
+
+def test_upload_page_lists_demo_documents() -> None:
+    """드롭다운이 "준비 중" 안내가 아니라 실제 케이스를 보여준다."""
+    client, sid = _client_with_session()
+    r = client.get(f"/web/session/{sid}/upload")
+    assert r.status_code == 200
+    assert "데모용 합성 문서 선택" in r.text
+    assert "연체 90일 — 개인워크아웃 경계(전문상담 연결)" in r.text
+    assert "설치되어 있지 않습니다 — PDF 또는 이미지 업로드를" not in r.text
+
+
+def test_every_offered_demo_case_is_actually_servable() -> None:
+    """드롭다운에 뜬 케이스는 전부 /demo-docs 에서 받을 수 있어야 한다.
+
+    화면이 고를 수 있게 해놓고 서버가 못 주는 상태가 이 기능의 원래 결함이었다
+    (선택지는 있는데 눌러도 "아직 준비 중"). 목록과 서빙을 함께 고정한다.
+    """
+    from dn.web.routes import _demo_cases
+
+    client = TestClient(create_app())
+    cases = _demo_cases(get_settings())
+    assert cases, "데모 케이스가 하나도 없다"
+    for case in cases:
+        r = client.get(f"/demo-docs/{case['id']}.pdf")
+        assert r.status_code == 200, case["id"]
+        assert r.content[:5] == b"%PDF-", case["id"]
+
+
+def test_demo_document_flows_through_the_normal_upload_api() -> None:
+    """데모 문서도 일반 업로드 API 를 그대로 타서 S2 까지 간다."""
+    client = TestClient(create_app())
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+
+    doc = client.get("/demo-docs/debt_count_3.pdf")
+    assert doc.status_code == 200
+
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("debt_count_3.pdf", doc.content, "application/pdf")},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["stage"] == "s2_extracted"
