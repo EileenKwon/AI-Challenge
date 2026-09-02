@@ -89,6 +89,9 @@ class SituationFlags(Base):
     has_guarantee_debt: Tracked[bool] = Field(default_factory=Tracked)
     has_tax_debt: Tracked[bool] = Field(default_factory=Tracked)
     has_private_debt: Tracked[bool] = Field(default_factory=Tracked)
+    # Q5_RECENT_DEBT. 채무별 executed_at 이 하나라도 비면 recent_debt_ratio 를
+    # 파생 계산할 수 없는데, 그때 "신규채무 없음" 자기신고가 유일한 근거가 된다.
+    has_recent_debt: Tracked[bool] = Field(default_factory=Tracked)
     housing_arrears_risk: Tracked[bool] = Field(default_factory=Tracked)
     legal_dispute: Tracked[bool] = Field(default_factory=Tracked)
 

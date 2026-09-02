@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -138,3 +139,69 @@ def test_no_dti_step_recorded_when_income_unknown() -> None:
     result = compute((_debt(),), _income(monthly_net_income=None), _household())
     labels = [step.label for step in result.trace]
     assert "부담률" not in labels
+
+
+# --- Q5_RECENT_DEBT: 실행일이 비어 파생 계산이 안 될 때의 보완입력 ------------------
+
+
+def _debt_without_executed_at(balance: str) -> Debt:
+    return Debt(
+        debt_id="no-date",
+        balance=Tracked(value=Decimal(balance), source=FieldSource.DOCUMENT),
+        executed_at=Tracked(),
+    )
+
+
+def test_recent_debt_ratio_is_unknown_when_executed_at_missing() -> None:
+    """실행일이 하나라도 비면 파생 계산은 불가능하다 — 기존 동작."""
+    result = compute(
+        (_debt_without_executed_at("10000000"),),
+        IncomeProfile(),
+        HouseholdProfile(),
+        as_of=date(2026, 9, 2),
+    )
+    assert result.recent_debt_ratio is None
+
+
+def test_declared_no_recent_debt_fills_the_gap() -> None:
+    """ "신규채무 없음"(False) 자기신고는 비율 0 의 근거가 된다."""
+    result = compute(
+        (_debt_without_executed_at("10000000"),),
+        IncomeProfile(),
+        HouseholdProfile(),
+        as_of=date(2026, 9, 2),
+        has_recent_debt=False,
+    )
+    assert result.recent_debt_ratio == Decimal("0")
+
+
+def test_declared_has_recent_debt_stays_unknown() -> None:
+    """ "있다"(True)는 금액을 모르므로 비율을 만들 수 없다.
+
+    자기신고만으로 조건을 충족시키는 방향은 열지 않는다 — 반대 방향만 채운다.
+    """
+    result = compute(
+        (_debt_without_executed_at("10000000"),),
+        IncomeProfile(),
+        HouseholdProfile(),
+        as_of=date(2026, 9, 2),
+        has_recent_debt=True,
+    )
+    assert result.recent_debt_ratio is None
+
+
+def test_derived_ratio_wins_over_self_report() -> None:
+    """실행일이 다 있으면 파생값이 자기신고를 덮는다 — 문서가 자기신고보다 강하다."""
+    recent = Debt(
+        debt_id="recent",
+        balance=Tracked(value=Decimal("10000000"), source=FieldSource.DOCUMENT),
+        executed_at=Tracked(value=date(2026, 8, 1), source=FieldSource.DOCUMENT),
+    )
+    result = compute(
+        (recent,),
+        IncomeProfile(),
+        HouseholdProfile(),
+        as_of=date(2026, 9, 2),
+        has_recent_debt=False,
+    )
+    assert result.recent_debt_ratio == Decimal("1")

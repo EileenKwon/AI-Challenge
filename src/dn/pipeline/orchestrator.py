@@ -119,10 +119,21 @@ def analyze(
     # 참조하지 않으므로(순수 함수) 오케스트레이터가 분석 시각을 넘긴다.
     # 주입된 `now` 를 그대로 쓰므로 테스트에서 결과가 결정론적으로 재현된다.
     analyzed_at = now or datetime.now()
+    has_recent_debt = state.flags.has_recent_debt.value
     cashflow = compute_cashflow(  # 2
-        debts, state.income, state.household, as_of=analyzed_at.date()
+        debts,
+        state.income,
+        state.household,
+        as_of=analyzed_at.date(),
+        has_recent_debt=has_recent_debt,
     )
-    scenario = income_drop(debts, state.income, state.household, as_of=analyzed_at.date())
+    scenario = income_drop(
+        debts,
+        state.income,
+        state.household,
+        as_of=analyzed_at.date(),
+        has_recent_debt=has_recent_debt,
+    )
 
     gaps = detect_gaps(debts, state.income)
     conflicts = detect_conflicts(extraction, state.household, settings=settings)
