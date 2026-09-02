@@ -43,3 +43,29 @@ def test_paths_are_resolved_relative_to_project_root() -> None:
     settings = get_settings()
     assert settings.upload_dir.is_absolute()
     assert settings.policy_card_dir.name == settings.config.paths.policy_card_version
+
+
+def test_upload_dir_env_var_overrides_config(monkeypatch, tmp_path) -> None:
+    """`DN_UPLOAD_DIR` 는 실제로 동작해야 한다.
+
+    이 속성이 config.yaml 만 읽던 동안 `.env.example` 과 Dockerfile 의
+    `DN_UPLOAD_DIR` 는 아무 효과가 없었다. 컨테이너에서 쓰기 가능한 경로를
+    그 변수로 지정해도 앱은 `./uploads` 를 쓰다가 PermissionError 로 죽었다.
+    """
+    override = tmp_path / "dn-upload-override"
+    monkeypatch.setenv("DN_UPLOAD_DIR", str(override))
+    get_settings.cache_clear()
+    try:
+        assert get_settings().upload_dir == override.resolve()
+    finally:
+        get_settings.cache_clear()
+
+
+def test_upload_dir_falls_back_to_config_when_env_absent(monkeypatch) -> None:
+    monkeypatch.delenv("DN_UPLOAD_DIR", raising=False)
+    get_settings.cache_clear()
+    try:
+        settings = get_settings()
+        assert settings.upload_dir == settings.resolve(settings.config.paths.upload_dir)
+    finally:
+        get_settings.cache_clear()
