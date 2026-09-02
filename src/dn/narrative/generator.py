@@ -10,6 +10,7 @@ LLM 호출 실패를 포함한 예외는 사용자에게 노출되지 않는다.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -23,6 +24,8 @@ from dn.narrative.grounding import GroundingSet, validate_grounding
 from dn.narrative.prompts import NARRATIVE_SYSTEM_PROMPT, build_cashflow_prompt, build_path_prompt
 
 _ORDINALS: frozenset[Decimal] = frozenset(Decimal(i) for i in range(1, 11))
+_MIN_SECTION_CHARS = 10
+_HANGUL_RE = re.compile(r"[가-힣]")
 _CASHFLOW_MONEY_FIELDS = (
     "total_debt",
     "monthly_total_payment",
@@ -91,6 +94,22 @@ def _path_summaries(paths: tuple[PathCandidate, ...]) -> list[dict[str, Any]]:
     return [{"이름": p.name, "담당기관": p.agency, "상태": p.status.value} for p in paths]
 
 
+def _is_usable_prose(text: str) -> bool:
+    """사용자에게 보여줄 만한 한국어 문장인지 본다.
+
+    그라운딩 검증은 "등장한 숫자가 허용 집합 안인가"만 본다 — 숫자가 하나도
+    없는 응답은 검사할 것이 없어 무조건 통과한다. 그래서 빈 문자열, `{}`,
+    한국어가 아닌 거절문 같은 응답이 그대로 채택돼 화면에 찍혔다. 실제로
+    `ANTHROPIC_API_KEY` 없이 뜨는 `StubClient` 는 `{}` 를 돌려주므로, 키 없는
+    배포에서는 결과 화면에 `{}` 가 그대로 보였다.
+
+    템플릿 fallback 이 같은 내용을 항상 대신할 수 있으므로, 의심스러우면
+    버리는 쪽이 언제나 낫다.
+    """
+    stripped = text.strip()
+    return len(stripped) >= _MIN_SECTION_CHARS and bool(_HANGUL_RE.search(stripped))
+
+
 def _generate_section(
     *,
     section: SectionKind,
@@ -105,7 +124,7 @@ def _generate_section(
                 text = client.complete(system=NARRATIVE_SYSTEM_PROMPT, user=build_prompt())
             except Exception:
                 break
-            if validate_grounding(text, allowed).grounded:
+            if _is_usable_prose(text) and validate_grounding(text, allowed).grounded:
                 return NarrativeSection(
                     section=section,
                     text=text,

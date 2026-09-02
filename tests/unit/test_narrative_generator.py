@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from dn.domain.enums import PathStatus, SectionKind
 from dn.domain.models import CashflowResult, PathCandidate, PolicyRef
 from dn.llm.client import StubClient
@@ -101,3 +103,37 @@ def test_build_allowed_set_includes_policy_base_date_parts() -> None:
     assert Decimal(2026) in allowed
     assert Decimal(8) in allowed
     assert Decimal(13) in allowed
+
+
+# --- 숫자가 없는 쓰레기 응답은 채택하지 않는다 ---------------------------------
+
+
+def _cashflow_for_prose_check() -> CashflowResult:
+    return CashflowResult(
+        total_debt=Decimal("46000000"),
+        monthly_total_payment=Decimal("1180000"),
+        monthly_available=Decimal("1050000"),
+        monthly_shortfall=Decimal("130000"),
+        dti_ratio=Decimal("0.472"),
+    )
+
+
+@pytest.mark.parametrize(
+    "junk",
+    [
+        "{}",  # StubClient 기본 응답 — 키 없는 배포에서 실제로 화면에 노출됐다
+        "",
+        "   \n  ",
+        "N/A",
+        "I cannot help with that request.",  # 한국어가 아닌 거절문
+    ],
+)
+def test_non_prose_llm_response_falls_back_to_template(junk: str) -> None:
+    """숫자가 없는 응답은 그라운딩 검증을 그냥 통과한다 — 별도 방어선이 필요하다."""
+    cashflow = _cashflow_for_prose_check()
+    narrative = generate(cashflow, (), (), client=StubClient(junk))
+
+    for section in narrative.sections:
+        assert section.text.strip() != junk.strip()
+        assert section.fallback_used is True
+        assert section.generated_by_llm is False
