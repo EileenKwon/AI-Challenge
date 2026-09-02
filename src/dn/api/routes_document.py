@@ -6,15 +6,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import uuid
+from datetime import date, datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from dn.api.deps import get_llm_client_dep, get_session_or_404, get_session_store
-from dn.domain.enums import SessionStage
+from dn.domain.enums import FieldSource, ProductType, SessionStage
 from dn.domain.errors import DomainError
-from dn.domain.models import ExtractionResult
+from dn.domain.models import Debt, ExtractionResult
+from dn.domain.provenance import Tracked
 from dn.extraction.extractor import extract
 from dn.ingest import pdf_reader
 from dn.ingest.injection_scanner import apply as apply_scan
@@ -83,6 +86,82 @@ async def upload_document(
         "session_id": new_state.session_id,
         "stage": new_state.stage.value,
         "debt_count": len(debts),
+    }
+
+
+class ManualDebtEntry(BaseModel):
+    """화면 02 "문서 없이 직접 입력" 의 채무 1건."""
+
+    creditor: str
+    product_type: ProductType | None = None
+    balance: Decimal | None = None
+    executed_at: date | None = None
+    overdue_days: int | None = None
+    is_secured: bool | None = None
+
+
+class ManualDebtsRequest(BaseModel):
+    debts: list[ManualDebtEntry]
+
+
+def _debt_from_manual_entry(entry: ManualDebtEntry) -> Debt:
+    """직접 입력값을 `Debt` 로 옮긴다. 빈 칸은 UNKNOWN 으로 남긴다.
+
+    `confidence` 는 채우지 않는다 — 문서 추출값의 신뢰도를 뜻하는 필드이고
+    (`Tracked` 정의 참고), 사용자가 직접 적은 값에 추출 신뢰도를 붙이면
+    화면 03 이 근거 없는 저신뢰 경고를 띄운다.
+    """
+
+    def tracked(value: object) -> Tracked:
+        if value is None:
+            return Tracked()
+        return Tracked(value=value, source=FieldSource.USER_INPUT)
+
+    return Debt(
+        debt_id=str(uuid.uuid4()),
+        creditor=tracked(entry.creditor),
+        product_type=tracked(entry.product_type),
+        balance=tracked(entry.balance),
+        executed_at=tracked(entry.executed_at),
+        overdue_days=tracked(entry.overdue_days),
+        is_secured=tracked(entry.is_secured),
+    )
+
+
+@router.post("/{session_id}/manual-debts")
+def enter_debts_manually(
+    session_id: str,
+    body: ManualDebtsRequest,
+    store: SessionStore = Depends(get_session_store),
+) -> dict:
+    """조회서 없이 채무를 직접 입력한다 (기획서 화면 02 의 네 번째 방식).
+
+    문서 경로와 같은 `S2_EXTRACTED` 로 도착시킨다 — 이후 화면 03~07 이
+    입력 방식을 구분하지 않고 그대로 동작하게 하기 위해서다. 출처는 전부
+    `USER_INPUT` 이라 설명가능성 번들과 화면 배지에 "입력" 으로 드러난다.
+    """
+    state = get_session_or_404(session_id, store)
+    settings = get_settings()
+
+    entries = [e for e in body.debts if e.creditor.strip()]
+    if not entries:
+        raise HTTPException(status_code=400, detail="채무를 최소 1건 입력해야 합니다.")
+    max_debts = settings.config.extraction.max_debts
+    if len(entries) > max_debts:
+        raise HTTPException(
+            status_code=400, detail=f"채무는 최대 {max_debts}건까지 입력할 수 있습니다."
+        )
+
+    extraction = ExtractionResult(debts=tuple(_debt_from_manual_entry(e) for e in entries))
+    new_state = transition(state, SessionStage.S2_EXTRACTED)
+    new_state = new_state.model_copy(
+        update={"extraction": extraction, "updated_at": datetime.now()}
+    )
+    store.save(new_state)
+    return {
+        "session_id": new_state.session_id,
+        "stage": new_state.stage.value,
+        "debt_count": len(entries),
     }
 
 
