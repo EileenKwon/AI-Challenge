@@ -51,11 +51,22 @@ RUN if [ -n "$DN_EXTRAS" ]; then \
         pip install --no-cache-dir -e .; \
     fi
 
+# 가변 상태는 /app/var 한 곳에 모은다. 코드(/app/src, /app/config)는 root 소유로
+# 두고 이 디렉터리만 앱 사용자에게 준다 — 실행 중 프로세스가 자기 코드를 덮어쓸 수
+# 없게 하기 위해서다. SQLite 는 -wal/-shm 을 같은 디렉터리에 만들므로 파일이 아니라
+# 디렉터리에 쓰기 권한이 필요하다.
 ENV DN_ENV=production \
-    DN_UPLOAD_DIR=/app/uploads \
-    DN_SESSION_DB=/app/sessions.db
+    DN_UPLOAD_DIR=/app/var/uploads \
+    DN_SESSION_DB=/app/var/sessions.db
 
-RUN mkdir -p /app/uploads
+# root 로 돌리지 않는다. 업로드 원본과 세션 DB 를 다루는 서비스라 컨테이너가
+# 뚫렸을 때의 권한을 좁혀 둔다. uid 1000 으로 고정한 것은 여러 무료 호스팅
+# (Hugging Face Spaces 등)이 컨테이너를 uid 1000 으로 실행하기 때문이다 —
+# 그 환경에서도 /app/var 에 그대로 쓸 수 있다.
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/var/uploads \
+    && chown -R app:app /app/var
+USER app
 
 EXPOSE 8000
 

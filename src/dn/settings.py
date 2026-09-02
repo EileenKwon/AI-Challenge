@@ -30,7 +30,8 @@ class _Env(BaseSettings):
     dn_llm_model: str = "claude-sonnet-4-6"
     dn_llm_timeout_sec: int = 60
     dn_secret_key: str = "change-me"
-    dn_upload_dir: str = "./uploads"
+    # 빈 값 = 미설정. config.yaml 의 paths.upload_dir 을 쓴다 (Settings.upload_dir 참고).
+    dn_upload_dir: str = ""
     dn_session_db: str = "./sessions.db"
     # ANTHROPIC_API_KEY 가 없을 때의 무료 폴백 — GGUF 파일 경로가 설정되고 실제
     # 존재하면 get_llm_client() 가 StubClient 대신 이 로컬 모델을 쓴다.
@@ -166,7 +167,15 @@ class Settings(BaseModel):
 
     @property
     def upload_dir(self) -> Path:
-        return self.resolve(self.config.paths.upload_dir)
+        """업로드 원본 저장 경로. `DN_UPLOAD_DIR` 가 있으면 그쪽이 이긴다.
+
+        이 속성은 원래 `config.yaml` 만 읽었다. 그런데 `.env.example` 과
+        Dockerfile 은 `DN_UPLOAD_DIR` 를 설정하고 있었다 — 아무도 읽지 않는
+        죽은 설정이었고, 컨테이너에서 쓰기 가능한 경로를 그 변수로 지정해도
+        앱은 여전히 `./uploads` 를 쓰다가 PermissionError 로 죽었다.
+        `DN_SESSION_DB` 는 이미 환경변수로 동작하므로 그쪽과 규칙을 맞춘다.
+        """
+        return self.resolve(self.env.dn_upload_dir or self.config.paths.upload_dir)
 
     @property
     def policy_card_dir(self) -> Path:
