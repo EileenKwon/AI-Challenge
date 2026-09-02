@@ -1,0 +1,32 @@
+# 배포된 웹서비스를 깨워 둔다.
+#
+# 왜 필요한가: 대회 규정상 제출한 URL 은 2026-09-07 11:00 ~ 09-11 23:59 동안
+# 접근 가능해야 하고, 접근 불가는 결격 사유다. Render 무료 플랜은 15분간 요청이
+# 없으면 잠들고 다음 요청에서 30~60초 걸려 깨어난다 — 심사위원이 그 1분을
+# 기다리게 두지 않기 위해 주기적으로 깨운다.
+#
+# 무료 한도 안에 들어가는가: 무료 웹서비스는 월 750시간을 주고 한 달 상시 가동이
+# 744시간이라 서비스 하나를 24시간 켜 두는 것은 한도 안이다. 공개 저장소의
+# Actions 사용량도 무료다.
+#
+# 심사가 끝나면 이 워크플로를 비활성화한다 (Actions 탭 → Keepalive → Disable).
+name: Keepalive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # GitHub 예약 실행은 몇 분 지연될 수 있다 — 10분 간격이면 충분
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 헬스체크 호출
+        run: |
+          # 잠들어 있으면 깨어나는 데 시간이 걸리므로 넉넉히 기다린다.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 120 \
+            "${{ vars.DEPLOY_URL || 'https://debt-recovery-navigator.onrender.com' }}/healthz")
+          echo "healthz -> $code"
+          [ "$code" = "200" ]
