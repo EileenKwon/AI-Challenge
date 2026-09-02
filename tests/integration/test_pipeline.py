@@ -120,21 +120,64 @@ def test_kimhaneul_narrative_is_generated() -> None:
     assert len(result.narrative.sections) >= 1
 
 
-def test_dev_mode_flags_remaining_unverified_card() -> None:
-    """미검증 카드가 하나라도 남아 있으면 dev_mode 로 표시된다.
+def test_shipped_cards_are_all_verified_and_dev_mode_is_off() -> None:
+    """배포 기준 설정에서는 미검증 카드가 0개이고 dev_mode 도 꺼져 있다.
 
-    2026-08-21 대조로 6개 중 5개가 verified 로 전환되었고, 개인워크아웃만
-    총채무액 한도 출처 충돌로 미검증 상태다. dev_mode 는 그 사실을 드러내는
-    신호이므로 '전부 미검증'이 아니라 '하나라도 미검증'을 검사한다.
+    2026-09-02 개인워크아웃 총채무액 한도 충돌을 해소해 6종 전부 verified 가
+    되었고, config 의 allow_unverified_cards 도 false 로 내렸다. 카드 하나가
+    미검증으로 되돌아가면 그 카드는 아예 로드되지 않으므로, 여기서 개수를
+    고정해 조용한 누락을 막는다.
     """
     cards, dev_mode = load_usable_cards()
     unverified = [c.id for c in cards if not c.verified]
-    assert unverified == ["personal_workout"], f"예상과 다른 미검증 카드: {unverified}"
-    assert dev_mode is True
+    assert unverified == [], f"미검증 카드가 남아 있다: {unverified}"
+    assert len(cards) == 6, f"로드된 카드 수가 6개가 아니다: {[c.id for c in cards]}"
+    assert dev_mode is False
 
     result = analyze(_kimhaneul_state())
     assert result.rules is not None
-    assert result.rules.dev_mode is True
+    assert result.rules.dev_mode is False
+
+
+def test_dev_mode_turns_on_when_an_unverified_card_is_loaded(tmp_path) -> None:
+    """미검증 카드가 섞여 들어오면 dev_mode 가 켜진다 — 배너의 근거가 되는 신호.
+
+    배포 설정에는 미검증 카드가 없으므로, 카드 하나를 verified: false 로 바꾼
+    사본 디렉터리를 만들어 기전 자체를 검사한다.
+    """
+    import shutil
+
+    import yaml
+
+    base_settings = get_settings()
+    src_dir = base_settings.resolve(base_settings.config.paths.policy_card_dir)
+    version = base_settings.config.paths.policy_card_version
+
+    copy_root = tmp_path / "policy_cards"
+    shutil.copytree(src_dir, copy_root)
+    target = copy_root / version / "personal_workout.yaml"
+    raw = yaml.safe_load(target.read_text(encoding="utf-8"))
+    raw["verified"] = False
+    target.write_text(yaml.safe_dump(raw, allow_unicode=True), encoding="utf-8")
+
+    relaxed = base_settings.model_copy(
+        update={
+            "config": base_settings.config.model_copy(
+                update={
+                    "rules": base_settings.config.rules.model_copy(
+                        update={"allow_unverified_cards": True}
+                    ),
+                    "paths": base_settings.config.paths.model_copy(
+                        update={"policy_card_dir": str(copy_root)}
+                    ),
+                }
+            )
+        }
+    )
+
+    cards, dev_mode = load_usable_cards(settings=relaxed)
+    assert [c.id for c in cards if not c.verified] == ["personal_workout"]
+    assert dev_mode is True
 
 
 # --- 정책 카드 전부 verified:false 여도 현금흐름은 반환된다 ---------------------
