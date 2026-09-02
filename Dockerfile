@@ -1,11 +1,14 @@
 # 채무회복 내비게이터 — 배포 이미지
 #
-# 주의: 이 Dockerfile 은 이 개발 환경에 docker 데몬 접근 권한이 없어
-# `docker build` 로 실제 빌드 검증을 하지 못했다. WeasyPrint/pdf2image 가
-# 요구하는 시스템 패키지는 이 저장소를 개발해 온 샌드박스(같은 계열의
-# Debian 기반)에서 실제로 동작을 확인한 패키지명을 그대로 옮긴 것이다.
+# 2026-09-02 `docker compose build` 실행으로 검증했다.
+#
+# 베이스 이미지에 OS 코드명을 붙여 고정한 이유: `python:3.11-slim` 은 떠 있는
+# 태그라 어느 날 Debian 이 올라가면 패키지 이름이 바뀐다. 실제로 이 프로젝트가
+# 그랬다 — trixie(Debian 13)로 올라가면서 `libgdk-pixbuf2.0-0` 이
+# `libgdk-pixbuf-2.0-0` 으로 바뀌어 빌드가 통째로 실패했다. 마감을 앞두고
+# 베이스가 움직여 빌드가 깨지는 일이 없도록 코드명을 명시한다.
 
-FROM python:3.11-slim
+FROM python:3.11-slim-trixie
 
 # WeasyPrint(PDF 렌더링) + pdf2image(스캔본 렌더링) + 한글 폰트 + 헬스체크용 curl.
 #
@@ -19,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fontconfig \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libcairo2 \
     libffi-dev \
     shared-mime-info \
