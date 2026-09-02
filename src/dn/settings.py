@@ -27,7 +27,16 @@ class _Env(BaseSettings):
 
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     dn_env: str = "development"
-    dn_llm_model: str = "claude-sonnet-4-6"
+    # 이 서비스가 LLM에 시키는 일은 (1) 1쪽짜리 조회서에서 고정 스키마 JSON 추출,
+    # (2) 확정 숫자를 문장으로 옮기기 두 가지다. 둘 다 난도가 높지 않다 —
+    # 로컬 오픈모델(Qwen2.5-7B)로도 E1 F1 0.9975가 나왔다.
+    #
+    # 기본값을 sonnet-4-6 에서 sonnet-5 로 올린다: 같은 계열의 후속 모델이면서
+    # 단가가 더 싸다($3/$15 → $2/$10 per MTok). 합성문서 55건 1회 평가는
+    # 문서당 대략 입력 2.5K·출력 0.6K 토큰이라 전체 $1 아래다.
+    # 더 싸고 빠르게: claude-haiku-4-5($1/$5). 여유를 더: claude-opus-5($5/$25).
+    # 배포 환경에서는 DN_LLM_MODEL 로 덮어쓴다.
+    dn_llm_model: str = "claude-sonnet-5"
     dn_llm_timeout_sec: int = 60
     dn_secret_key: str = "change-me"
     # 빈 값 = 미설정. config.yaml 의 paths.upload_dir 을 쓴다 (Settings.upload_dir 참고).
