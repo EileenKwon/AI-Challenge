@@ -94,6 +94,9 @@ def main() -> None:
     label_files = sorted(label_dir.glob("*.json"))
     print(f"  [STAGE] loading labels from {label_dir}")
     print(f"  대상 케이스: {len(label_files)}건")
+    call_interval = float(eval_config.get("llm_call_interval_sec", 0) or 0)
+    if call_interval:
+        print(f"  호출 간격: {call_interval}초 (무료 티어 분당 토큰 한도 대응)")
 
     client, stub_mode = _eval_client()
     if stub_mode:
@@ -112,6 +115,8 @@ def main() -> None:
 
         document: DocumentContent = pdf_reader.read(pdf_path, doc_id=label["case_id"])
         extracted = extract(document, client=client)
+        if call_interval:
+            time.sleep(call_interval)
         expected_debts = label["debts"]
 
         n = min(len(extracted), len(expected_debts))

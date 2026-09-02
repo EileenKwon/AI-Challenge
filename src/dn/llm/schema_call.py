@@ -29,7 +29,7 @@ def call_json(
     last_error: Exception | None = None
     total_attempts = max_retries + 1
     for attempt in range(1, total_attempts + 1):
-        raw = client.complete(system=system, user=user, max_tokens=max_tokens)
+        raw = client.complete(system=system, user=user, max_tokens=max_tokens, json_mode=True)
         try:
             data = json.loads(raw)
             jsonschema.validate(instance=data, schema=schema)

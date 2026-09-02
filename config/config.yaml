@@ -52,6 +52,15 @@ reconcile:
     6: 2737905
   living_cost_check_enabled: true
 
+ratelimit:
+  # LLM 을 호출하는 엔드포인트(문서 업로드·분석)에만 적용한다.
+  # 공개 URL 뒤에 과금/한도가 있는 백엔드가 붙어 있으므로, 스크립트 한 번에
+  # 한도가 소진되지 않게 막는다. 심사위원이 여러 번 눌러보는 것은 막지 않는
+  # 수준으로 잡았다 — 한 세션이 LLM 을 최대 5회 호출한다.
+  enabled: true
+  llm_calls_per_ip: 40
+  window_seconds: 3600
+
 cashflow:
   currency_unit: "KRW"
   # 부담률 경고 구간 (표시 목적. 제도 판정과 무관)

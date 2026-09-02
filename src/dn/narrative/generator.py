@@ -152,6 +152,11 @@ def generate(
         client=client,
         fallback=lambda: templates.cashflow_fallback(cashflow),
     )
+    # 경로가 하나도 없으면 LLM 에 물어봐야 할 것이 없다. 물어보면 "후보를
+    # 제공해 주시면 서술하겠습니다" 같은 메타 응답이 그대로 화면에 나온다(실측).
+    if not paths:
+        return Narrative(sections=(cashflow_section, templates.path_fallback(paths)))
+
     path_section = _generate_section(
         section=SectionKind.PATH,
         build_prompt=lambda: build_path_prompt(_path_summaries(paths)),
