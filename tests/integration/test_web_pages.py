@@ -298,3 +298,83 @@ def test_demo_document_flows_through_the_normal_upload_api() -> None:
     )
     assert r.status_code == 200, r.text
     assert r.json()["stage"] == "s2_extracted"
+
+
+# --- 02 화면 "문서 없이 직접 입력" ---------------------------------------------
+
+
+def _consented_session() -> tuple[TestClient, str]:
+    client = TestClient(create_app())
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+    return client, sid
+
+
+def test_upload_page_renders_manual_entry_form() -> None:
+    client, sid = _client_with_session()
+    r = client.get(f"/web/session/{sid}/upload")
+    assert r.status_code == 200
+    assert 'id="manual-debt-row"' in r.text
+    assert "신용대출" in r.text  # 채무유형 선택지가 한국어 라벨로 나온다
+    assert "아직 준비 중입니다" not in r.text
+
+
+def test_manual_debts_land_in_the_same_stage_as_upload() -> None:
+    """직접 입력도 문서 경로와 같은 S2 로 도착해야 이후 화면이 그대로 동작한다."""
+    client, sid = _consented_session()
+    r = client.post(
+        f"/api/session/{sid}/manual-debts",
+        json={
+            "debts": [
+                {
+                    "creditor": "가나캐피탈",
+                    "product_type": "credit_loan",
+                    "balance": "12000000",
+                    "overdue_days": 42,
+                    "is_secured": False,
+                    "executed_at": "2024-03-01",
+                },
+                {"creditor": "다라카드"},  # 채권자만 아는 경우
+            ]
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json() == {"session_id": sid, "stage": "s2_extracted", "debt_count": 2}
+
+    extraction = client.get(f"/api/session/{sid}/extraction").json()
+    assert [d["creditor"]["source"] for d in extraction["debts"]] == ["user_input"] * 2
+    # 빈 칸은 UNKNOWN 으로 남는다 — 0 이나 기본값으로 채우지 않는다
+    assert extraction["debts"][1]["balance"]["value"] is None
+    assert extraction["debts"][1]["balance"]["source"] == "unknown"
+
+
+def test_manual_debt_gets_no_extraction_confidence() -> None:
+    """직접 입력값에 추출 신뢰도를 붙이면 화면 03 이 근거 없는 경고를 띄운다."""
+    client, sid = _consented_session()
+    client.post(
+        f"/api/session/{sid}/manual-debts",
+        json={"debts": [{"creditor": "가나캐피탈", "balance": "12000000"}]},
+    )
+    extraction = client.get(f"/api/session/{sid}/extraction").json()
+    assert extraction["debts"][0]["balance"]["confidence"] is None
+
+    page = client.get(f"/web/session/{sid}/extraction")
+    assert "확인 필요(신뢰도 낮음)" not in page.text
+
+
+def test_manual_debts_rejects_empty_list() -> None:
+    client, sid = _consented_session()
+    r = client.post(f"/api/session/{sid}/manual-debts", json={"debts": [{"creditor": "  "}]})
+    assert r.status_code == 400
+    assert "최소 1건" in r.json()["detail"]
+
+
+def test_manual_debts_rejects_more_than_max() -> None:
+    client, sid = _consented_session()
+    limit = get_settings().config.extraction.max_debts
+    r = client.post(
+        f"/api/session/{sid}/manual-debts",
+        json={"debts": [{"creditor": f"채권자{i}"} for i in range(limit + 1)]},
+    )
+    assert r.status_code == 400
+    assert str(limit) in r.json()["detail"]

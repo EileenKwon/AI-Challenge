@@ -41,8 +41,15 @@
     <label class="block rounded-lg border-2 border-slate-200 bg-white p-4 has-[:checked]:border-emerald-500">
       <input type="radio" name="method" value="manual_entry" class="mr-2" />
       <span class="font-semibold text-sm">4. 문서 없이 직접 입력</span>
-      <p class="text-xs text-slate-500 mt-1">조회서가 없다면 채무 정보를 직접 입력할 수 있습니다.</p>
-      <p class="text-xs text-amber-600 mt-1">아직 준비 중입니다 — PDF 또는 이미지 업로드를 이용해 주세요.</p>
+      <p class="text-xs text-slate-500 mt-1">
+        조회서가 없다면 채무 정보를 직접 입력할 수 있습니다. 채권자만 필수이고,
+        <span class="font-medium">모르는 칸은 비워 두면 미확인으로 남습니다.</span>
+      </p>
+      <div id="manual-debts" class="mt-2 space-y-2"></div>
+      <button type="button" id="manual-add"
+              class="mt-2 w-full rounded border border-slate-300 text-sm py-2 active:bg-slate-100">
+        + 채무 추가
+      </button>
     </label>
 
     <button type="submit"
@@ -51,10 +58,100 @@
     </button>
   </form>
 </section>
+
+<template id="manual-debt-row">
+  <div class="manual-debt rounded border border-slate-200 p-3 space-y-2">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-slate-600 manual-debt-title">채무</span>
+      <button type="button" class="manual-remove text-xs text-slate-400 underline">삭제</button>
+    </div>
+    <label class="block text-xs text-slate-500">
+      채권자 (필수)
+      <input type="text" data-field="creditor" placeholder="예: OO캐피탈"
+             class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+    </label>
+    <div class="grid grid-cols-2 gap-2">
+      <label class="text-xs text-slate-500">
+        채무유형
+        <select data-field="product_type" class="mt-0.5 block w-full rounded border-slate-300 text-sm">
+          <option value="">모름</option>
+          {% for pt in product_types %}
+          <option value="{{ pt.id }}">{{ pt.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="text-xs text-slate-500">
+        잔액(원)
+        <input type="number" min="0" data-field="balance"
+               class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+      </label>
+      <label class="text-xs text-slate-500">
+        연체일수
+        <input type="number" min="0" data-field="overdue_days"
+               class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+      </label>
+      <label class="text-xs text-slate-500">
+        담보여부
+        <select data-field="is_secured" class="mt-0.5 block w-full rounded border-slate-300 text-sm">
+          <option value="">모름</option>
+          <option value="false">무담보</option>
+          <option value="true">담보</option>
+        </select>
+      </label>
+      <label class="text-xs text-slate-500 col-span-2">
+        대출실행일 (알면 입력 — 최근 6개월 신규채무 비율 계산에 쓰입니다)
+        <input type="date" data-field="executed_at"
+               class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+      </label>
+    </div>
+  </div>
+</template>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// --- 4. 문서 없이 직접 입력 -------------------------------------------------
+const dnManualList = document.getElementById('manual-debts');
+const dnManualTemplate = document.getElementById('manual-debt-row');
+
+function dnRenumberManualDebts() {
+  dnManualList.querySelectorAll('.manual-debt').forEach((row, i) => {
+    row.querySelector('.manual-debt-title').textContent = '채무 ' + (i + 1);
+  });
+}
+
+function dnAddManualDebt() {
+  const row = dnManualTemplate.content.cloneNode(true);
+  row.querySelector('.manual-remove').addEventListener('click', (e) => {
+    e.target.closest('.manual-debt').remove();
+    if (!dnManualList.children.length) dnAddManualDebt();
+    dnRenumberManualDebts();
+  });
+  dnManualList.appendChild(row);
+  dnRenumberManualDebts();
+}
+
+function dnCollectManualDebts() {
+  return Array.from(dnManualList.querySelectorAll('.manual-debt')).flatMap((row) => {
+    const get = (name) => row.querySelector('[data-field="' + name + '"]').value.trim();
+    const creditor = get('creditor');
+    if (!creditor) return [];  // 채권자 없는 행은 빈 행으로 보고 버린다
+    const debt = { creditor: creditor };
+    // 빈 칸은 키 자체를 보내지 않는다 — 서버가 UNKNOWN 으로 남기게 하기 위해서다.
+    // 0 은 유효한 값이므로 빈 문자열만 걸러야 한다.
+    for (const name of ['product_type', 'balance', 'overdue_days', 'executed_at']) {
+      const v = get(name);
+      if (v !== '') debt[name] = v;
+    }
+    const secured = get('is_secured');
+    if (secured !== '') debt.is_secured = secured === 'true';
+    return [debt];
+  });
+}
+
+dnAddManualDebt();
+document.getElementById('manual-add').addEventListener('click', dnAddManualDebt);
+
 document.getElementById('upload-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -62,7 +159,21 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   const method = form.querySelector('input[name="method"]:checked').value;
 
   if (method === 'manual_entry') {
-    dnShowError(btn, '문서 없이 직접 입력은 아직 지원되지 않습니다. 조회서가 없다면 "데모용 합성 문서 선택"으로 체험해 주세요.');
+    const debts = dnCollectManualDebts();
+    if (!debts.length) {
+      dnShowError(btn, '채권자를 적은 채무를 최소 1건 입력해 주세요.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    try {
+      await dnPost('/api/session/{{ session_id }}/manual-debts', { debts: debts });
+      location.href = '/web/session/{{ session_id }}/extraction';
+    } catch (err) {
+      dnShowError(btn, err.message);
+      btn.disabled = false;
+      btn.textContent = '업로드하고 다음으로';
+    }
     return;
   }
 

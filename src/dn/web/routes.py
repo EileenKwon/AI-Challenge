@@ -86,6 +86,20 @@ def _demo_cases(settings) -> list[dict[str, str]]:
     ]
 
 
+# 화면 02 "문서 없이 직접 입력" 의 채무유형 선택지. enum 값을 그대로 화면에
+# 노출하면 사용자가 credit_loan 을 골라야 한다.
+_PRODUCT_TYPE_LABELS = {
+    "credit_loan": "신용대출",
+    "card_loan": "카드론",
+    "cash_advance": "현금서비스",
+    "installment": "할부금융",
+    "revolving": "리볼빙",
+    "secured_loan": "담보대출",
+    "guarantee": "보증채무",
+    "other": "기타",
+}
+
+
 _STATUS_LABEL = {
     "candidate": "우선 검토 가능",
     "needs_info": "추가 확인 필요",
@@ -164,6 +178,7 @@ def upload_page(session_id: str, store: SessionStore = Depends(get_session_store
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
     ctx["synthetic_cases"] = _demo_cases(get_settings())
+    ctx["product_types"] = [{"id": k, "label": v} for k, v in _PRODUCT_TYPE_LABELS.items()]
     return render_page("02_upload.html", ctx)
 
 
