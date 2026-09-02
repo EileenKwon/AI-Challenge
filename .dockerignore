@@ -9,7 +9,11 @@ __pycache__/
 *.egg-info/
 
 # 런타임에 필요 없는 개발/평가용 산출물
-data/
+# data/ 는 통째로 빼지 않는다 — 02 화면의 "데모용 합성 문서 선택"이 런타임에
+# data/synthetic/pdf 를 서빙하므로, 그것만 남기고 나머지를 뺀다.
+data/cases/
+data/redteam/
+data/synthetic/labels/
 tests/
 eval/
 tools/

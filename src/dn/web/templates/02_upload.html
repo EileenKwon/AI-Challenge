@@ -24,13 +24,18 @@
     <label class="block rounded-lg border-2 border-slate-200 bg-white p-4 has-[:checked]:border-emerald-500">
       <input type="radio" name="method" value="demo_synthetic" class="mr-2" />
       <span class="font-semibold text-sm">3. 데모용 합성 문서 선택</span>
+      {% if synthetic_cases %}
       <select name="synthetic_case" class="mt-2 block w-full rounded border-slate-300 text-sm">
-        <option value="kimhaneul">김하늘 사례 (기획서 15장 데모)</option>
         {% for case in synthetic_cases %}
-        <option value="{{ case }}">{{ case }}</option>
+        <option value="{{ case.id }}">{{ case.label }}</option>
         {% endfor %}
       </select>
-      <p class="text-xs text-amber-600 mt-1">아직 준비 중입니다 — PDF 또는 이미지 업로드를 이용해 주세요.</p>
+      <p class="text-xs text-slate-500 mt-1">
+        조회서가 없어도 체험할 수 있습니다. 실제 개인정보가 아닌 생성 문서입니다.
+      </p>
+      {% else %}
+      <p class="text-xs text-amber-600 mt-1">이 서버에는 데모 문서가 설치되어 있지 않습니다 — PDF 또는 이미지 업로드를 이용해 주세요.</p>
+      {% endif %}
     </label>
 
     <label class="block rounded-lg border-2 border-slate-200 bg-white p-4 has-[:checked]:border-emerald-500">
@@ -56,24 +61,33 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   const btn = form.querySelector('button[type="submit"]');
   const method = form.querySelector('input[name="method"]:checked').value;
 
-  if (method !== 'pdf_upload' && method !== 'image_upload') {
-    dnShowError(btn, '이 방법은 아직 지원되지 않습니다. "PDF 파일 업로드" 또는 "사진(이미지) 업로드"를 이용해 주세요.');
+  if (method === 'manual_entry') {
+    dnShowError(btn, '문서 없이 직접 입력은 아직 지원되지 않습니다. 조회서가 없다면 "데모용 합성 문서 선택"으로 체험해 주세요.');
     return;
   }
-  const fileInput = form.querySelector('input[name="method"][value="' + method + '"]')
-    .closest('label').querySelector('input[type="file"]');
-  const file = fileInput.files[0];
-  if (!file) {
-    dnShowError(btn, '파일을 선택해 주세요.');
-    return;
-  }
-
-  const data = new FormData();
-  data.append('file', file);
 
   btn.disabled = true;
   btn.textContent = '업로드 중...';
   try {
+    let file;
+    if (method === 'demo_synthetic') {
+      // 데모 문서를 내려받아 일반 업로드 API 로 그대로 보낸다 — 검증·마스킹·스캔을
+      // 우회하는 별도 서버 경로를 만들지 않기 위해서다.
+      const select = form.querySelector('select[name="synthetic_case"]');
+      if (!select) throw new Error('이 서버에는 데모 문서가 설치되어 있지 않습니다.');
+      const caseId = select.value;
+      const docRes = await fetch('/demo-docs/' + encodeURIComponent(caseId) + '.pdf');
+      if (!docRes.ok) throw new Error('데모 문서를 불러오지 못했습니다 (' + docRes.status + ')');
+      file = new File([await docRes.blob()], caseId + '.pdf', { type: 'application/pdf' });
+    } else {
+      const fileInput = form.querySelector('input[name="method"][value="' + method + '"]')
+        .closest('label').querySelector('input[type="file"]');
+      file = fileInput.files[0];
+      if (!file) throw new Error('파일을 선택해 주세요.');
+    }
+
+    const data = new FormData();
+    data.append('file', file);
     const res = await fetch('/api/session/{{ session_id }}/document', { method: 'POST', body: data });
     if (!res.ok) {
       let detail = '';
