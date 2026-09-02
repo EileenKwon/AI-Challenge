@@ -107,17 +107,37 @@ def _rate_stats(debts: tuple[Debt, ...]) -> tuple[Decimal | None, Decimal | None
 
 
 def _recent_debt_ratio(
-    debts: tuple[Debt, ...], total_debt: Decimal, *, as_of: date | None
+    debts: tuple[Debt, ...],
+    total_debt: Decimal,
+    *,
+    as_of: date | None,
+    has_recent_debt: bool | None = None,
 ) -> Decimal | None:
     """최근 6개월 이내 실행된 채무 원금의 비중.
 
     신용회복위원회 제도 공통 조건("최근 6개월 이내 새로 생긴 채무 원금이 총 채무원금의
     30% 미만")을 평가하려면 이 값이 필요하다.
 
-    기준일(`as_of`)이 없거나 실행일이 하나라도 미확인이면 `None` 을 돌려준다 —
+    기준일(`as_of`)이 없거나 실행일이 하나라도 미확인이면 파생 계산이 불가능하다 —
     일부만으로 비율을 내면 "모른다"가 "충족"으로 둔갑한다. 이 모듈은 현재 시각을
     참조하지 않으므로(AGENTS.md 절대 규칙 10) 기준일은 반드시 인자로 받는다.
+
+    `has_recent_debt` 는 보완입력 Q5_RECENT_DEBT 의 답이다. 파생 계산이 불가능할 때만
+    쓰이며, **"없다"(False)만** 비율 0 으로 받는다. "있다"(True)는 금액을 모르므로
+    비율을 만들 수 없어 미확인으로 남긴다 — 자기신고로 조건을 충족시키는 방향은
+    열지 않는다.
     """
+    derived = _derived_recent_debt_ratio(debts, total_debt, as_of=as_of)
+    if derived is not None:
+        return derived
+    if has_recent_debt is False:
+        return _ZERO
+    return None
+
+
+def _derived_recent_debt_ratio(
+    debts: tuple[Debt, ...], total_debt: Decimal, *, as_of: date | None
+) -> Decimal | None:
     if as_of is None or not debts or total_debt <= _ZERO:
         return None
     cutoff = as_of - timedelta(days=182)  # 6개월
@@ -136,11 +156,15 @@ def compute(
     household: HouseholdProfile,
     *,
     as_of: date | None = None,
+    has_recent_debt: bool | None = None,
 ) -> CashflowResult:
     """채무·소득·가구 정보로부터 확정 현금흐름 숫자를 산출한다.
 
     `as_of` 는 "최근 6개월 신규채무 비율" 계산의 기준일이다. 이 모듈은 현재 시각을
     참조하지 않으므로 호출부가 넘겨야 하며, 넘기지 않으면 해당 비율은 `None`(미확인)이 된다.
+
+    `has_recent_debt` 는 같은 비율을 파생 계산할 수 없을 때의 보완입력 답변이다.
+    자세한 처리는 `_recent_debt_ratio()` 참고.
     """
     assumptions: list[str] = []
 
@@ -254,7 +278,9 @@ def compute(
         secured_ratio=_secured_ratio(debts, total_debt),
         weighted_avg_rate=weighted_avg_rate,
         max_rate=max_rate,
-        recent_debt_ratio=_recent_debt_ratio(debts, total_debt, as_of=as_of),
+        recent_debt_ratio=_recent_debt_ratio(
+            debts, total_debt, as_of=as_of, has_recent_debt=has_recent_debt
+        ),
         trace=tuple(trace),
         assumptions=tuple(assumptions),
         excluded_items=excluded_items,

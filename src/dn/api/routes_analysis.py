@@ -76,6 +76,7 @@ class SupplementRequest(BaseModel):
     has_collateral_asset: bool | None = None  # C1_COLLATERAL
     under_collection_contact: bool | None = None  # C2_COLLECTION
     income_drop_occurred: bool | None = None  # C3_INCOME_DROP
+    has_recent_debt: bool | None = None  # Q5_RECENT_DEBT
     debts: list[DebtFinancialUpdate] | None = None
 
 
@@ -150,6 +151,10 @@ def _apply_supplement_flags(flags: SituationFlags, body: SupplementRequest) -> S
         tracked = Tracked(value=body.income_drop_occurred, source=FieldSource.USER_INPUT)
         update["recent_job_loss"] = tracked
         update["business_closed"] = tracked
+    if body.has_recent_debt is not None:
+        update["has_recent_debt"] = Tracked(
+            value=body.has_recent_debt, source=FieldSource.USER_INPUT
+        )
     return flags.model_copy(update=update) if update else flags
 
 

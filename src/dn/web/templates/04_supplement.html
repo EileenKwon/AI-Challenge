@@ -87,14 +87,14 @@
 {% block scripts %}
 <script>
 const DN_DEBT_COUNT = {{ debts|length }};
-// config/questions.yaml qid → SupplementRequest 필드명. Q5_RECENT_DEBT는 아직
-// 대응하는 저장 필드가 없어 화면에는 표시하되 전송하지 않는다(알려진 제약).
+// config/questions.yaml qid → SupplementRequest 필드명.
 const DN_QUESTION_FIELD_MAP = {
   Q1_INCOME: { field: 'monthly_net_income', kind: 'money' },
   Q2_LIVING_COST: { field: 'essential_living_cost', kind: 'money' },
   Q3_INCOME_PROOF: { field: 'income_proof_available', kind: 'bool' },
   Q4_DEPENDENTS: { field: 'dependents', kind: 'int' },
   Q6_CONTINUOUS_INCOME: { field: 'has_continuous_income', kind: 'bool' },
+  Q5_RECENT_DEBT: { field: 'has_recent_debt', kind: 'bool' },
 };
 const DN_FLAG_FIELD_MAP = {
   C1_COLLATERAL: 'has_collateral_asset',
