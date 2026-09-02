@@ -13,7 +13,9 @@ def test_config_yaml_values_reflected_in_settings() -> None:
     assert settings.config.session.ttl_minutes == 60
     assert settings.config.meta.service_name == "채무회복 내비게이터"
     assert settings.config.rules.max_paths == 3
-    assert settings.config.rules.allow_unverified_cards is True
+    # 배포 기준값. 정책 카드 6종이 전부 verified 로 승격된 2026-09-02 부터 false 다
+    # — 이 값이 true 로 되돌아가면 미검증 카드가 결과에 섞여도 아무도 모른다.
+    assert settings.config.rules.allow_unverified_cards is False
 
 
 def test_unknown_key_in_config_yaml_rejected() -> None:

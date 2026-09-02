@@ -59,7 +59,9 @@ cashflow:
   dti_severe_ratio: 0.50
 
 rules:
-  allow_unverified_cards: true   # 개발 중에만 true. 배포 전 반드시 false
+  # 정책 카드 6종 전부 verified: true (2026-09-02, personal_workout 한도 충돌 해소로 마지막 1건 승격).
+  # false 면 미검증 카드는 로드되지 않고 화면의 '개발 모드' 배너도 사라진다 — 배포 기준값이다.
+  allow_unverified_cards: false
   max_paths: 3
 
 narrative:
