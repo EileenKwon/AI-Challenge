@@ -119,3 +119,62 @@ def test_compute_gaps_filters_met_and_unknown() -> None:
     assert gaps[0].condition_id == "c"
     assert gaps[0].field == "max_overdue_days"
     assert gaps[0].label == "연체일수 90일 이상"
+
+
+# --- compute_gaps 의 안전 계층 ----------------------------------------------------
+#
+# compute_gap() 은 순수 산술이라 무엇이든 계산한다. 그 값을 사용자에게 보여줘도
+# 되는지는 별개 판단이며, 아래가 그 판단을 고정한다.
+
+
+def test_unreachable_direction_is_not_reported() -> None:
+    """연체일수는 되돌릴 수 없다 — "47일 남았습니다" 는 불가능한 안내다.
+
+    연체 77일에게 신속채무조정(30일 이하)까지 47일 남았다고 알리던 결함이 있었다.
+    """
+    conditions = [_cond("lte", 30, field="max_overdue_days", label="연체 30일 이하")]
+    assert compute_gap(conditions[0], {"max_overdue_days": 77}) is not None  # 산술은 계산된다
+    assert compute_gaps(conditions, {"max_overdue_days": 77}) == ()  # 보여주지는 않는다
+
+
+def test_reachable_by_waiting_always_carries_the_warning() -> None:
+    """'더 연체하면 충족' 을 경고 없이 알리면 레드팀 UQ-01 이 막는 행동을 유도한다."""
+    conditions = [_cond("gte", 90, field="max_overdue_days", label="연체 90일 이상")]
+    (gap,) = compute_gaps(conditions, {"max_overdue_days": 77})
+
+    assert "13일" in gap.message
+    assert "의도적으로 연체하는 것을 권하지 않습니다" in gap.message
+    assert "신용도에 불리" in gap.message
+    assert gap.tone == "caution"
+
+
+def test_distance_beyond_threshold_is_not_reported() -> None:
+    """연체 28일에게 개인워크아웃까지 62일 남았다는 안내는 노이즈다."""
+    conditions = [_cond("gte", 90, field="max_overdue_days", label="연체 90일 이상")]
+    assert compute_gaps(conditions, {"max_overdue_days": 28}) == ()
+
+
+def test_field_absent_from_config_is_not_reported() -> None:
+    """'총 채무 한도까지 14억 남았습니다' 는 사실이어도 쓸모가 없다."""
+    conditions = [_cond("lte", 1_500_000_000, field="total_debt", label="총 채무 15억 이하")]
+    assert compute_gap(conditions[0], {"total_debt": Decimal("1600000000")}) is not None
+    assert compute_gaps(conditions, {"total_debt": Decimal("1600000000")}) == ()
+
+
+def test_disabled_by_config() -> None:
+    from dn.settings import get_settings
+
+    base = get_settings()
+    off = base.model_copy(
+        update={
+            "config": base.config.model_copy(
+                update={
+                    "counterfactual": base.config.counterfactual.model_copy(
+                        update={"enabled": False}
+                    )
+                }
+            )
+        }
+    )
+    conditions = [_cond("gte", 90, field="max_overdue_days", label="연체 90일 이상")]
+    assert compute_gaps(conditions, {"max_overdue_days": 77}, settings=off) == ()

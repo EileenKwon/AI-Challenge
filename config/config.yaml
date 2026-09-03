@@ -52,6 +52,26 @@ reconcile:
     6: 2737905
   living_cost_check_enabled: true
 
+counterfactual:
+  # 경계까지의 거리를 화면에 알릴 필드와 조건.
+  #
+  # 여기 없는 필드는 알리지 않는다. 거리는 대부분 의미가 없기 때문이다 —
+  # 총 채무액 한도가 15억인데 현재 8천만 원이면 "14억이 더 늘면 넘습니다" 가
+  # 사실이어도 사용자에게 쓸모가 없다.
+  #
+  # time_driven: 가만히 있어도 시간이 지나면 값이 커지는가. 연체일수가 그렇다.
+  #   - 커져야 충족되는 조건: 시간이 지나면 도달한다 → 알리되 경고를 붙인다
+  #   - 작아져야 충족되는 조건: 도달할 방법이 없다 → 알리지 않는다
+  #     (연체일수를 되돌릴 수는 없다. "47일 남았습니다" 는 불가능한 안내다)
+  enabled: true
+  fields:
+    max_overdue_days:
+      report_within: 30
+      time_driven: true
+    recent_debt_ratio:
+      report_within: 0.05
+      time_driven: false
+
 ratelimit:
   # LLM 을 호출하는 엔드포인트(문서 업로드·분석)에만 적용한다.
   # 공개 URL 뒤에 과금/한도가 있는 백엔드가 붙어 있으므로, 스크립트 한 번에
