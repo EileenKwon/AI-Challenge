@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -116,6 +117,17 @@ class ReconcileConfig(_StrictModel):
         return table[max_size] + step * (household_size - max_size)
 
 
+class ProximityFieldConfig(_StrictModel):
+    report_within: Decimal
+    unit: str = ""
+    time_driven: bool = False
+
+
+class ProximityConfig(_StrictModel):
+    enabled: bool
+    fields: dict[str, ProximityFieldConfig] = {}
+
+
 class RateLimitConfig(_StrictModel):
     enabled: bool
     llm_calls_per_ip: int
@@ -158,6 +170,7 @@ class AppConfig(_StrictModel):
     ingest: IngestConfig
     extraction: ExtractionConfig
     reconcile: ReconcileConfig
+    proximity: ProximityConfig
     ratelimit: RateLimitConfig
     cashflow: CashflowConfig
     rules: RulesConfig

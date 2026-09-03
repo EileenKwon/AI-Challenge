@@ -42,6 +42,7 @@ from dn.reconcile.gap_detector import detect_gaps
 from dn.rules.engine import evaluate as evaluate_rules
 from dn.rules.facts import build_facts
 from dn.rules.policy_card import load_usable_cards
+from dn.rules.proximity import analyze as analyze_proximity
 from dn.rules.triage import evaluate as evaluate_triage
 from dn.safety.audit import redact
 from dn.safety.output_filter import check as check_output
@@ -152,6 +153,13 @@ def analyze(
         )
 
     paths = rules_result.paths if rules_result is not None else ()
+    # 경계 근접도 — 새 판정이 아니라 이미 나온 판정의 여유분을 되돌려 계산한다.
+    proximity = analyze_proximity(
+        paths,
+        facts,
+        excluded_paths=(rules_result.excluded_paths if rules_result is not None else ()),
+        settings=settings,
+    )
     narrative_raw = generate_narrative(cashflow, paths, debts, client=client)  # 7
 
     if triage_result.decision == TriageDecision.REFER:
@@ -184,6 +192,7 @@ def analyze(
         gaps=gaps,
         conflicts=conflicts,
         scenario=scenario,
+        proximity=proximity,
         policy_base_date=policy_base_date,
         dev_mode=rules_result.dev_mode if rules_result is not None else False,
     )

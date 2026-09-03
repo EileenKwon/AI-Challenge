@@ -64,6 +64,9 @@ def evaluate(condition: PolicyCondition, facts: dict[str, Any]) -> ConditionResu
             state=ConditionState.UNKNOWN,
             required=condition.required,
             evidence=None,
+            field=condition.field,
+            op=condition.op,
+            value=condition.value,
         )
 
     met = _apply_op(condition.op, field_value, condition.value)
@@ -73,4 +76,7 @@ def evaluate(condition: PolicyCondition, facts: dict[str, Any]) -> ConditionResu
         state=ConditionState.MET if met else ConditionState.NOT_MET,
         required=condition.required,
         evidence=str(field_value),
+        field=condition.field,
+        op=condition.op,
+        value=condition.value,
     )

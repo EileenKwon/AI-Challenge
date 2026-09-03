@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from pydantic import Field
 
@@ -253,6 +254,39 @@ class ConditionResult(Base):
     required: bool
     evidence: str | None = None  # 판단 근거가 된 사용자 입력
 
+    # 평가에 쓰인 규칙 자체. 설명가능성 번들이 "적용된 규칙"을 사후 재구성하지
+    # 않고 그대로 보여줄 수 있게 하며, 경계 근접도(rules/proximity.py)가
+    # 정책 카드를 다시 뒤지지 않고 여유분을 역산할 수 있게 한다.
+    field: str | None = None
+    op: str | None = None
+    value: Any = None
+
+
+class BoundaryDistance(Base):
+    """조건 하나의 경계까지 남은 거리. `message` 는 결정론적으로 생성된다."""
+
+    condition_id: str
+    condition_label: str
+    field: str
+    current: Decimal
+    boundary: Decimal
+    distance: Decimal
+    unit: str = ""
+    direction: str  # "increase" | "decrease" — 값이 어느 쪽으로 가야 뒤집히나
+    currently_met: bool
+    time_driven: bool  # 시간이 지나면 저절로 변하는 값인가
+    message: str
+    tone: str  # "urgent" | "caution" | "info"
+
+
+class PathProximity(Base):
+    path_id: str
+    path_name: str
+    excluded: bool = False  # 현재는 제외됐지만 경계가 가까운 경로
+    unknown_count: int = 0
+    unknown_labels: tuple[str, ...] = ()
+    boundaries: tuple[BoundaryDistance, ...] = ()
+
 
 class PathCandidate(Base):
     """기획서 7.2 결과 카드 11개 항목과 1:1 대응."""
@@ -384,6 +418,7 @@ class AnalysisResult(Base):
     rules: RuleEngineResult | None = None  # REFER 또는 실패 시 None
     narrative: Narrative | None = None
     plan: ActionPlan | None = None
+    proximity: tuple[PathProximity, ...] = ()
 
     # 진단 계층
     gaps: GapReport = Field(default_factory=GapReport)

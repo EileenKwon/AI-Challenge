@@ -52,6 +52,27 @@ reconcile:
     6: 2737905
   living_cost_check_enabled: true
 
+proximity:
+  # 경계 근접도 — "무엇이 얼마나 바뀌면 판정이 뒤집히는가".
+  #
+  # 여기 적힌 필드만 보고한다. 경계까지의 거리는 대부분 의미가 없기 때문이다 —
+  # 총 채무액 한도가 15억인데 현재 8천만 원이면 "14억이 더 늘면 넘습니다"가
+  # 사실이어도 쓸모가 없다.
+  #
+  # time_driven: 가만히 있어도 시간이 지나면 값이 변하는가. 연체일수가 그렇다.
+  # 이 표시가 켜진 필드는 "얻는 방향" 문구에 의도적 연체를 권하지 않는다는
+  # 경고를 함께 붙인다 (rules/proximity.py 참고).
+  enabled: true
+  fields:
+    max_overdue_days:
+      report_within: 30
+      unit: "일"
+      time_driven: true
+    recent_debt_ratio:
+      report_within: 0.05
+      unit: ""
+      time_driven: false
+
 ratelimit:
   # LLM 을 호출하는 엔드포인트(문서 업로드·분석)에만 적용한다.
   # 공개 URL 뒤에 과금/한도가 있는 백엔드가 붙어 있으므로, 스크립트 한 번에

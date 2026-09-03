@@ -290,6 +290,20 @@ def paths_page(session_id: str, store: SessionStore = Depends(get_session_store)
         for p in (rules.paths if rules else ())
     ]
     ctx["excluded_paths"] = list(rules.excluded_paths) if rules else []
+    analysis = state.analysis
+    ctx["proximity"] = (
+        [
+            {
+                "path_name": p.path_name,
+                "excluded": p.excluded,
+                "boundaries": [{"message": b.message, "tone": b.tone} for b in p.boundaries],
+            }
+            for p in analysis.proximity
+            if p.boundaries
+        ]
+        if analysis
+        else []
+    )
     return render_page("06_paths.html", ctx)
 
 
