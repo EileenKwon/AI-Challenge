@@ -153,6 +153,36 @@ def test_fully_known_facts_are_not_undetermined(cards) -> None:
     assert result.undetermined is False
 
 
+# --- 반사실 거리(counterfactual_gaps) --------------------------------------------
+
+
+def test_excluded_path_carries_counterfactual_gap(cards) -> None:
+    facts = _base_facts(max_overdue_days=89)
+    result = evaluate(facts, cards)
+
+    personal_workout = _path_by_id(result, "personal_workout")
+    assert personal_workout is not None
+    assert personal_workout.status == PathStatus.EXCLUDED
+
+    overdue_gap = next(
+        g for g in personal_workout.counterfactual_gaps if g.field == "max_overdue_days"
+    )
+    assert overdue_gap.gap == Decimal("1")
+    assert overdue_gap.direction == "increase"
+    assert overdue_gap.gap_display == "1일"
+
+
+def test_candidate_path_has_no_counterfactual_gap(cards) -> None:
+    """CANDIDATE 는 NOT_MET 조건이 없으므로 거리도 없다."""
+    facts = _base_facts(max_overdue_days=90)
+    result = evaluate(facts, cards)
+
+    personal_workout = _path_by_id(result, "personal_workout")
+    assert personal_workout is not None
+    assert personal_workout.status == PathStatus.CANDIDATE
+    assert personal_workout.counterfactual_gaps == ()
+
+
 # --- dev_mode 전달 ---------------------------------------------------------------
 
 

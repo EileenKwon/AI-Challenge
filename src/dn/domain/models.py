@@ -254,6 +254,21 @@ class ConditionResult(Base):
     evidence: str | None = None  # 판단 근거가 된 사용자 입력
 
 
+class CounterfactualGap(Base):
+    """NOT_MET 조건 하나를 충족하는 데 남은 산술적 거리.
+
+    판정이 아니라 순수 계산이다(`rules/counterfactual.py` 참고). 필드 값이
+    확인된 경우에만 존재하며, 값을 지어내지 않는다.
+    """
+
+    condition_id: str
+    label: str
+    field: str
+    gap: Decimal
+    gap_display: str  # 사람이 읽는 표시값 (예: "13일", "1억원", "5.0%p")
+    direction: str  # "increase" | "decrease" — field 값이 늘어나야/줄어야 충족
+
+
 class PathCandidate(Base):
     """기획서 7.2 결과 카드 11개 항목과 1:1 대응."""
 
@@ -265,6 +280,7 @@ class PathCandidate(Base):
     met: tuple[ConditionResult, ...] = ()  # 4
     unknown: tuple[ConditionResult, ...] = ()  # 5
     not_met: tuple[ConditionResult, ...] = ()
+    counterfactual_gaps: tuple[CounterfactualGap, ...] = ()  # NOT_MET 조건까지 남은 거리
     swing_factors: tuple[str, ...] = ()  # 6
     user_evidence: tuple[str, ...] = ()  # 7
     policy_ref: PolicyRef | None = None  # 8

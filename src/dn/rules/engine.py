@@ -18,6 +18,7 @@ from typing import Any
 from dn.domain.enums import ConditionState, PathStatus
 from dn.domain.models import ConditionResult, PathCandidate, PolicyRef, RuleEngineResult
 from dn.rules.condition_eval import evaluate as evaluate_condition
+from dn.rules.counterfactual import compute_gaps
 from dn.rules.policy_card import PolicyCard, PolicyCondition
 
 _MAX_PATHS = 3
@@ -51,6 +52,7 @@ def _to_path_candidate(
     met: list[ConditionResult],
     unknown: list[ConditionResult],
     not_met: list[ConditionResult],
+    facts: dict[str, Any],
 ) -> PathCandidate:
     policy_ref = PolicyRef(
         card_id=card.id,
@@ -69,6 +71,7 @@ def _to_path_candidate(
         met=tuple(met),
         unknown=tuple(unknown),
         not_met=tuple(not_met),
+        counterfactual_gaps=compute_gaps(card.conditions, facts),
         swing_factors=tuple(card.swing_factors),
         policy_ref=policy_ref,
         consult_questions=tuple(card.consult_questions),
@@ -94,7 +97,7 @@ def evaluate(
 
     for card in cards:
         status, met, unknown, not_met = _evaluate_card(card, facts)
-        path = _to_path_candidate(card, status, met, unknown, not_met)
+        path = _to_path_candidate(card, status, met, unknown, not_met, facts)
         (excluded if status == PathStatus.EXCLUDED else candidates).append(path)
 
     # 정렬 기준은 카드의 priority 가 먼저다. status 는 동순위 안에서만 쓴다.
