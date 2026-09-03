@@ -68,9 +68,11 @@
       <li>
         <p>{{ p.name }} — {{ p.excluded_reason }}</p>
         {% if p.counterfactual_gaps %}
-        <ul class="mt-1 text-xs text-amber-700 space-y-0.5">
+        <ul class="mt-1 space-y-1">
           {% for g in p.counterfactual_gaps %}
-          <li>· '{{ g.label }}' 조건까지 {{ g.gap_display }} 남았습니다.</li>
+          <li class="text-xs rounded p-2 border
+            {% if g.tone == 'caution' %}border-slate-300 bg-slate-100 text-slate-700
+            {% else %}border-amber-200 bg-amber-50 text-amber-800{% endif %}">{{ g.message }}</li>
           {% endfor %}
         </ul>
         {% endif %}

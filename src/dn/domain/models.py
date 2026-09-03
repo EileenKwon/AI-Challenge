@@ -268,6 +268,10 @@ class CounterfactualGap(Base):
     gap_display: str  # 사람이 읽는 표시값 (예: "13일", "1억원", "5.0%p")
     direction: str  # "increase" | "decrease" — field 값이 늘어나야/줄어야 충족
 
+    # 화면 표시용. compute_gaps() 가 채운다(compute_gap() 은 순수 산술만 한다).
+    message: str = ""
+    tone: str = "info"  # "info" | "caution"
+
 
 class PathCandidate(Base):
     """기획서 7.2 결과 카드 11개 항목과 1:1 대응."""
