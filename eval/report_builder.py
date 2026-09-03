@@ -120,12 +120,22 @@ def main() -> None:
         f"(n={n_completeness}, {measured_at} 측정)"
     )
 
-    unmeasured = [
-        "사용자 이해도 — 목표 평균 4점 이상(5점 척도, n=5) / 실측 미측정 "
-        "(실제 사용자 설문이 필요한 지표. 자동화 스크립트로 측정 불가)",
-        "준비시간 — 목표 수동 정리 대비 30% 이상 단축(n=5) / 실측 미측정 "
-        "(실제 사용자 타이밍 스터디가 필요한 지표. 자동화 스크립트로 측정 불가)",
-    ]
+    # 사용자 스터디(E7)는 사람이 있어야 측정된다. 응답이 수집돼 리포트가 있으면
+    # 실측치로 올리고, 없으면 "미측정" 으로 남긴다 — 없는 값을 지어내지 않는다.
+    print("  [STAGE] 사용자 스터디(E7) 결과 확인")
+    study_lines = _summary_lines_from(reports_dir / "e7_user_study.md")
+    if study_lines:
+        collected.extend(study_lines)
+        unmeasured: list[str] = []
+        print(f"    E7: {len(study_lines)}개 지표 문구 (미측정 → 실측 전환)")
+    else:
+        unmeasured = [
+            "사용자 이해도 — 목표 평균 4점 이상(5점 척도, n=5) / 실측 미측정 "
+            "(실제 사용자 설문이 필요한 지표. eval/user_study/프로토콜.md 참고)",
+            "준비시간 — 목표 수동 정리 대비 30% 이상 단축(n=5) / 실측 미측정 "
+            "(실제 사용자 타이밍 스터디가 필요한 지표. eval/user_study/프로토콜.md 참고)",
+        ]
+        print("    E7: 응답 없음 — 두 지표를 미측정으로 유지")
 
     md_path = reports_dir / "metrics_summary.md"
     with md_path.open("w", encoding="utf-8") as f:
@@ -142,9 +152,10 @@ def main() -> None:
         f.write(f"## 자동 측정 지표 ({len(collected)}개)\n\n")
         for line in collected:
             f.write(f"- {line}\n")
-        f.write(f"\n## 사용자 스터디 필요 지표 ({len(unmeasured)}개, 자동화 불가)\n\n")
-        for line in unmeasured:
-            f.write(f"- {line}\n")
+        if unmeasured:
+            f.write(f"\n## 사용자 스터디 필요 지표 ({len(unmeasured)}개, 자동화 불가)\n\n")
+            for line in unmeasured:
+                f.write(f"- {line}\n")
         f.write("\n")
 
         stub_flag = any("STUB_MODE" in line for line in collected)
