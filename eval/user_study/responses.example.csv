@@ -1,0 +1,6 @@
+participant,order,manual_seconds,service_seconds,q1,q2,q3,q4,q5,felt_certified,note
+P1,AB,412,203,5,4,4,4,5,no,
+P2,AB,388,241,4,4,3,4,4,no,근거 조건 표현이 길다
+P3,BA,455,198,5,5,4,5,5,no,
+P4,AB,367,220,4,3,4,4,4,no,미확인 조건 위치를 못 찾음
+P5,BA,401,215,5,4,5,4,5,no,
