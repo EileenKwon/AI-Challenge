@@ -14,6 +14,10 @@
     {{ m.confirmed_box("부담률", cashflow.dti_ratio) }}
   </div>
 
+  <p class="plain-only text-sm bg-sky-50 border border-sky-200 rounded-lg p-3">
+    {{ cashflow.dti_ratio_plain }}
+  </p>
+
   {% if narrative_cashflow_text %}
   <p class="text-sm text-slate-700 bg-white rounded-lg border border-slate-200 p-3">
     {{ narrative_cashflow_text }}

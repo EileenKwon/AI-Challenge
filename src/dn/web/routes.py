@@ -12,7 +12,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from dn.api.deps import get_session_or_404, get_session_store
 from dn.api.routes_session import create_session
-from dn.cashflow.formatting import format_ratio, format_won
+from dn.cashflow.formatting import format_ratio, format_ratio_plain, format_won
 from dn.domain.models import ExtractionResult, SessionState
 from dn.reconcile.questions import (
     has_income_drop_signal,
@@ -228,6 +228,7 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
             "monthly_shortfall": format_won(abs(cashflow.monthly_shortfall)),
             "shortfall_is_positive": cashflow.monthly_shortfall >= 0,
             "dti_ratio": format_ratio(cashflow.dti_ratio),
+            "dti_ratio_plain": format_ratio_plain(cashflow.dti_ratio),
         }
         ctx["available_ratio"] = int(min(cashflow.monthly_available, total_ref) / total_ref * 100)
         ctx["payment_ratio"] = int(min(cashflow.monthly_total_payment, total_ref) / total_ref * 100)

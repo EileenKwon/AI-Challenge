@@ -11,15 +11,27 @@
   html.large-text body { font-size: 1.2rem; }
   html.large-text .text-xs { font-size: 0.95rem; }
   html.large-text .text-sm { font-size: 1.05rem; }
+
+  /* 접근성: 쉬운 말 모드 토글 — 문장은 항상 서버가 렌더링해 두고 표시만 전환한다 */
+  .plain-only { display: none; }
+  html.plain-language .plain-only { display: block; }
+  html.plain-language .plain-hide { display: none; }
 </style>
 <script>
   function toggleLargeText() {
     document.documentElement.classList.toggle('large-text');
     localStorage.setItem('dn_large_text', document.documentElement.classList.contains('large-text') ? '1' : '0');
   }
+  function togglePlainLanguage() {
+    document.documentElement.classList.toggle('plain-language');
+    localStorage.setItem('dn_plain_language', document.documentElement.classList.contains('plain-language') ? '1' : '0');
+  }
   document.addEventListener('DOMContentLoaded', function () {
     if (localStorage.getItem('dn_large_text') === '1') {
       document.documentElement.classList.add('large-text');
+    }
+    if (localStorage.getItem('dn_plain_language') === '1') {
+      document.documentElement.classList.add('plain-language');
     }
   });
 
@@ -61,11 +73,16 @@
   </div>
   {% endif %}
 
-  <header class="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
+  <header class="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between gap-2">
     <h1 class="text-base font-bold truncate">{{ service_name }}</h1>
-    <button type="button" onclick="toggleLargeText()"
-            class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-            aria-label="큰 글씨 보기 전환">글씨 크게</button>
+    <div class="flex gap-1 shrink-0">
+      <button type="button" onclick="togglePlainLanguage()"
+              class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
+              aria-label="쉬운 말 모드 전환">쉬운 말</button>
+      <button type="button" onclick="toggleLargeText()"
+              class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
+              aria-label="큰 글씨 보기 전환">글씨 크게</button>
+    </div>
   </header>
 
   {% block stepper %}
