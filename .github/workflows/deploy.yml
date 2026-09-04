@@ -1,0 +1,33 @@
+# main 에 새 커밋이 올라올 때마다 Render 배포를 자동으로 트리거한다.
+#
+# 왜 필요한가: 이 서비스는 공개 저장소 URL 로 생성됐고 Render 의 GitHub App 이
+# 저장소에 설치돼 있지 않다. 그래서 render.yaml 의 `autoDeploy: yes` 에도
+# 불구하고 GitHub → Render 웹훅이 없어 push 가 배포로 이어지지 않는다
+# (2026-09-04 실측 — docs/배포.md, scripts/deploy_render.sh 참고).
+#
+# 근본 해결(저장소 소유자가 Render 대시보드에서 GitHub 연동을 설치하는 것)
+# 전에는, 이 워크플로가 같은 일을 Render REST API 로 대신한다 — 웹훅이 아니라
+# API 호출이므로 GitHub App 설치 여부와 무관하게 동작한다.
+#
+# 필요 설정: 저장소 Settings → Secrets and variables → Actions 에
+# `RENDER_API_KEY` 시크릿을 등록해야 한다 (Render 대시보드 → Account Settings →
+# API Keys 에서 발급). 이 시크릿이 없으면 이 워크플로는 실패한다 — 그때는
+# scripts/deploy_render.sh 로 수동 배포한다.
+name: Deploy to Render
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render 배포 트리거 + 완료 대기
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: bash scripts/deploy_render.sh
