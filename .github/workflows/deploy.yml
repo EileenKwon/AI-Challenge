@@ -9,10 +9,20 @@
 # 전에는, 이 워크플로가 같은 일을 Render REST API 로 대신한다 — 웹훅이 아니라
 # API 호출이므로 GitHub App 설치 여부와 무관하게 동작한다.
 #
-# 필요 설정: 저장소 Settings → Secrets and variables → Actions 에
-# `RENDER_API_KEY` 시크릿을 등록해야 한다 (Render 대시보드 → Account Settings →
-# API Keys 에서 발급). 이 시크릿이 없으면 이 워크플로는 실패한다 — 그때는
-# scripts/deploy_render.sh 로 수동 배포한다.
+# 필요 설정(둘 중 하나, 저장소 admin 권한 필요):
+#   Settings → Secrets and variables → Actions
+#     - `RENDER_DEPLOY_HOOK` — Render 서비스 Settings 의 Deploy Hook URL (권장.
+#       헤더도 인증도 필요 없는 단일 URL 이고, 그 서비스 배포만 가능해 API 키보다
+#       권한이 좁다)
+#     - 또는 `RENDER_API_KEY` — Render Account Settings → API Keys
+#
+# 둘 다 없으면 이 워크플로는 **실패하지 않고 건너뛴다.** 시크릿이 없다는 이유로
+# 매 푸시마다 빨간 X 가 쌓이면, 정작 진짜 실패를 알아보지 못하게 된다.
+# 그 상태에서는 아래로 수동 배포한다.
+#
+#   curl -X POST "<Deploy Hook URL>"
+#   # 또는
+#   RENDER_API_KEY=rnd_... bash scripts/deploy_render.sh
 name: Deploy to Render
 
 on:
@@ -27,7 +37,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Render 배포 트리거 + 완료 대기
+
+      # 시크릿을 `if:` 조건에 직접 쓰지 않는다 — secrets 컨텍스트의 가용 범위가
+      # 조건절마다 달라 조용히 건너뛰거나 항상 실행되는 함정이 있다. env 로
+      # 내려받아 쉘에서 판단하면 어디서든 같게 동작한다.
+      - name: Render 배포
         env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: bash scripts/deploy_render.sh
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "  Deploy Hook 으로 배포"
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$RENDER_DEPLOY_HOOK")
+            echo "  deploy hook -> $code"
+            [ "$code" = "200" ]
+          elif [ -n "$RENDER_API_KEY" ]; then
+            echo "  API 키로 배포 (완료까지 대기)"
+            bash scripts/deploy_render.sh
+          else
+            echo "::notice::RENDER_DEPLOY_HOOK / RENDER_API_KEY 시크릿이 없어 배포를 건너뜁니다."
+            echo "::notice::수동 배포: curl -X POST '<Deploy Hook URL>'"
+            echo "저장소 admin 이 시크릿을 등록하면 이후 push 부터 자동 배포됩니다."
+          fi
