@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pypdf
@@ -14,19 +15,33 @@ from dn.domain.errors import ExtractionError
 from dn.domain.models import DocumentContent, PageContent
 from dn.settings import Settings, get_settings
 
+logger = logging.getLogger(__name__)
+
 
 def read(path: Path, *, doc_id: str, settings: Settings | None = None) -> DocumentContent:
-    """PDF 를 읽어 `DocumentContent` 로 변환한다. 암호화된 PDF 는 명시적으로 거부한다."""
+    """PDF 를 읽어 `DocumentContent` 로 변환한다. 암호화된 PDF 는 명시적으로 거부한다.
+
+    사용자에게 보이는 메시지에는 원본 예외 텍스트나 서버 내부 경로를 절대
+    포함하지 않는다 — pypdf/PIL 의 예외 메시지가 종종 전체 파일 경로를
+    그대로 담고 있어 그대로 노출하면 정보 노출이 된다. 진단에 필요한
+    상세는 문서 내용 없이 파일명·예외 클래스만 서버 로그에 남긴다.
+    """
     settings = settings or get_settings()
     threshold = settings.config.ingest.min_text_chars
 
     try:
         reader = pypdf.PdfReader(str(path))
     except Exception as exc:
-        raise ExtractionError(f"PDF 를 열 수 없습니다: {path.name} ({exc})") from exc
+        logger.warning(
+            "pdf_open_failed",
+            extra={"upload_filename": path.name, "exception_class": type(exc).__name__},
+        )
+        raise ExtractionError(
+            "PDF 파일을 읽을 수 없습니다. 손상되지 않은 PDF인지 확인해 주세요."
+        ) from exc
 
     if reader.is_encrypted:
-        raise ExtractionError(f"암호화된 PDF 는 지원하지 않습니다: {path.name}")
+        raise ExtractionError("암호화된 PDF 는 지원하지 않습니다. 암호를 해제한 뒤 다시 업로드해 주세요.")
 
     pages: list[PageContent] = []
     any_scanned = False

@@ -11,12 +11,15 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
 from dn.domain.errors import ExtractionError
 from dn.domain.models import DocumentContent, PageContent
+
+logger = logging.getLogger(__name__)
 
 
 def read(path: Path, *, doc_id: str) -> DocumentContent:
@@ -26,12 +29,24 @@ def read(path: Path, *, doc_id: str) -> DocumentContent:
     빈 페이지로 남긴다 — 스캔 PDF에서 렌더링에 실패한 페이지를 빈 페이지로
     두는 기존 `pdf_reader` 동작과 같다. 이 경우 추출 단계가 채무 0건을
     반환하고, 사용자는 화면 02의 "문서 없이 직접 입력"으로 넘어갈 수 있다.
+
+    사용자에게 보이는 메시지에는 원본 예외 텍스트나 서버 내부 경로를 절대
+    포함하지 않는다 — Pillow 의 `UnidentifiedImageError` 는 종종 전체 파일
+    경로(`/app/var/uploads/...`)를 그대로 메시지에 담고 있어, 그대로
+    노출하면 서버 내부 구조가 클라이언트에 새어 나간다. 진단에 필요한
+    상세는 문서 내용 없이 파일명·예외 클래스만 서버 로그에 남긴다.
     """
     try:
         with Image.open(path) as img:
             img.verify()
     except (UnidentifiedImageError, OSError) as exc:
-        raise ExtractionError(f"이미지 파일을 읽을 수 없습니다: {path.name} ({exc})") from exc
+        logger.warning(
+            "image_open_failed",
+            extra={"upload_filename": path.name, "exception_class": type(exc).__name__},
+        )
+        raise ExtractionError(
+            "이미지 파일을 읽을 수 없습니다. PNG 또는 JPG/JPEG 파일인지 확인해 주세요."
+        ) from exc
 
     try:
         import pytesseract
@@ -43,8 +58,12 @@ def read(path: Path, *, doc_id: str) -> DocumentContent:
         with Image.open(path) as img:
             text = pytesseract.image_to_string(img, lang="kor+eng").strip()
     except pytesseract.TesseractError as exc:
+        logger.warning(
+            "image_ocr_failed",
+            extra={"upload_filename": path.name, "exception_class": type(exc).__name__},
+        )
         raise ExtractionError(
-            f"이미지에서 글자를 인식하지 못했습니다: {path.name} ({exc})"
+            "이미지에서 글자를 인식하지 못했습니다. 더 선명한 사진으로 다시 시도해 주세요."
         ) from exc
 
     return DocumentContent(
