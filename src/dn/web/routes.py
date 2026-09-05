@@ -14,6 +14,7 @@ from dn.api.deps import get_session_or_404, get_session_store
 from dn.api.routes_session import create_session
 from dn.cashflow.formatting import format_ratio, format_ratio_plain, format_won
 from dn.domain.models import ExtractionResult, SessionState
+from dn.ingest.uploader import supported_format_label
 from dn.reconcile.questions import (
     has_income_drop_signal,
     has_overdue,
@@ -191,9 +192,11 @@ def upload_page(
 ) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
-    ctx["synthetic_cases"] = _demo_cases(get_settings())
+    settings = get_settings()
+    ctx["synthetic_cases"] = _demo_cases(settings)
     ctx["product_types"] = [{"id": k, "label": v} for k, v in _PRODUCT_TYPE_LABELS.items()]
     ctx["demo_mode"] = demo == "1"
+    ctx["supported_format_label"] = supported_format_label(settings)
     return render_page("02_upload.html", ctx)
 
 

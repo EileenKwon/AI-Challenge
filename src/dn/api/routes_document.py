@@ -59,6 +59,7 @@ async def upload_document(
             filename=file.filename or "upload",
             content_type=file.content_type or "application/octet-stream",
             size_bytes=len(content_bytes),
+            content=content_bytes,
             settings=settings,
         )
     except UploadValidationError as exc:

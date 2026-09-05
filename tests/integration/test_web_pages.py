@@ -300,6 +300,64 @@ def test_demo_document_flows_through_the_normal_upload_api() -> None:
     assert r.json()["stage"] == "s2_extracted"
 
 
+# --- 파일 업로드 호환성 버그 (2026-09-06): application/haansoftpdf ---------------
+
+
+def test_upload_accepts_real_pdf_reported_as_haansoftpdf_mime() -> None:
+    """버그 재현 그대로 — 정상 PDF 인데 한컴 연동 Windows 환경 MIME 으로 오면 통과해야 한다."""
+    client = TestClient(create_app())
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+
+    doc = client.get("/demo-docs/debt_count_3.pdf")
+    assert doc.status_code == 200
+
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("debt_count_3.pdf", doc.content, "application/haansoftpdf")},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["stage"] == "s2_extracted"
+
+
+def test_upload_rejects_fake_pdf_even_with_haansoftpdf_alias_mime() -> None:
+    """별칭 MIME 은 호환성일 뿐 신뢰가 아니다 — 실제 내용이 PDF 가 아니면 여전히 거부."""
+    client = TestClient(create_app())
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("fake.pdf", b"<html>not a pdf</html>", "application/haansoftpdf")},
+    )
+    assert r.status_code == 400
+    assert "지원하지 않는 파일 형식" in r.json()["detail"]
+
+
+def test_upload_rejects_hwpx_file() -> None:
+    """HWPX 는 별도로 구현하지 않았으므로 PDF/이미지로 혼동해 허용하면 안 된다."""
+    client = TestClient(create_app())
+    sid = client.post("/api/session").json()["session_id"]
+    client.post(f"/api/session/{sid}/consent")
+
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("document.hwpx", b"PK\x03\x04" + b"\x00" * 32, "application/octet-stream")},
+    )
+    assert r.status_code == 400
+    assert "지원하지 않는 파일 형식" in r.json()["detail"]
+
+
+def test_upload_page_advertises_the_same_formats_the_api_accepts() -> None:
+    """UI 안내 문구와 백엔드 허용 목록이 같은 함수에서 나오는지 고정한다."""
+    from dn.ingest.uploader import supported_format_label
+    from dn.settings import get_settings
+
+    client, sid = _client_with_session()
+    page = client.get(f"/web/session/{sid}/upload")
+    assert supported_format_label(get_settings()) in page.text
+
+
 # --- 02 화면 "문서 없이 직접 입력" ---------------------------------------------
 
 
