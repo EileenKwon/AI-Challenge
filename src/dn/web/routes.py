@@ -6,7 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -122,6 +122,7 @@ def _base_context(state: SessionState) -> dict[str, Any]:
         "policy_base_date": settings.config.meta.policy_base_date,
         "current_step": _STAGE_STEP.get(state.stage.value, 0),
         "dev_mode": settings.config.rules.allow_unverified_cards,
+        "upload_ttl_minutes": settings.config.session.ttl_minutes,
     }
 
 
@@ -162,23 +163,37 @@ def landing_page() -> HTMLResponse:
 
 
 @landing_router.get("/start")
-def start_session(store: SessionStore = Depends(get_session_store)) -> RedirectResponse:
+def start_session(
+    demo: str | None = Query(None), store: SessionStore = Depends(get_session_store)
+) -> RedirectResponse:
     created = create_session(store=store)
-    return RedirectResponse(url=f"/web/session/{created.session_id}/intro", status_code=303)
+    suffix = "?demo=1" if demo == "1" else ""
+    return RedirectResponse(url=f"/web/session/{created.session_id}/intro{suffix}", status_code=303)
 
 
 @router.get("/{session_id}/intro", response_class=HTMLResponse)
-def intro_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
+def intro_page(
+    session_id: str,
+    demo: str | None = Query(None),
+    store: SessionStore = Depends(get_session_store),
+) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
-    return render_page("01_intro.html", _base_context(state))
+    ctx = _base_context(state)
+    ctx["demo_mode"] = demo == "1"
+    return render_page("01_intro.html", ctx)
 
 
 @router.get("/{session_id}/upload", response_class=HTMLResponse)
-def upload_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
+def upload_page(
+    session_id: str,
+    demo: str | None = Query(None),
+    store: SessionStore = Depends(get_session_store),
+) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
     ctx["synthetic_cases"] = _demo_cases(get_settings())
     ctx["product_types"] = [{"id": k, "label": v} for k, v in _PRODUCT_TYPE_LABELS.items()]
+    ctx["demo_mode"] = demo == "1"
     return render_page("02_upload.html", ctx)
 
 

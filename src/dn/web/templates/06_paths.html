@@ -13,50 +13,71 @@
   {% endif %}
 
   {% for p in paths %}
-  <article class="rounded-lg border-2 border-amber-300 bg-white p-4 space-y-2">
+  <article class="rounded-lg border-2 border-amber-300 bg-white p-4 space-y-3">
     {{ m.candidate_box(p.name, p.agency, p.status_label) }}
+    <p class="text-xs text-slate-400">{{ p.priority }}순위 검토 대상</p>
 
-    <dl class="text-sm space-y-2">
-      <div><dt class="text-slate-500 text-xs">2. 우선순위</dt><dd>{{ p.priority }}</dd></div>
-      <div><dt class="text-slate-500 text-xs">3. 담당기관</dt><dd>{{ p.agency }}</dd></div>
-
+    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+      <p class="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-1.5">
+        <span aria-hidden="true">✓</span><span>확인된 조건</span>
+      </p>
       <div>
-        <dt class="text-slate-500 text-xs">4. 충족된 조건</dt>
-        <dd>
-          {% for c in p.met %}
-          <span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs mr-1 mb-1">{{ c.label }}</span>
-          {% else %}<span class="text-slate-400 text-xs">없음</span>{% endfor %}
-        </dd>
+        {% for c in p.met %}
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-emerald-300 text-emerald-700 text-xs mr-1 mb-1">
+          <span aria-hidden="true">✓</span>{{ c.label }}</span>
+        {% else %}<span class="text-slate-400 text-xs">확인된 조건이 아직 없습니다</span>{% endfor %}
       </div>
+    </div>
+
+    <div class="rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-3">
+      <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-800 mb-1.5">
+        <span aria-hidden="true">?</span><span>아직 확인되지 않은 조건 (미확인)</span>
+      </p>
       <div>
-        <dt class="text-slate-500 text-xs">5. 미확인 조건</dt>
-        <dd>
-          {% for c in p.unknown %}
-          <span class="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs mr-1 mb-1">{{ c.label }}</span>
-          {% else %}<span class="text-slate-400 text-xs">없음</span>{% endfor %}
-        </dd>
+        {% for c in p.unknown %}
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-amber-400 text-amber-800 text-xs font-medium mr-1 mb-1">
+          <span aria-hidden="true">?</span>{{ c.label }}</span>
+        {% else %}<span class="text-slate-400 text-xs">없음</span>{% endfor %}
       </div>
+    </div>
 
-      <div><dt class="text-slate-500 text-xs">6. 결과를 바꿀 수 있는 요인</dt>
-        <dd class="text-xs">{% for f in p.swing_factors %}<p>· {{ f }}</p>{% endfor %}</dd></div>
-      <div><dt class="text-slate-500 text-xs">7. 근거로 쓰인 사용자 답변</dt>
-        <dd class="text-xs">{% for e in p.user_evidence %}<p>· {{ e }}</p>{% else %}<p class="text-slate-400">없음</p>{% endfor %}</dd></div>
+    <div class="rounded-lg border border-slate-300 bg-slate-50 p-3 space-y-1.5">
+      <p class="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+        <span aria-hidden="true">☎</span><span>공식 상담에서 최종 확인할 사항</span>
+      </p>
+      <p class="text-xs text-slate-600">{{ p.why_final_check }}</p>
+      {% if p.consult_questions %}
+      <ul class="text-xs text-slate-600 list-disc pl-4 space-y-0.5">
+        {% for q in p.consult_questions %}<li>{{ q }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
 
-      <div><dt class="text-slate-500 text-xs">8. 정책 근거</dt>
-        <dd class="text-xs">
-          {% if p.policy_ref %}
-          {{ p.policy_ref.title }} ({{ p.policy_ref.card_version }}) · 기준일 {{ p.policy_ref.policy_base_date }}
-          {% if not p.policy_ref.verified %}<span class="text-red-600 font-medium">· 공식 출처 대조 전(미검증)</span>{% endif %}
-          {% else %}확인되지 않음{% endif %}
-        </dd></div>
+    {% if p.next_actions %}
+    <div>
+      <p class="text-xs font-semibold text-slate-500 mb-1">다음 행동</p>
+      <ul class="text-xs text-slate-600 space-y-0.5">
+        {% for a in p.next_actions %}<li>· {{ a }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
 
-      <div><dt class="text-slate-500 text-xs">9. 다음 행동</dt>
-        <dd class="text-xs">{% for a in p.next_actions %}<p>· {{ a }}</p>{% endfor %}</dd></div>
-      <div><dt class="text-slate-500 text-xs">10. 상담 시 확인할 질문</dt>
-        <dd class="text-xs">{% for q in p.consult_questions %}<p>· {{ q }}</p>{% endfor %}</dd></div>
-      <div><dt class="text-slate-500 text-xs">11. 왜 최종 확인이 필요한가</dt>
-        <dd class="text-xs">{{ p.why_final_check }}</dd></div>
-    </dl>
+    <details class="text-xs">
+      <summary class="cursor-pointer text-slate-500 font-medium">판단 근거 자세히 보기</summary>
+      <dl class="mt-2 space-y-2">
+        <div><dt class="text-slate-500">결과를 바꿀 수 있는 요인</dt>
+          <dd>{% for f in p.swing_factors %}<p>· {{ f }}</p>{% endfor %}</dd></div>
+        <div><dt class="text-slate-500">근거로 쓰인 사용자 답변</dt>
+          <dd>{% for e in p.user_evidence %}<p>· {{ e }}</p>{% else %}<p class="text-slate-400">없음</p>{% endfor %}</dd></div>
+        <div><dt class="text-slate-500">정책 근거</dt>
+          <dd>
+            {% if p.policy_ref %}
+            {{ p.policy_ref.title }} ({{ p.policy_ref.card_version }}) · 기준일 {{ p.policy_ref.policy_base_date }}
+            {% if not p.policy_ref.verified %}<span class="text-red-600 font-medium">· 공식 출처 대조 전(미검증)</span>{% endif %}
+            {% else %}확인되지 않음{% endif %}
+          </dd></div>
+      </dl>
+    </details>
   </article>
   {% endfor %}
 
@@ -83,7 +104,9 @@
   {% endif %}
 
   <button type="button" id="to-plan-btn"
-     class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3">
+     class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3
+            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+            focus-visible:outline-emerald-700">
     7일 계획 보기
   </button>
 </section>

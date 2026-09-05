@@ -2,16 +2,94 @@
 {% block title %}시작{% endblock %}
 {% block stepper %}{% endblock %}
 {% block content %}
-<section class="space-y-4 pt-6 text-center">
-  <h2 class="text-xl font-bold">저신용·다중채무자를 위한<br />AI 채무회복 실행 코파일럿</h2>
-  <p class="text-sm text-slate-600 text-left">
-    신용정보조회서를 업로드하면 상환여력(현금흐름)을 결정론적으로 계산하고,
-    검토 가능한 채무조정 제도 후보를 근거·미확인 조건과 함께 안내합니다.
-    제도 적합성은 판정하지 않으며, 최종 자격은 공식 상담을 통해 확인해야 합니다.
-  </p>
-  <a href="/start"
-     class="block w-full text-center rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700">
-    새 세션 시작하기
-  </a>
+<section class="space-y-5 pt-4">
+
+  <div class="text-center space-y-3">
+    <h2 class="text-xl font-bold leading-snug">
+      여러 금융회사 채무를 한 번에 정리하고,<br />매달 얼마가 부족한지 확인하세요
+    </h2>
+    <p class="text-sm text-slate-600 text-left leading-relaxed">
+      신용정보조회서·부채증명서를 올리거나 직접 입력하면 AI가 채무정보를 정리하고,
+      확인된 입력을 기준으로 상환여력을 계산해 공식 상담 준비까지 도와드립니다.
+    </p>
+    <p class="inline-block text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-3 py-1.5">
+      AI는 문서를 읽고 · 숫자는 코드가 계산하고 · 최종 자격은 공식기관이 판단합니다
+    </p>
+  </div>
+
+  <div class="space-y-1.5">
+    <a href="/start?demo=1"
+       class="block w-full text-center rounded-lg bg-emerald-600 text-white font-semibold py-3
+              active:bg-emerald-700 focus-visible:outline focus-visible:outline-2
+              focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+      개인정보 없이 2분 데모 체험
+    </a>
+    <p class="text-xs text-slate-400 text-center">합성 데이터로 체험하기 · 회원가입 불필요</p>
+    <a href="/start"
+       class="block w-full text-center rounded-lg border-2 border-slate-300 text-slate-700 font-semibold py-3
+              active:bg-slate-100 focus-visible:outline focus-visible:outline-2
+              focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+      내 문서로 시작
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 gap-2" aria-label="이 서비스로 확인할 수 있는 결과 3가지">
+    <div class="rounded-lg border border-slate-200 bg-white p-3">
+      <p class="text-xs font-semibold text-emerald-700 mb-1">① 내 채무 한눈에 정리</p>
+      <p class="text-xs text-slate-500">금융회사 · 채무 유형 · 잔액 · 연체 상태</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-3">
+      <p class="text-xs font-semibold text-emerald-700 mb-1">② 월 상환여력 계산</p>
+      <p class="text-xs text-slate-500">월 가용재원 · 월 부족액 · 소득 대비 상환부담률</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-3">
+      <p class="text-xs font-semibold text-emerald-700 mb-1">③ 공식 상담 준비</p>
+      <p class="text-xs text-slate-500">검토 가능한 회복경로 · 미확인 조건 · 상담 질문 · 7일 행동계획 · 상담용 요약서</p>
+    </div>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-slate-700">AI · 코드 · 공식기관의 역할 구분</h3>
+    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="space-y-1">
+        <div class="rounded bg-sky-50 border border-sky-200 py-2 px-1 font-medium text-sky-700">AI</div>
+        <p class="text-slate-500 leading-snug">비정형 금융문서<br />→ 구조화된 채무정보</p>
+      </div>
+      <div class="space-y-1">
+        <div class="rounded bg-emerald-50 border border-emerald-200 py-2 px-1 font-medium text-emerald-700">코드</div>
+        <p class="text-slate-500 leading-snug">확인된 숫자<br />→ 현금흐름 계산<br />정책조건<br />→ 규칙 평가</p>
+      </div>
+      <div class="space-y-1">
+        <div class="rounded bg-amber-50 border border-amber-200 py-2 px-1 font-medium text-amber-700">공식기관</div>
+        <p class="text-slate-500 leading-snug">최종 신청 자격<br />·지원내용 판단</p>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500 border-t border-slate-100 pt-2 leading-relaxed">
+      문서 형식과 표현은 다양해 AI가 필요하지만, 금액·제도 조건처럼 동일한 입력에서
+      동일한 결과가 나와야 하는 영역에는 AI를 사용하지 않습니다.
+    </p>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
+    <p class="text-sm text-slate-700 leading-relaxed">
+      기존 간편진단이 사용자가 구조화한 정보를 입력하는 단계에서 시작한다면,
+      채무회복 내비게이터는 그 이전의 '금융문서를 읽고 채무를 정리하는 단계'부터 시작합니다.
+    </p>
+    <p class="text-xs text-slate-500 leading-relaxed">
+      공식 자가진단이나 상담을 대체하지 않고, 문서 정리 → 상환여력 계산 → 상담 준비
+      구간을 보완합니다.
+    </p>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
+    <h3 class="text-sm font-semibold text-slate-700">지원하는 입력 방법 4가지</h3>
+    <ul class="text-xs text-slate-500 space-y-1.5">
+      <li><span class="font-medium text-slate-700">문서 업로드(PDF)</span> — 보유한 신용정보조회서나 부채증명서를 사용합니다.</li>
+      <li><span class="font-medium text-slate-700">이미지 업로드</span> — 금융문서를 이미지로 보유한 경우 사용합니다.</li>
+      <li><span class="font-medium text-slate-700">데모 체험</span> — 실제 개인정보 없이 합성문서로 전체 흐름을 체험합니다.</li>
+      <li><span class="font-medium text-slate-700">직접입력</span> — 문서가 없거나 계산 기능을 바로 확인할 때 사용합니다.</li>
+    </ul>
+  </div>
+
 </section>
 {% endblock %}

@@ -6,6 +6,7 @@
   <h2 class="text-xl font-bold">현금흐름 결과</h2>
 
   {{ m.confirmed_box("월 부족액" if cashflow.shortfall_is_positive else "월 여유자금", cashflow.monthly_shortfall) }}
+  <p class="text-xs text-slate-400 -mt-2">이 결과는 사용자가 확인한 입력에 대한 계산 결과입니다.</p>
 
   <div class="grid grid-cols-2 gap-2">
     {{ m.confirmed_box("총 채무액", cashflow.total_debt) }}
