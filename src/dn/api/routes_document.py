@@ -21,11 +21,16 @@ from dn.domain.errors import DomainError
 from dn.domain.models import Debt, ExtractionResult
 from dn.domain.provenance import Tracked
 from dn.extraction.extractor import extract
-from dn.ingest import pdf_reader
+from dn.ingest import image_reader, pdf_reader
 from dn.ingest.injection_scanner import apply as apply_scan
 from dn.ingest.injection_scanner import scan as scan_injection
 from dn.ingest.pii_masker import mask as mask_pii
-from dn.ingest.uploader import UploadValidationError, safe_filename, validate_upload
+from dn.ingest.uploader import (
+    UploadValidationError,
+    file_kind_for,
+    safe_filename,
+    validate_upload,
+)
 from dn.llm.client import LLMClient
 from dn.pipeline.stages import transition
 from dn.settings import get_settings
@@ -55,7 +60,7 @@ async def upload_document(
 
     content_bytes = await file.read()
     try:
-        validate_upload(
+        canonical_mime = validate_upload(
             filename=file.filename or "upload",
             content_type=file.content_type or "application/octet-stream",
             size_bytes=len(content_bytes),
@@ -70,8 +75,14 @@ async def upload_document(
     saved_path = session_dir / safe_filename(file.filename or "upload.pdf")
     saved_path.write_bytes(content_bytes)
 
+    # 검증 단계에서 이미 확정한 정규 MIME 으로 처리기를 나눈다. pypdf 를
+    # PDF 가 아닌 파일에 호출하지 않기 위해서다 — PNG/JPEG 를 PDF 판독기에
+    # 넘기면 "PDF 를 열 수 없습니다" 크래시가 난다(2026-09-06 버그 리포트).
     try:
-        document = pdf_reader.read(saved_path, doc_id=saved_path.name, settings=settings)
+        if file_kind_for(canonical_mime) == "image":
+            document = image_reader.read(saved_path, doc_id=saved_path.name)
+        else:
+            document = pdf_reader.read(saved_path, doc_id=saved_path.name, settings=settings)
     except DomainError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

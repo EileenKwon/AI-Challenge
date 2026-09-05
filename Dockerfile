@@ -16,6 +16,9 @@ FROM python:3.11-slim-trixie
 # 라이브러리(libfontconfig1)뿐이고, fc-cache/트리거 스크립트를 가진 fontconfig
 # 패키지 자체는 아니다. 이게 없으면 fonts-noto-cjk 로 설치된 폰트가 캐시에
 # 제대로 등록된다는 보장이 없어, 컨테이너는 뜨지만 PDF의 한글이 깨질 수 있다.
+#
+# tesseract-ocr(+kor)은 "사진(이미지) 업로드" 경로의 OCR 에 쓴다 — 조회서를
+# 사진/캡처로만 가진 사용자를 위한 화면 02의 두 번째 입력 방식이다.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     fonts-noto-cjk \
@@ -26,6 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libffi-dev \
     shared-mime-info \
+    tesseract-ocr \
+    tesseract-ocr-kor \
     curl \
     && fc-cache -f \
     && rm -rf /var/lib/apt/lists/*

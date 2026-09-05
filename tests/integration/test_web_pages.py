@@ -358,6 +358,109 @@ def test_upload_page_advertises_the_same_formats_the_api_accepts() -> None:
     assert supported_format_label(get_settings()) in page.text
 
 
+# --- PNG/JPEG 가 PDF 판독기로 잘못 전달되던 버그 (2026-09-06) ---------------------
+
+
+def _png_bytes() -> bytes:
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (20, 20), color="white").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_png_upload_dispatches_to_image_reader_not_pdf_reader(monkeypatch) -> None:
+    """핵심 회귀 테스트 — PNG 는 반드시 image_reader 를 타고 pdf_reader(pypdf)는 타지 않는다."""
+    import dn.api.routes_document as routes_document
+
+    calls: dict[str, bool] = {"pdf": False, "image": False}
+
+    def fake_pdf_read(path, *, doc_id, settings):
+        calls["pdf"] = True
+        raise AssertionError("PNG 파일이 pdf_reader.read() 로 전달되면 안 된다")
+
+    def fake_image_read(path, *, doc_id):
+        calls["image"] = True
+        from dn.domain.models import DocumentContent, PageContent
+
+        return DocumentContent(
+            doc_id=doc_id, filename=path.name, is_scanned=True,
+            pages=(PageContent(page_no=1, text="OCR 텍스트", image_path=None),),
+        )
+
+    monkeypatch.setattr(routes_document.pdf_reader, "read", fake_pdf_read)
+    monkeypatch.setattr(routes_document.image_reader, "read", fake_image_read)
+
+    client, sid = _client_with_session()
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("scan.png", _png_bytes(), "image/png")},
+    )
+    assert r.status_code == 200, r.text
+    assert calls["image"] is True
+    assert calls["pdf"] is False
+
+
+def test_pdf_upload_dispatches_to_pdf_reader_not_image_reader(monkeypatch) -> None:
+    """대칭 케이스 — PDF 는 image_reader(OCR)를 타지 않는다."""
+    import dn.api.routes_document as routes_document
+
+    calls: dict[str, bool] = {"pdf": False, "image": False}
+
+    def fake_pdf_read(path, *, doc_id, settings):
+        calls["pdf"] = True
+        from dn.domain.models import DocumentContent, PageContent
+
+        return DocumentContent(
+            doc_id=doc_id, filename=path.name, is_scanned=False,
+            pages=(PageContent(page_no=1, text="네이티브 텍스트", image_path=None),),
+        )
+
+    def fake_image_read(path, *, doc_id):
+        calls["image"] = True
+        raise AssertionError("PDF 파일이 image_reader.read() 로 전달되면 안 된다")
+
+    monkeypatch.setattr(routes_document.pdf_reader, "read", fake_pdf_read)
+    monkeypatch.setattr(routes_document.image_reader, "read", fake_image_read)
+
+    client, sid = _client_with_session()
+    doc = client.get("/demo-docs/debt_count_3.pdf")
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("debt_count_3.pdf", doc.content, "application/pdf")},
+    )
+    assert r.status_code == 200, r.text
+    assert calls["pdf"] is True
+    assert calls["image"] is False
+
+
+def test_png_upload_no_longer_crashes_with_pdf_error(monkeypatch) -> None:
+    """버그 재현 그대로 — 실제 PNG 업로드가 "PDF 를 열 수 없습니다" 로 죽지 않는다."""
+    monkeypatch.setattr("pytesseract.image_to_string", lambda img, lang=None: "채무 정보")
+
+    client, sid = _client_with_session()
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("scan.png", _png_bytes(), "image/png")},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["stage"] == "s2_extracted"
+
+
+def test_corrupted_png_gets_image_specific_error_message() -> None:
+    """깨진 이미지는 "PDF 를 열 수 없습니다" 가 아니라 이미지 전용 문구로 안내한다."""
+    client, sid = _client_with_session()
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("broken.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 4, "image/png")},
+    )
+    assert r.status_code == 400
+    assert "PDF" not in r.json()["detail"]
+    assert "이미지" in r.json()["detail"]
+
+
 # --- 02 화면 "문서 없이 직접 입력" ---------------------------------------------
 
 

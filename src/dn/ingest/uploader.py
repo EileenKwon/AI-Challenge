@@ -58,6 +58,16 @@ _FORMAT_LABELS: dict[str, str] = {
     "image/jpeg": "JPG/JPEG",
 }
 
+# 정규 MIME → 처리기 종류. PDF 와 이미지는 완전히 다른 판독기(pypdf vs. OCR)를
+# 타야 하므로, 검증에서 이미 확정한 정규 MIME 을 그대로 재사용해 라우터가
+# 다시 판별하지 않게 한다 — 판별 로직이 두 곳에 흩어지면 한쪽만 고치고
+# 잊는 회귀(이번 haansoftpdf/PNG 버그가 그 사례)가 반복된다.
+_FILE_KINDS: dict[str, str] = {
+    "application/pdf": "pdf",
+    "image/png": "image",
+    "image/jpeg": "image",
+}
+
 _REJECTION_MESSAGE = "지원하지 않는 파일 형식입니다. {formats} 파일을 사용해 주세요."
 
 
@@ -94,6 +104,11 @@ def _canonical_mime(content_type: str, *, content_head: bytes) -> str | None:
     return None
 
 
+def file_kind_for(canonical_mime: str) -> str:
+    """정규 MIME 에서 처리기 종류("pdf"/"image")를 얻는다."""
+    return _FILE_KINDS[canonical_mime]
+
+
 def validate_upload(
     *,
     filename: str,
@@ -101,12 +116,13 @@ def validate_upload(
     size_bytes: int,
     content: bytes,
     settings: Settings,
-) -> None:
+) -> str:
     """크기·MIME(별칭 포함)·확장자·magic signature 정합성을 검증한다.
 
     위반 시 `UploadValidationError` 를 던진다. 사용자에게는 일반적인 안내 문구만
     보여주고, 실제 클라이언트 MIME·판별 결과는 로그에만 남긴다(문서 내용은 남기지
-    않는다).
+    않는다). 통과하면 정규 MIME 을 반환한다 — 호출자가 이 값으로 `file_kind_for()`
+    를 호출해 PDF/이미지 처리기를 정확히 나눠 타게 한다.
     """
     max_bytes = settings.config.ingest.max_upload_mb * 1024 * 1024
     if size_bytes > max_bytes:
@@ -145,6 +161,8 @@ def validate_upload(
             canonical_mime,
         )
         raise UploadValidationError(_REJECTION_MESSAGE.format(formats=formats))
+
+    return canonical_mime
 
 
 def safe_filename(original_filename: str) -> str:
