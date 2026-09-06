@@ -1,7 +1,9 @@
 {% extends "_layout.html" %}
+{% import "_macros.html" as m %}
 {% block title %}계획·요약서{% endblock %}
 {% block content %}
 <section class="space-y-4 pt-2">
+  {{ m.back_link('/web/session/' + session_id + '/paths', '회복경로') }}
   <h2 class="text-xl font-bold">7일 실행계획</h2>
 
   <ol class="space-y-2">

@@ -102,9 +102,12 @@
   </div>
   {% endif %}
 
-  <a href="/web/session/{{ session_id }}/paths"
-     class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3">
-    회복경로 확인하기
-  </a>
+  <div class="dn-nav-bar sticky bottom-0 -mx-4 px-4 pt-3 pb-4 mt-2 bg-slate-50/95 backdrop-blur-sm border-t border-slate-200 flex gap-2">
+    {{ m.back_link('/web/session/' + session_id + '/supplement', '입력 수정') }}
+    <a href="/web/session/{{ session_id }}/paths"
+       class="flex-1 text-center rounded-lg bg-emerald-600 text-white font-semibold py-3">
+      회복경로 확인하기 →
+    </a>
+  </div>
 </section>
 {% endblock %}

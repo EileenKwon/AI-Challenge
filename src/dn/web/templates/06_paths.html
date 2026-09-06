@@ -103,12 +103,15 @@
   </details>
   {% endif %}
 
-  <button type="button" id="to-plan-btn"
-     class="block text-center w-full rounded-lg bg-emerald-600 text-white font-semibold py-3
-            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-            focus-visible:outline-emerald-700">
-    7일 계획 만들기
-  </button>
+  <div class="dn-nav-bar sticky bottom-0 -mx-4 px-4 pt-3 pb-4 mt-2 bg-slate-50/95 backdrop-blur-sm border-t border-slate-200 flex gap-2">
+    {{ m.back_link('/web/session/' + session_id + '/result', '상환여력') }}
+    <button type="button" id="to-plan-btn"
+       class="flex-1 text-center rounded-lg bg-emerald-600 text-white font-semibold py-3
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+              focus-visible:outline-emerald-700">
+      7일 계획 만들기 →
+    </button>
+  </div>
 </section>
 {% endblock %}
 

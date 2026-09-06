@@ -153,12 +153,20 @@ def test_intro_page_renders_required_elements() -> None:
     assert "크레딧포유" in r.text
 
 
-def test_upload_page_renders_four_input_methods() -> None:
+def test_upload_page_renders_three_consolidated_methods() -> None:
+    """PDF/이미지 업로드는 사용자에게 하나의 방식("내 문서 업로드")으로 통합해 보여준다.
+
+    파일 형식 구분은 서버(validate_upload)가 하고, 화면에는 노출하지 않는다
+    (2026-09-06 UX 개편 — progressive disclosure).
+    """
     client, sid = _client_with_session()
     r = client.get(f"/web/session/{sid}/upload")
     assert r.status_code == 200
-    for marker in ("PDF 파일 업로드", "사진(이미지) 업로드", "데모용 합성 문서", "직접 입력"):
+    for marker in ("내 문서 업로드", "데모로 체험하기", "직접 입력하기"):
         assert marker in r.text
+    # 선택되지 않은 방식의 상세 UI는 최초 로드 시 숨김 처리되어 있어야 한다.
+    assert 'data-detail="demo_synthetic" class="hidden' in r.text
+    assert 'data-detail="manual_entry" class="hidden' in r.text
 
 
 def test_extraction_page_shows_source_badges() -> None:
@@ -167,7 +175,7 @@ def test_extraction_page_shows_source_badges() -> None:
     assert r.status_code == 200
     assert "A금융" in r.text
     assert "문서" in r.text  # source badge label
-    assert "추가입력 계속하기" in r.text
+    assert "추가정보 입력하기" in r.text
 
 
 def test_supplement_page_shows_five_fixed_questions() -> None:
@@ -263,7 +271,7 @@ def test_upload_page_lists_demo_documents() -> None:
     assert r.status_code == 200
     assert "데모용 합성 문서 선택" in r.text
     assert "연체 90일 — 개인워크아웃 경계(전문상담 연결)" in r.text
-    assert "설치되어 있지 않습니다 — PDF 또는 이미지 업로드를" not in r.text
+    assert "설치되어 있지 않습니다 — 내 문서 업로드" not in r.text
 
 
 def test_every_offered_demo_case_is_actually_servable() -> None:
