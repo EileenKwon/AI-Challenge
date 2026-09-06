@@ -17,6 +17,33 @@ from dn.main import create_app
 _FIXTURE_PDF = Path(__file__).resolve().parents[1] / "fixtures" / "sample_text.pdf"
 
 
+def _upload_and_wait(client: TestClient, session_id: str, filename: str, content: bytes) -> dict:
+    """`POST /document`(202+job) → `GET /document/status` 폴링.
+
+    `/document` 도 `/report` 와 같은 이유로(2026-09-06, 업로드 진행상태 UX
+    개선 — 무료 LLM 티어 rate limit 재시도로 3~14초+ 걸릴 수 있음) 비동기
+    작업으로 바뀌었다. 완료된 job 상태 dict(`session_stage`/`debt_count`
+    포함)를 돌려준다.
+    """
+    created = client.post(
+        f"/api/session/{session_id}/document",
+        files={"file": (filename, content, "application/pdf")},
+    )
+    assert created.status_code == 202, created.text
+    job_id = created.json()["job_id"]
+
+    status = created.json()
+    for _ in range(100):
+        if status["state"] in ("ready", "failed"):
+            break
+        time.sleep(0.05)
+        status = client.get(
+            f"/api/session/{session_id}/document/status", params={"job_id": job_id}
+        ).json()
+    assert status["state"] == "ready", status
+    return status
+
+
 def _generate_and_download_report(client: TestClient, session_id: str) -> bytes:
     """`POST /report`(202+job) → `GET /report/status` 폴링 → `GET /report/download`.
 
@@ -51,12 +78,7 @@ def test_full_demo_scenario_upload_to_pdf_download() -> None:
 
     assert client.post(f"/api/session/{session_id}/consent").status_code == 200
 
-    with _FIXTURE_PDF.open("rb") as f:
-        upload = client.post(
-            f"/api/session/{session_id}/document",
-            files={"file": ("sample_text.pdf", f, "application/pdf")},
-        )
-    assert upload.status_code == 200, upload.text
+    _upload_and_wait(client, session_id, "sample_text.pdf", _FIXTURE_PDF.read_bytes())
 
     assert client.post(f"/api/session/{session_id}/confirm").status_code == 200
 
@@ -85,11 +107,7 @@ def test_report_before_plan_returns_409() -> None:
     created = client.post("/api/session")
     session_id = created.json()["session_id"]
     client.post(f"/api/session/{session_id}/consent")
-    with _FIXTURE_PDF.open("rb") as f:
-        client.post(
-            f"/api/session/{session_id}/document",
-            files={"file": ("sample_text.pdf", f, "application/pdf")},
-        )
+    _upload_and_wait(client, session_id, "sample_text.pdf", _FIXTURE_PDF.read_bytes())
     client.post(f"/api/session/{session_id}/confirm")
     client.post(
         f"/api/session/{session_id}/supplement",
@@ -134,13 +152,8 @@ def _client_with_extracting_backend() -> TestClient:
 def _uploaded_session(client: TestClient) -> str:
     session_id = client.post("/api/session").json()["session_id"]
     client.post(f"/api/session/{session_id}/consent")
-    with _FIXTURE_PDF.open("rb") as f:
-        upload = client.post(
-            f"/api/session/{session_id}/document",
-            files={"file": ("sample_text.pdf", f, "application/pdf")},
-        )
-    assert upload.status_code == 200, upload.text
-    assert upload.json()["debt_count"] == 3
+    status = _upload_and_wait(client, session_id, "sample_text.pdf", _FIXTURE_PDF.read_bytes())
+    assert status["debt_count"] == 3
     return session_id
 
 

@@ -32,13 +32,30 @@ echo "  [STAGE] 동의"
 curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/consent" > /dev/null
 echo "  [OK] consent"
 
-echo "  [STAGE] 합성 문서 업로드"
+echo "  [STAGE] 합성 문서 업로드 (비동기 작업)"
 if [ ! -f "$FIXTURE_PDF" ]; then
   echo "[ERR] 데모 PDF 가 없습니다: $FIXTURE_PDF"
   exit 1
 fi
-curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/document" \
-  -F "file=@${FIXTURE_PDF};type=application/pdf" > /dev/null
+# /document 도 추출 결과를 바로 돌려주지 않는다(2026-09-06, 업로드 진행상태
+# UX 개선 — 무료 LLM 티어 rate limit 재시도로 3~14초+ 걸릴 수 있음) — 202 +
+# job_id 를 받고 완료될 때까지 상태를 폴링한다.
+UPLOAD_RESPONSE=$(curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/document" \
+  -F "file=@${FIXTURE_PDF};type=application/pdf")
+UPLOAD_JOB_ID=$(echo "$UPLOAD_RESPONSE" | _json_field job_id)
+
+UPLOAD_STATE="reading_document"
+for _ in $(seq 1 100); do
+  UPLOAD_STATE=$(curl -fsS "$BASE_URL/api/session/$SESSION_ID/document/status?job_id=$UPLOAD_JOB_ID" | _json_field state)
+  if [ "$UPLOAD_STATE" = "ready" ] || [ "$UPLOAD_STATE" = "failed" ]; then
+    break
+  fi
+  sleep 0.2
+done
+if [ "$UPLOAD_STATE" != "ready" ]; then
+  echo "[ERR] 문서 업로드가 완료되지 않았습니다 (state=$UPLOAD_STATE)"
+  exit 1
+fi
 echo "  [OK] document uploaded"
 
 echo "  [STAGE] 추출 확인"

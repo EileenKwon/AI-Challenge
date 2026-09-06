@@ -17,20 +17,10 @@ from pydantic import BaseModel
 from dn.api import ratelimit
 from dn.api.deps import get_llm_client_dep, get_session_or_404, get_session_store
 from dn.domain.enums import FieldSource, ProductType, SessionStage
-from dn.domain.errors import DomainError
 from dn.domain.models import Debt, ExtractionResult
 from dn.domain.provenance import Tracked
-from dn.extraction.extractor import extract
-from dn.ingest import image_reader, pdf_reader
-from dn.ingest.injection_scanner import apply as apply_scan
-from dn.ingest.injection_scanner import scan as scan_injection
-from dn.ingest.pii_masker import mask as mask_pii
-from dn.ingest.uploader import (
-    UploadValidationError,
-    file_kind_for,
-    safe_filename,
-    validate_upload,
-)
+from dn.ingest import jobs as upload_jobs
+from dn.ingest.uploader import UploadValidationError, safe_filename, validate_upload
 from dn.llm.client import LLMClient
 from dn.pipeline.stages import transition
 from dn.settings import get_settings
@@ -41,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/session", tags=["document"])
 
 
-@router.post("/{session_id}/document")
+@router.post("/{session_id}/document", status_code=202)
 def upload_document(
     session_id: str,
     request: Request,
@@ -49,20 +39,20 @@ def upload_document(
     store: SessionStore = Depends(get_session_store),
     client: LLMClient = Depends(get_llm_client_dep),
 ) -> dict:
-    """PDF/이미지 업로드를 받아 텍스트를 추출한다.
+    """PDF/이미지 업로드를 받아 파일 검증까지 동기로 끝내고, 이후(문서 읽기·
+    PII 마스킹·AI 추출)는 백그라운드 작업으로 넘긴다.
 
-    일부러 `async def` 가 아니라 동기 함수다 — 본문 전체(PDF 파싱, poppler
-    렌더링, Tesseract OCR, LLM 호출)가 전부 블로킹 호출인데 `async def` 로
-    선언하면 Starlette 가 스레드풀로 offload 하지 않고 단일 이벤트 루프에서
-    그대로 실행한다. 스캔 PDF OCR(poppler + tesseract 서브프로세스 2개가
-    한 요청 안에서 순차 실행)을 얹은 뒤 이 블로킹 구간이 길어져, Render
-    무료 티어의 헬스체크(`HEALTHCHECK`, 10초 간격)가 응답을 못 받고 연속
-    실패해 컨테이너가 재시작되는 문제가 실제로 발생했다(2026-09-06 실측:
-    스캔 PDF 업로드 직후 healthz 가 503/502 로 떨어지고 세션이 사라짐).
-    동기 함수로 바꾸면 Starlette 가 이 핸들러를 스레드풀에서 실행해 메인
-    이벤트 루프(헬스체크 포함)를 막지 않는다.
+    형식이 잘못된 파일(400)은 기다리게 하지 않고 즉시 알려준다. 느리고
+    가변적인 부분(무료 LLM 티어의 rate limit 재시도로 3~14초+ 걸릴 수
+    있음, 2026-09-06 실측)만 비동기로 돌려 진행상태 UI(`GET .../document/
+    status`)를 붙일 수 있게 한다 — `report/jobs.py` 와 같은 이유·구조다.
+
+    일부러 `async def` 가 아니라 동기 함수다 — 본문의 파일 검증·저장이
+    블로킹 호출인데 `async def` 로 선언하면 Starlette 가 스레드풀로
+    offload 하지 않고 단일 이벤트 루프에서 그대로 실행해 헬스체크를 막을
+    수 있다(2026-09-06 실측 회귀). 동기 함수로 두면 스레드풀에서 실행된다.
     """
-    state = get_session_or_404(session_id, store)
+    get_session_or_404(session_id, store)
     settings = get_settings()
     if settings.config.ratelimit.enabled:
         ratelimit.check(
@@ -88,57 +78,18 @@ def upload_document(
     saved_path = session_dir / safe_filename(file.filename or "upload.pdf")
     saved_path.write_bytes(content_bytes)
 
-    # 검증 단계에서 이미 확정한 정규 MIME 으로 처리기를 나눈다. pypdf 를
-    # PDF 가 아닌 파일에 호출하지 않기 위해서다 — PNG/JPEG 를 PDF 판독기에
-    # 넘기면 "PDF 를 열 수 없습니다" 크래시가 난다(2026-09-06 버그 리포트).
-    try:
-        if file_kind_for(canonical_mime) == "image":
-            document = image_reader.read(saved_path, doc_id=saved_path.name)
-        else:
-            document = pdf_reader.read(saved_path, doc_id=saved_path.name, settings=settings)
-    except DomainError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    cleaned_pages = []
-    for page in document.pages:
-        if page.text is None:
-            cleaned_pages.append(page)
-            continue
-        scan_report = scan_injection(page.text, settings=settings)
-        cleaned_text = apply_scan(page.text, scan_report)
-        masked_text, _ = mask_pii(cleaned_text)
-        cleaned_pages.append(page.model_copy(update={"text": masked_text}))
-    document = document.model_copy(update={"pages": tuple(cleaned_pages)})
-
-    try:
-        debts = extract(document, client=client)
-    except Exception as exc:
-        # LLM 백엔드 장애·한도 초과로 추출이 막혀도 서비스 전체가 죽으면 안 된다.
-        # 세션은 S1 에 그대로 두고 503 으로 돌려주면, 화면 02 의 기존 오류 표시가
-        # 이 문구를 그대로 띄우고 사용자는 다른 입력 방식으로 넘어갈 수 있다.
-        # 예외 종류를 메시지 본문에 넣는다. extra= 로만 넘기면 uvicorn 기본
-        # 포매터가 출력하지 않아 배포 로그에 "extraction_failed" 만 남고 원인을
-        # 알 수 없다 — 실제로 그 상태에서 원인 추적에 시간을 썼다.
-        logger.warning("extraction_failed: %s: %s", type(exc).__name__, exc)
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "AI 문서 추출을 일시적으로 사용할 수 없습니다. "
-                '아래 "문서 없이 직접 입력"으로 진행해 주세요.'
-            ),
-        ) from exc
-    extraction = ExtractionResult(debts=tuple(debts))
-
-    new_state = transition(state, SessionStage.S2_EXTRACTED)
-    new_state = new_state.model_copy(
-        update={"document": document, "extraction": extraction, "updated_at": datetime.now()}
+    job = upload_jobs.start_job(
+        session_id, saved_path, canonical_mime, settings=settings, store=store, client=client
     )
-    store.save(new_state)
-    return {
-        "session_id": new_state.session_id,
-        "stage": new_state.stage.value,
-        "debt_count": len(debts),
-    }
+    return {"job_id": job.job_id, **job.to_status_dict()}
+
+
+@router.get("/{session_id}/document/status")
+def get_document_status(session_id: str, job_id: str) -> dict:
+    job = upload_jobs.get_job(job_id)
+    if job is None or job.session_id != session_id:
+        raise HTTPException(status_code=404, detail="작업을 찾을 수 없습니다.")
+    return job.to_status_dict()
 
 
 class ManualDebtEntry(BaseModel):

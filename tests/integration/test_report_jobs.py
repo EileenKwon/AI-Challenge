@@ -26,10 +26,21 @@ def _planned_session() -> tuple[TestClient, str]:
     session_id = client.post("/api/session").json()["session_id"]
     client.post(f"/api/session/{session_id}/consent")
     with _FIXTURE_PDF.open("rb") as f:
-        client.post(
+        created = client.post(
             f"/api/session/{session_id}/document",
             files={"file": ("sample_text.pdf", f, "application/pdf")},
         )
+    # /document 도 202+job 비동기라(2026-09-06, 업로드 진행상태 UX 개선) 추출이
+    # 실제로 끝난 뒤에야 /confirm 을 불러야 한다 — 안 그러면 세션이 아직
+    # s2_extracted 에 도달하기 전에 경합한다.
+    job_id = created.json()["job_id"]
+    status = created.json()
+    deadline = time.monotonic() + 15.0
+    while status.get("state") not in ("ready", "failed") and time.monotonic() < deadline:
+        time.sleep(0.02)
+        status = client.get(
+            f"/api/session/{session_id}/document/status", params={"job_id": job_id}
+        ).json()
     client.post(f"/api/session/{session_id}/confirm")
     client.post(
         f"/api/session/{session_id}/supplement",

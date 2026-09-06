@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import time
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -144,6 +145,33 @@ def _client_with_session() -> tuple[TestClient, str]:
     return client, state.session_id
 
 
+def _upload_document(
+    client: TestClient, sid: str, filename: str, content: bytes, content_type: str
+) -> dict:
+    """`POST /document` 를 올리고(202) 완료까지 기다려 최종 job 상태를 돌려준다.
+
+    2026-09-06: `/document` 가 동기(즉시 200/400/503)에서 비동기 job(202 +
+    폴링)으로 바뀌었다(무료 LLM 티어 rate limit 재시도로 3~14초+ 걸릴 수
+    있어 진행상태 UI 를 붙이기 위해서). 파일 형식 검증(400)은 여전히
+    동기라 이 헬퍼를 거치지 않고 바로 응답이 온다 — 그 경우도 이 함수가
+    그대로 반환한다.
+    """
+    r = client.post(
+        f"/api/session/{sid}/document", files={"file": (filename, content, content_type)}
+    )
+    if r.status_code != 202:
+        return {"sync_status_code": r.status_code, "sync_detail": r.json().get("detail")}
+    job_id = r.json()["job_id"]
+    deadline = time.monotonic() + 15.0
+    status = r.json()
+    while time.monotonic() < deadline:
+        status = client.get(f"/api/session/{sid}/document/status", params={"job_id": job_id}).json()
+        if status.get("state") in ("ready", "failed"):
+            return status
+        time.sleep(0.02)
+    raise AssertionError(f"업로드 작업이 제한 시간 안에 끝나지 않았습니다: {status}")
+
+
 def test_intro_page_renders_required_elements() -> None:
     client, sid = _client_with_session()
     r = client.get(f"/web/session/{sid}/intro")
@@ -201,6 +229,153 @@ def test_result_page_shows_income_drop_scenario() -> None:
     assert r.status_code == 200
     assert "소득이 20% 줄어든다면" in r.text
     assert "60만 원" in r.text
+
+
+# --- 화면 05 현금흐름 결과 — 시각화 UX·집계 점검 (2026-09-06) --------------------
+#
+# 특정 채권자 1개가 100%로 표시되는 사례 리포트 → routes.py `_creditor_shares()`
+# 로 분리해 tests/unit/test_creditor_shares.py 에서 순수 함수로 상세 검증한다.
+# 여기서는 화면 렌더링(1건/2건 이상 분기, 상단 결론 문구, 두 막대의 동일 스케일
+# 비교)만 확인한다.
+
+
+def _debt_for_result(debt_id: str, creditor: str, balance: Decimal) -> Debt:
+    def tracked(value):
+        return Tracked(value=value, source=FieldSource.DOCUMENT)
+
+    return Debt(debt_id=debt_id, creditor=tracked(creditor), balance=tracked(balance))
+
+
+def _result_session(
+    *,
+    debts: tuple[Debt, ...],
+    monthly_available: Decimal,
+    monthly_total_payment: Decimal,
+) -> tuple[TestClient, str]:
+    now = datetime(2026, 8, 18)
+    session_id = "result-test-session"
+    cashflow = CashflowResult(
+        total_debt=sum((d.balance.value for d in debts), Decimal(0)),
+        monthly_total_payment=monthly_total_payment,
+        monthly_available=monthly_available,
+        monthly_shortfall=monthly_total_payment - monthly_available,
+        dti_ratio=Decimal("0.1"),
+    )
+    extraction = ExtractionResult(debts=debts)
+    analysis = AnalysisResult(
+        session_id=session_id,
+        analyzed_at=now,
+        extraction=extraction,
+        income=IncomeProfile(monthly_net_income=_known(Decimal("2000000"))),
+        household=HouseholdProfile(essential_living_cost=_known(Decimal("1200000"))),
+        flags=SituationFlags(),
+        cashflow=cashflow,
+    )
+    state = SessionState(
+        session_id=session_id,
+        stage=SessionStage.S5_ANALYZED,
+        created_at=now,
+        updated_at=now,
+        extraction=extraction,
+        analysis=analysis,
+    )
+    client = TestClient(create_app())
+    get_session_store().create(state)
+    return client, session_id
+
+
+def test_result_page_shows_simple_summary_for_a_single_debt() -> None:
+    """채무 1건 — 막대그래프 대신 "현재 확인된 채무 1건 + 금융회사명 + 금액"."""
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("500000"),
+        monthly_total_payment=Decimal("300000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert r.status_code == 200
+    assert "현재 확인된 채무 1건" in r.text
+    assert "OO캐피탈" in r.text
+    assert "500만 원" in r.text
+    assert 'aria-label="금융회사별 채무 비중 막대 차트"' not in r.text
+
+
+def test_result_page_shows_bar_chart_with_name_balance_percent_for_multiple_debts() -> None:
+    """채무 2건 이상 — 각 항목에 금융회사명·잔액·비중% 을 모두 표시한다."""
+    client, sid = _result_session(
+        debts=(
+            _debt_for_result("d0", "OO캐피탈", Decimal("6000000")),
+            _debt_for_result("d1", "XX카드", Decimal("4000000")),
+        ),
+        monthly_available=Decimal("500000"),
+        monthly_total_payment=Decimal("300000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert r.status_code == 200
+    assert "현재 확인된 채무 1건" not in r.text
+    assert "OO캐피탈" in r.text and "600만 원" in r.text and "60%" in r.text
+    assert "XX카드" in r.text and "400만 원" in r.text and "40%" in r.text
+
+
+def test_result_page_headline_when_shortfall_positive() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("500000"),
+        monthly_total_payment=Decimal("630000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert "매달 13만 원이 부족합니다" in r.text
+
+
+def test_result_page_headline_when_shortfall_zero() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("500000"),
+        monthly_total_payment=Decimal("500000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert "예정 상환액과 가용재원이 같습니다" in r.text
+
+
+def test_result_page_headline_when_shortfall_negative() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("500000"),
+        monthly_total_payment=Decimal("200000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert "월 30만 원의 여유가 있습니다" in r.text
+
+
+def test_result_page_two_bars_use_the_same_scale_when_available_less_than_payment() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("300000"),
+        monthly_total_payment=Decimal("600000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert "width: 50%" in r.text  # 가용재원(작은 값) = 300000/600000
+    assert "width: 100%" in r.text  # 예정상환액(큰 값) = 자기 자신 기준 100%
+
+
+def test_result_page_two_bars_equal_when_available_equals_payment() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("400000"),
+        monthly_total_payment=Decimal("400000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert r.text.count("width: 100%") >= 2
+
+
+def test_result_page_two_bars_use_the_same_scale_when_available_greater_than_payment() -> None:
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("600000"),
+        monthly_total_payment=Decimal("300000"),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert "width: 100%" in r.text  # 가용재원(큰 값)
+    assert "width: 50%" in r.text  # 예정상환액(작은 값) = 300000/600000
 
 
 def test_paths_page_shows_eleven_item_card() -> None:
@@ -300,12 +475,9 @@ def test_demo_document_flows_through_the_normal_upload_api() -> None:
     doc = client.get("/demo-docs/debt_count_3.pdf")
     assert doc.status_code == 200
 
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("debt_count_3.pdf", doc.content, "application/pdf")},
-    )
-    assert r.status_code == 200, r.text
-    assert r.json()["stage"] == "s2_extracted"
+    status = _upload_document(client, sid, "debt_count_3.pdf", doc.content, "application/pdf")
+    assert status["state"] == "ready", status
+    assert status["session_stage"] == "s2_extracted"
 
 
 # --- 파일 업로드 호환성 버그 (2026-09-06): application/haansoftpdf ---------------
@@ -320,12 +492,11 @@ def test_upload_accepts_real_pdf_reported_as_haansoftpdf_mime() -> None:
     doc = client.get("/demo-docs/debt_count_3.pdf")
     assert doc.status_code == 200
 
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("debt_count_3.pdf", doc.content, "application/haansoftpdf")},
+    status = _upload_document(
+        client, sid, "debt_count_3.pdf", doc.content, "application/haansoftpdf"
     )
-    assert r.status_code == 200, r.text
-    assert r.json()["stage"] == "s2_extracted"
+    assert status["state"] == "ready", status
+    assert status["session_stage"] == "s2_extracted"
 
 
 def test_upload_rejects_fake_pdf_even_with_haansoftpdf_alias_mime() -> None:
@@ -398,16 +569,13 @@ def test_scanned_pdf_upload_routes_through_ocr_not_left_empty(monkeypatch) -> No
     monkeypatch.setattr("pytesseract.image_to_string", lambda img, lang=None: "스캔본 OCR 텍스트")
 
     client, sid = _client_with_session()
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("scanned.pdf", _scanned_pdf_bytes(), "application/pdf")},
-    )
-    assert r.status_code == 200, r.text
-    assert r.json()["stage"] == "s2_extracted"
+    status = _upload_document(client, sid, "scanned.pdf", _scanned_pdf_bytes(), "application/pdf")
+    assert status["state"] == "ready", status
+    assert status["session_stage"] == "s2_extracted"
 
 
 def test_scanned_pdf_ocr_engine_missing_gets_safe_error_without_internal_path(monkeypatch) -> None:
-    """tesseract 자체가 없을 때도 크래시·경로 노출 없이 안전하게 400 으로 떨어진다."""
+    """tesseract 자체가 없을 때도 크래시·경로 노출 없이 안전하게 실패 처리된다."""
     import pytesseract
 
     def _raise(img, lang=None):
@@ -416,19 +584,16 @@ def test_scanned_pdf_ocr_engine_missing_gets_safe_error_without_internal_path(mo
     monkeypatch.setattr("pytesseract.image_to_string", _raise)
 
     client, sid = _client_with_session()
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("scanned.pdf", _scanned_pdf_bytes(), "application/pdf")},
-    )
-    assert r.status_code == 400
-    body = r.json()["detail"]
+    status = _upload_document(client, sid, "scanned.pdf", _scanned_pdf_bytes(), "application/pdf")
+    assert status["state"] == "failed", status
+    body = status["error"]
     assert "/" not in body
     assert str(get_settings().upload_dir) not in body
 
 
 def test_png_upload_dispatches_to_image_reader_not_pdf_reader(monkeypatch) -> None:
     """핵심 회귀 테스트 — PNG 는 반드시 image_reader 를 타고 pdf_reader(pypdf)는 타지 않는다."""
-    import dn.api.routes_document as routes_document
+    import dn.ingest.jobs as upload_jobs
 
     calls: dict[str, bool] = {"pdf": False, "image": False}
 
@@ -447,22 +612,19 @@ def test_png_upload_dispatches_to_image_reader_not_pdf_reader(monkeypatch) -> No
             pages=(PageContent(page_no=1, text="OCR 텍스트", image_path=None),),
         )
 
-    monkeypatch.setattr(routes_document.pdf_reader, "read", fake_pdf_read)
-    monkeypatch.setattr(routes_document.image_reader, "read", fake_image_read)
+    monkeypatch.setattr(upload_jobs.pdf_reader, "read", fake_pdf_read)
+    monkeypatch.setattr(upload_jobs.image_reader, "read", fake_image_read)
 
     client, sid = _client_with_session()
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("scan.png", _png_bytes(), "image/png")},
-    )
-    assert r.status_code == 200, r.text
+    status = _upload_document(client, sid, "scan.png", _png_bytes(), "image/png")
+    assert status["state"] == "ready", status
     assert calls["image"] is True
     assert calls["pdf"] is False
 
 
 def test_pdf_upload_dispatches_to_pdf_reader_not_image_reader(monkeypatch) -> None:
     """대칭 케이스 — PDF 는 image_reader(OCR)를 타지 않는다."""
-    import dn.api.routes_document as routes_document
+    import dn.ingest.jobs as upload_jobs
 
     calls: dict[str, bool] = {"pdf": False, "image": False}
 
@@ -481,16 +643,13 @@ def test_pdf_upload_dispatches_to_pdf_reader_not_image_reader(monkeypatch) -> No
         calls["image"] = True
         raise AssertionError("PDF 파일이 image_reader.read() 로 전달되면 안 된다")
 
-    monkeypatch.setattr(routes_document.pdf_reader, "read", fake_pdf_read)
-    monkeypatch.setattr(routes_document.image_reader, "read", fake_image_read)
+    monkeypatch.setattr(upload_jobs.pdf_reader, "read", fake_pdf_read)
+    monkeypatch.setattr(upload_jobs.image_reader, "read", fake_image_read)
 
     client, sid = _client_with_session()
     doc = client.get("/demo-docs/debt_count_3.pdf")
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("debt_count_3.pdf", doc.content, "application/pdf")},
-    )
-    assert r.status_code == 200, r.text
+    status = _upload_document(client, sid, "debt_count_3.pdf", doc.content, "application/pdf")
+    assert status["state"] == "ready", status
     assert calls["pdf"] is True
     assert calls["image"] is False
 
@@ -500,24 +659,20 @@ def test_png_upload_no_longer_crashes_with_pdf_error(monkeypatch) -> None:
     monkeypatch.setattr("pytesseract.image_to_string", lambda img, lang=None: "채무 정보")
 
     client, sid = _client_with_session()
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("scan.png", _png_bytes(), "image/png")},
-    )
-    assert r.status_code == 200, r.text
-    assert r.json()["stage"] == "s2_extracted"
+    status = _upload_document(client, sid, "scan.png", _png_bytes(), "image/png")
+    assert status["state"] == "ready", status
+    assert status["session_stage"] == "s2_extracted"
 
 
 def test_corrupted_png_gets_image_specific_error_message() -> None:
     """깨진 이미지는 "PDF 를 열 수 없습니다" 가 아니라 이미지 전용 문구로 안내한다."""
     client, sid = _client_with_session()
-    r = client.post(
-        f"/api/session/{sid}/document",
-        files={"file": ("broken.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 4, "image/png")},
+    status = _upload_document(
+        client, sid, "broken.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 4, "image/png"
     )
-    assert r.status_code == 400
-    assert "PDF" not in r.json()["detail"]
-    assert "이미지" in r.json()["detail"]
+    assert status["state"] == "failed", status
+    assert "PDF" not in status["error"]
+    assert "이미지" in status["error"]
 
 
 # --- 02 화면 "문서 없이 직접 입력" ---------------------------------------------
@@ -625,7 +780,7 @@ def test_document_upload_is_rate_limited_per_ip() -> None:
         )
         statuses.append(r.status_code)
 
-    assert statuses[:limit] == [200] * limit, "한도 안에서는 전부 통과해야 한다"
+    assert statuses[:limit] == [202] * limit, "한도 안에서는 전부 통과해야 한다"
     assert statuses[limit:] == [429, 429]
     ratelimit.reset()
 
@@ -668,11 +823,9 @@ def test_llm_failure_degrades_to_503_with_guidance() -> None:
     client.post(f"/api/session/{sid}/consent")
     doc = client.get("/demo-docs/debt_count_3.pdf").content
 
-    r = client.post(
-        f"/api/session/{sid}/document", files={"file": ("d.pdf", doc, "application/pdf")}
-    )
-    assert r.status_code == 503
-    assert "직접 입력" in r.json()["detail"]
+    status = _upload_document(client, sid, "d.pdf", doc, "application/pdf")
+    assert status["state"] == "failed", status
+    assert "직접 입력" in status["error"]
 
     # 세션은 S1 에 남아 있어야 다른 방식으로 다시 시도할 수 있다
     assert client.get(f"/api/session/{sid}/extraction").json()["debts"] == []

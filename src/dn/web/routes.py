@@ -184,6 +184,42 @@ def _debt_view(debt) -> dict[str, Any]:
     }
 
 
+def _creditor_shares(extraction: ExtractionResult) -> tuple[list[dict[str, Any]], int]:
+    """화면 05 "채무 비중" 집계. `(항목 목록, 잔액 미확인으로 제외한 채무 수)`.
+
+    이 시점(S3_CONFIRMED 이후)의 `extraction.debts` 는 전부 사용자가 확인을
+    마친 채무다 — 화면 03 에서 필드별 `user_confirmed` 없이는 다음 단계로
+    못 가므로 별도의 "확인됨" 필터가 필요 없다.
+
+    잔액이 `None`(미확인)인 채무만 제외한다. 잔액 `0`은 실제로 확인된 값이라
+    truthy 검사(`if debt.balance.value`)로 걸러내면 안 된다 — 그렇게 하면
+    다른 채무가 남은 채무 전부를 차지한 것처럼 보여 특정 채권자가 100%로
+    나오는 버그가 생긴다(2026-09-06 리포트). 같은 채권자명이 여러 채무에
+    걸쳐 있으면 잔액을 합산해 하나의 항목으로 묶는다.
+    """
+    priced = [d for d in extraction.debts if d.balance.value is not None]
+    excluded_count = len(extraction.debts) - len(priced)
+
+    totals_by_creditor: dict[str, Decimal] = {}
+    for debt in priced:
+        name = debt.creditor.value or "미확인 채권자"
+        totals_by_creditor[name] = totals_by_creditor.get(name, Decimal(0)) + debt.balance.value
+
+    total_balance = sum(totals_by_creditor.values(), Decimal(0))
+    if total_balance <= 0:
+        return [], excluded_count
+
+    shares = [
+        {
+            "creditor": name,
+            "balance": format_won(amount),
+            "percent": round(amount / total_balance * 100),
+        }
+        for name, amount in totals_by_creditor.items()
+    ]
+    return shares, excluded_count
+
+
 def render_page(template_name: str, context: dict[str, Any]) -> HTMLResponse:
     template = _env().get_template(template_name)
     return HTMLResponse(template.render(**context))
@@ -281,32 +317,40 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
     cashflow = analysis.cashflow if analysis else None
 
     if cashflow is not None:
-        total_ref = max(cashflow.monthly_available, cashflow.monthly_total_payment, Decimal(1))
+        # 두 막대(가용재원·예정상환액)를 같은 기준(둘 중 큰 값)에 대한 비율로
+        # 그려야 서로 비교가 된다 — 각자 따로 100% 스케일을 쓰면(예: 예정상환액이
+        # 0원이어도 그 막대 자체는 항상 꽉 차 보이는 식) 비교 의미가 사라진다.
+        max_value = max(cashflow.monthly_available, cashflow.monthly_total_payment, Decimal(1))
+        if cashflow.monthly_shortfall > 0:
+            shortfall_sign = "positive"
+        elif cashflow.monthly_shortfall < 0:
+            shortfall_sign = "negative"
+        else:
+            shortfall_sign = "zero"
         ctx["cashflow"] = {
             "total_debt": format_won(cashflow.total_debt),
             "monthly_available": format_won(cashflow.monthly_available),
             "monthly_total_payment": format_won(cashflow.monthly_total_payment),
             "monthly_shortfall": format_won(abs(cashflow.monthly_shortfall)),
             "shortfall_is_positive": cashflow.monthly_shortfall >= 0,
+            "shortfall_sign": shortfall_sign,
             "dti_ratio": format_ratio(cashflow.dti_ratio),
             "dti_ratio_plain": format_ratio_plain(cashflow.dti_ratio),
         }
-        ctx["available_ratio"] = int(min(cashflow.monthly_available, total_ref) / total_ref * 100)
-        ctx["payment_ratio"] = int(min(cashflow.monthly_total_payment, total_ref) / total_ref * 100)
+        ctx["available_ratio"] = int(cashflow.monthly_available / max_value * 100)
+        ctx["payment_ratio"] = int(cashflow.monthly_total_payment / max_value * 100)
         ctx["trace"] = list(cashflow.trace)
         extraction = state.extraction or ExtractionResult()
-        known = [d for d in extraction.debts if d.balance.value and d.creditor.value]
-        total = sum((d.balance.value for d in known), Decimal(0)) or Decimal(1)
-        ctx["creditor_shares"] = [
-            {"creditor": d.creditor.value, "percent": int(d.balance.value / total * 100)}
-            for d in known
-        ]
+        ctx["creditor_shares"], ctx["creditor_excluded_count"] = _creditor_shares(extraction)
+        ctx["confirmed_debt_count"] = len(extraction.debts)
     else:
         ctx["cashflow"] = None
         ctx["available_ratio"] = 0
         ctx["payment_ratio"] = 0
         ctx["trace"] = []
         ctx["creditor_shares"] = []
+        ctx["creditor_excluded_count"] = 0
+        ctx["confirmed_debt_count"] = 0
 
     scenario = analysis.scenario if analysis else None
     if scenario is not None and state.income.monthly_net_income.value is not None:

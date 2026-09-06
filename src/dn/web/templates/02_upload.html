@@ -14,6 +14,7 @@
 
   <form id="upload-form" class="space-y-4">
 
+  <div id="upload-form-view" class="space-y-4">
     <div class="space-y-2" role="radiogroup" aria-label="자료 입력 방식 선택">
       <label class="flex items-start gap-3 rounded-lg border-2 border-slate-300 bg-white p-4 cursor-pointer
                     has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
@@ -105,6 +106,29 @@
         방식을 선택해 주세요 →
       </button>
     </div>
+  </div>
+
+  <div id="upload-progress-view" class="hidden rounded-lg border border-slate-200 bg-white p-4 space-y-3"
+       role="status" aria-live="polite">
+    <p class="text-sm font-medium">문서를 확인하고 있습니다</p>
+    <ol class="text-sm space-y-1">
+      <li data-step="1" class="flex items-center gap-2 text-slate-400">
+        <span class="upload-step-icon w-4 text-center">○</span> 문서 읽는 중
+      </li>
+      <li data-step="2" class="flex items-center gap-2 text-slate-400">
+        <span class="upload-step-icon w-4 text-center">○</span> 내용 확인 중
+      </li>
+      <li data-step="3" class="flex items-center gap-2 text-slate-400">
+        <span class="upload-step-icon w-4 text-center">○</span> AI가 채무정보 추출 중
+      </li>
+    </ol>
+    <div class="w-full bg-slate-200 rounded-full h-2">
+      <div id="upload-progress-bar" class="bg-emerald-500 h-2 rounded-full transition-all" style="width:0%"></div>
+    </div>
+    <p id="upload-slow-notice" class="hidden text-xs text-amber-600" role="alert">
+      무료 AI 서비스 사용량이 많아 평소보다 오래 걸리고 있습니다. 잠시만 기다려 주세요.
+    </p>
+  </div>
   </form>
 </section>
 
@@ -322,7 +346,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     const data = new FormData();
     data.append('file', file);
     const res = await fetch('/api/session/{{ session_id }}/document', { method: 'POST', body: data });
-    if (!res.ok) {
+    if (res.status !== 202) {
       // 409: 뒤로가기 후 이미 지난 단계를 다시 제출한 경우(상태전이 충돌) — 원본
       // 메시지는 내부 상태값을 그대로 노출하므로 사용자 문구로 바꾼다.
       if (res.status === 409) {
@@ -332,12 +356,70 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
       try { detail = (await res.json()).detail || ''; } catch (e2) {}
       throw new Error(detail || ('업로드에 실패했습니다 (' + res.status + ')'));
     }
-    location.href = '/web/session/{{ session_id }}/extraction';
+    const created = await res.json();
+    await dnPollUploadJob(created.job_id, created);
   } catch (err) {
+    dnShowUploadForm();
     dnShowError(btn, err.message);
     btn.disabled = false;
     btn.textContent = originalLabel;
   }
 });
+
+// --- 업로드 후 AI 추출 진행상태 (실제 서버 단계만 반영 — 가짜 타이머 금지) ---------
+const uploadFormView = document.getElementById('upload-form-view');
+const uploadProgressView = document.getElementById('upload-progress-view');
+const uploadProgressBar = document.getElementById('upload-progress-bar');
+const uploadSlowNotice = document.getElementById('upload-slow-notice');
+// 무료 LLM 티어 rate limit 재시도 실측(2026-09-06): 정상 3초 안팎, 재시도가
+// 걸리면 8~15초 이상. 이 시간을 넘기면 "평소보다 오래 걸림" 안내만 띄운다.
+const UPLOAD_SLOW_THRESHOLD_MS = 8000;
+const UPLOAD_STEP_INDEX = { reading_document: 1, checking_content: 2, extracting_debts: 3 };
+
+function dnShowUploadForm() {
+  uploadFormView.classList.remove('hidden');
+  uploadProgressView.classList.add('hidden');
+}
+
+function dnShowUploadProgress() {
+  uploadFormView.classList.add('hidden');
+  uploadProgressView.classList.remove('hidden');
+}
+
+function dnRenderUploadStep(step) {
+  uploadProgressView.querySelectorAll('li[data-step]').forEach((li) => {
+    const n = parseInt(li.dataset.step, 10);
+    const icon = li.querySelector('.upload-step-icon');
+    icon.textContent = n < step ? '✓' : (n === step ? '●' : '○');
+    li.classList.toggle('text-emerald-700', n <= step);
+    li.classList.toggle('text-slate-400', n > step);
+  });
+  uploadProgressBar.style.width = Math.round((step / 3) * 100) + '%';
+}
+
+async function dnPollUploadJob(jobId, initialStatus) {
+  dnShowUploadProgress();
+  uploadSlowNotice.classList.add('hidden');
+  const slowTimer = setTimeout(() => uploadSlowNotice.classList.remove('hidden'), UPLOAD_SLOW_THRESHOLD_MS);
+  let status = initialStatus;
+  try {
+    while (true) {
+      if (status.state === 'failed') {
+        throw new Error(status.error || '문서를 처리하지 못했습니다.');
+      }
+      if (status.state === 'ready') {
+        location.href = '/web/session/{{ session_id }}/extraction';
+        return;
+      }
+      dnRenderUploadStep(UPLOAD_STEP_INDEX[status.state] || 1);
+      await new Promise((r) => setTimeout(r, 700));
+      const res = await fetch('/api/session/{{ session_id }}/document/status?job_id=' + jobId);
+      if (!res.ok) throw new Error('상태 확인에 실패했습니다.');
+      status = await res.json();
+    }
+  } finally {
+    clearTimeout(slowTimer);
+  }
+}
 </script>
 {% endblock %}
