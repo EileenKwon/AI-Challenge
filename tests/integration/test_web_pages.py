@@ -433,7 +433,9 @@ def test_png_upload_dispatches_to_image_reader_not_pdf_reader(monkeypatch) -> No
         from dn.domain.models import DocumentContent, PageContent
 
         return DocumentContent(
-            doc_id=doc_id, filename=path.name, is_scanned=True,
+            doc_id=doc_id,
+            filename=path.name,
+            is_scanned=True,
             pages=(PageContent(page_no=1, text="OCR 텍스트", image_path=None),),
         )
 
@@ -461,7 +463,9 @@ def test_pdf_upload_dispatches_to_pdf_reader_not_image_reader(monkeypatch) -> No
         from dn.domain.models import DocumentContent, PageContent
 
         return DocumentContent(
-            doc_id=doc_id, filename=path.name, is_scanned=False,
+            doc_id=doc_id,
+            filename=path.name,
+            is_scanned=False,
             pages=(PageContent(page_no=1, text="네이티브 텍스트", image_path=None),),
         )
 
