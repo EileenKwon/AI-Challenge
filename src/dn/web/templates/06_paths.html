@@ -73,7 +73,10 @@
           <dd>
             {% if p.policy_ref %}
             {{ p.policy_ref.title }} ({{ p.policy_ref.card_version }}) · 기준일 {{ p.policy_ref.policy_base_date }}
-            {% if not p.policy_ref.verified %}<span class="text-red-600 font-medium">· 공식 출처 대조 전(미검증)</span>{% endif %}
+            {% if not p.policy_ref.verified %}
+            <span class="plain-hide text-red-600 font-medium">· 공식 출처 대조 전(미검증)</span>
+            <span class="plain-only text-red-600 font-medium">· 아직 공식 사이트와 다시 맞춰보지 않았어요</span>
+            {% endif %}
             {% else %}확인되지 않음{% endif %}
           </dd></div>
       </dl>

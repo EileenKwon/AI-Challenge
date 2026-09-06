@@ -5,33 +5,87 @@
 <section class="space-y-4 pt-2">
   <h2 class="text-xl font-bold">현금흐름 결과</h2>
 
-  {% if cashflow.shortfall_sign == "positive" %}
-  <p class="rounded-lg bg-rose-50 border-2 border-rose-300 p-4 text-base font-bold text-rose-800">
-    현재 입력 기준 매달 {{ cashflow.monthly_shortfall }}이 부족합니다.
-  </p>
+  {% if cashflow.shortfall_sign == "insufficient" %}
+  <div class="rounded-lg bg-amber-50 border-2 border-amber-300 p-4">
+    <p class="plain-hide text-base font-bold text-amber-900">아직 정확한 월 상환 여력을 계산하기 어렵습니다.</p>
+    <p class="plain-hide text-sm text-amber-800 mt-1">월 소득, 생활비 또는 월 상환액 정보가 부족할 수 있습니다.</p>
+    <p class="plain-only text-base font-bold text-amber-900">아직 계산할 수 없어요.</p>
+    <p class="plain-only text-sm text-amber-800 mt-1">소득, 생활비, 월 상환액 중 아직 안 적은 게 있어요.</p>
+    <div class="flex gap-2 mt-3">
+      <a href="/web/session/{{ session_id }}/supplement"
+         class="flex-1 text-center rounded-lg border-2 border-amber-400 bg-white text-amber-800 font-semibold py-2 text-sm">
+        입력값 다시 확인하기
+      </a>
+      <a href="/web/session/{{ session_id }}/supplement"
+         class="flex-1 text-center rounded-lg bg-amber-600 text-white font-semibold py-2 text-sm">
+        월 소득/생활비 수정하기
+      </a>
+    </div>
+  </div>
+  {% elif cashflow.shortfall_sign == "positive" %}
+  <div class="rounded-lg bg-rose-50 border-2 border-rose-300 p-4">
+    <p class="plain-hide text-base font-bold text-rose-800">
+      현재 입력 기준 매달 {{ cashflow.monthly_shortfall }}이 부족합니다.
+    </p>
+    <p class="plain-only text-base font-bold text-rose-800">
+      지금 적은 대로면 매달 {{ cashflow.monthly_shortfall }}이 모자라요.
+    </p>
+  </div>
   {% elif cashflow.shortfall_sign == "zero" %}
-  <p class="rounded-lg bg-slate-50 border-2 border-slate-300 p-4 text-base font-bold text-slate-800">
-    현재 입력 기준 예정 상환액과 가용재원이 같습니다.
-  </p>
+  <div class="rounded-lg bg-slate-50 border-2 border-slate-300 p-4">
+    <p class="plain-hide text-base font-bold text-slate-800">현재 입력 기준 월 부족액은 0원입니다.</p>
+    <p class="plain-hide text-sm text-slate-600 mt-1">예정 상환액과 월 가용재원이 같습니다.</p>
+    <p class="plain-only text-base font-bold text-slate-800">딱 맞게 갚을 수 있어요.</p>
+    <p class="plain-only text-sm text-slate-600 mt-1">갚아야 할 돈과 쓸 수 있는 돈이 같아요.</p>
+  </div>
   {% else %}
-  <p class="rounded-lg bg-emerald-50 border-2 border-emerald-300 p-4 text-base font-bold text-emerald-800">
-    예정 상환액을 제외하고 월 {{ cashflow.monthly_shortfall }}의 여유가 있습니다.
-  </p>
+  <div class="rounded-lg bg-emerald-50 border-2 border-emerald-300 p-4">
+    <p class="plain-hide text-base font-bold text-emerald-800">
+      예정 상환액을 제외하고 월 {{ cashflow.monthly_shortfall }}의 여유가 있습니다.
+    </p>
+    <p class="plain-only text-base font-bold text-emerald-800">
+      갚을 돈을 빼고도 매달 {{ cashflow.monthly_shortfall }}이 남아요.
+    </p>
+  </div>
   {% endif %}
 
-  {{ m.confirmed_box("월 부족액" if cashflow.shortfall_is_positive else "월 여유자금", cashflow.monthly_shortfall) }}
-  <p class="text-xs text-slate-400 -mt-2">이 결과는 사용자가 확인한 입력에 대한 계산 결과입니다.</p>
-
-  <div class="grid grid-cols-2 gap-2">
-    {{ m.confirmed_box("총 채무액", cashflow.total_debt) }}
-    {{ m.confirmed_box("월 가용재원", cashflow.monthly_available) }}
-    {{ m.confirmed_box("월 예정 상환액", cashflow.monthly_total_payment) }}
-    {{ m.confirmed_box("부담률", cashflow.dti_ratio) }}
+  <div>
+    {{ m.metric_box(
+      m.tooltip("월 가용재원", "한 달에 상환에 사용할 수 있는 금액"),
+      cashflow.monthly_available,
+      "월 소득에서 생활비 등 필수 지출을 뺀, 상환에 쓸 수 있는 금액",
+      known=cashflow.available_known,
+      unknown_reason="월 소득 또는 생활비 정보가 부족합니다"
+    ) }}
+    {{ m.metric_box(
+      "월 예정 상환액",
+      cashflow.monthly_total_payment,
+      "현재 확인된 채무의 월 상환 예정 금액 합계",
+      known=cashflow.payment_known,
+      unknown_reason="일부 채무의 월 상환액이 아직 입력되지 않았습니다"
+    ) }}
+    {{ m.metric_box(
+      "월 부족액" if cashflow.shortfall_is_positive else "월 여유자금",
+      cashflow.monthly_shortfall,
+      "예정 상환액이 가용재원보다 많으면 부족액, 적으면 여유자금으로 표시합니다",
+      known=cashflow.shortfall_known,
+      unknown_reason="월 소득 또는 월 상환액 정보가 부족합니다"
+    ) }}
+    {{ m.metric_box(
+      "부담률",
+      cashflow.dti_ratio,
+      "월 소득 대비 월 상환액의 비율",
+      known=cashflow.dti_known,
+      unknown_reason="월 소득 또는 월 예정 상환액 정보가 필요합니다"
+    ) }}
   </div>
+  <p class="text-xs text-slate-400">총 채무액 {{ cashflow.total_debt }} · 현재 확인된 입력 기준</p>
 
+  {% if cashflow.dti_known %}
   <p class="plain-only text-sm bg-sky-50 border border-sky-200 rounded-lg p-3">
     {{ cashflow.dti_ratio_plain }}
   </p>
+  {% endif %}
 
   {% if narrative_cashflow_text %}
   <p class="text-sm text-slate-700 bg-white rounded-lg border border-slate-200 p-3">
@@ -125,6 +179,7 @@
   {% if unknowns %}
   <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
     <h3 class="font-semibold text-sm text-amber-800 mb-1">미확인 항목</h3>
+    <p class="plain-only text-xs text-amber-700 mb-1.5">아직 답하지 않았거나 확인 못 한 항목이에요. 상담에서 다시 확인해요.</p>
     <ul class="text-sm text-amber-800 list-disc pl-5">
       {% for u in unknowns %}<li>{{ u }}</li>{% endfor %}
     </ul>

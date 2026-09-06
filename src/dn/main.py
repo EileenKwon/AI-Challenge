@@ -9,7 +9,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dn.api import routes_analysis, routes_document, routes_session
@@ -56,6 +56,20 @@ def create_app() -> FastAPI:
     """`Settings` 를 로드하고 라우터를 등록한 `FastAPI` 인스턴스를 만든다."""
     settings = get_settings()
     app = FastAPI(title=settings.config.meta.service_name, lifespan=_lifespan)
+
+    @app.middleware("http")
+    async def _security_headers(request: Request, call_next) -> Response:
+        """저위험 보안 헤더를 모든 응답(정적 파일·PDF 다운로드 포함)에 공통 적용한다.
+
+        CSP는 여기서 추가하지 않는다 — Tailwind CDN·htmx·인라인 스타일을 쓰는
+        상태에서 회귀 테스트 없이 걸면 화면이 깨질 수 있다(TODO: 제출 이후
+        CDN 자원을 자체 호스팅으로 옮기고 나서 별도 작업으로 추가).
+        """
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
 
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:

@@ -1,12 +1,15 @@
 {# 재사용 부분 템플릿 — 확정 숫자/후보 표현의 시각적 구분, 출처 배지, 툴팁. #}
 
-{% macro confirmed_box(label, value) %}
-<div class="rounded-lg bg-emerald-50 border-2 border-emerald-400 p-4 my-2">
-  <div class="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
-    <span aria-hidden="true">✓</span><span>확정 숫자</span>
-  </div>
-  <div class="text-slate-600 text-sm mt-1">{{ label }}</div>
+{% macro metric_box(label, value, description, known=True, unknown_reason=None) %}
+<div class="rounded-lg border-2 p-4 my-2 {{ 'bg-emerald-50 border-emerald-300' if known else 'bg-slate-50 border-slate-300' }}">
+  <div class="text-slate-600 text-sm">{{ label }}</div>
+  {% if known %}
   <div class="text-2xl font-extrabold text-emerald-800">{{ value }}</div>
+  <div class="text-xs text-slate-500 mt-1">{{ description }}</div>
+  {% else %}
+  <div class="text-lg font-bold text-slate-600">계산할 수 없음</div>
+  <div class="text-xs text-slate-500 mt-1">{{ unknown_reason }}</div>
+  {% endif %}
 </div>
 {% endmacro %}
 

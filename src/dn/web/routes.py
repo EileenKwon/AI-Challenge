@@ -321,7 +321,23 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
         # 그려야 서로 비교가 된다 — 각자 따로 100% 스케일을 쓰면(예: 예정상환액이
         # 0원이어도 그 막대 자체는 항상 꽉 차 보이는 식) 비교 의미가 사라진다.
         max_value = max(cashflow.monthly_available, cashflow.monthly_total_payment, Decimal(1))
-        if cashflow.monthly_shortfall > 0:
+
+        # `compute()` 는 소득·생활비·월상환액이 미입력이어도 0으로 대신 채워
+        # 숫자를 항상 반환한다(계산이 항상 성립해야 하므로). 그래서 "실제 0원"과
+        # "입력이 없어서 0으로 보이는 값"이 화면 값만 봐서는 구별되지 않는다 —
+        # `assumptions`/`excluded_items`(어떤 필드를 0으로 대신했는지 계산 모듈이
+        # 이미 기록해 둔 사유)를 그대로 재사용해 구분한다. 프론트에서 새로
+        # 판단하지 않는다.
+        income_known = not any("월 실수령소득 미입력" in a for a in cashflow.assumptions)
+        living_cost_known = not any("필수생활비 미입력" in a for a in cashflow.assumptions)
+        available_known = income_known and living_cost_known
+        payment_known = not any("월상환액 미입력" in item for item in cashflow.excluded_items)
+        shortfall_known = available_known and payment_known
+        dti_known = cashflow.dti_ratio is not None
+
+        if not shortfall_known:
+            shortfall_sign = "insufficient"
+        elif cashflow.monthly_shortfall > 0:
             shortfall_sign = "positive"
         elif cashflow.monthly_shortfall < 0:
             shortfall_sign = "negative"
@@ -336,6 +352,10 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
             "shortfall_sign": shortfall_sign,
             "dti_ratio": format_ratio(cashflow.dti_ratio),
             "dti_ratio_plain": format_ratio_plain(cashflow.dti_ratio),
+            "available_known": available_known,
+            "payment_known": payment_known,
+            "shortfall_known": shortfall_known,
+            "dti_known": dti_known,
         }
         ctx["available_ratio"] = int(cashflow.monthly_available / max_value * 100)
         ctx["payment_ratio"] = int(cashflow.monthly_total_payment / max_value * 100)

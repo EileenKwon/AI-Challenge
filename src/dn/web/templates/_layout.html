@@ -18,21 +18,45 @@
   html.plain-language .plain-hide { display: none; }
 </style>
 <script>
-  function toggleLargeText() {
-    document.documentElement.classList.toggle('large-text');
-    localStorage.setItem('dn_large_text', document.documentElement.classList.contains('large-text') ? '1' : '0');
+  // 두 접근성 토글(쉬운 말/큰 글씨)은 서로 독립적으로 켜고 끌 수 있어야 하므로
+  // 각자 별도의 <html> class·localStorage 키를 쓴다. 버튼 표시(텍스트·
+  // aria-pressed·배경색)는 항상 이 함수를 거쳐서만 바뀐다 — 페이지 로드
+  // 직후 localStorage 값을 반영할 때도 같은 함수를 불러 "저장된 상태"와
+  // "버튼이 보여주는 상태"가 어긋나지 않게 한다. 색상만으로 on/off 를
+  // 구분하지 않도록 텍스트 자체("✓ ... 사용 중")도 함께 바꾼다.
+  function _setToggleButton(btnId, active, labelOn, labelOff) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.textContent = active ? ('✓ ' + labelOn) : labelOff;
+    btn.classList.toggle('bg-emerald-600', active);
+    btn.classList.toggle('border-emerald-700', active);
+    btn.classList.toggle('text-white', active);
+    btn.classList.toggle('font-semibold', active);
+    btn.classList.toggle('bg-white', !active);
+    btn.classList.toggle('border-slate-300', !active);
+    btn.classList.toggle('text-slate-700', !active);
   }
+
   function togglePlainLanguage() {
-    document.documentElement.classList.toggle('plain-language');
-    localStorage.setItem('dn_plain_language', document.documentElement.classList.contains('plain-language') ? '1' : '0');
+    const active = !document.documentElement.classList.contains('plain-language');
+    document.documentElement.classList.toggle('plain-language', active);
+    localStorage.setItem('dn_plain_language', active ? '1' : '0');
+    _setToggleButton('dn-toggle-plain-language', active, '쉬운 말 사용 중', '쉬운 말');
+  }
+  function toggleLargeText() {
+    const active = !document.documentElement.classList.contains('large-text');
+    document.documentElement.classList.toggle('large-text', active);
+    localStorage.setItem('dn_large_text', active ? '1' : '0');
+    _setToggleButton('dn-toggle-large-text', active, '큰 글씨 사용 중', '글씨 크게');
   }
   document.addEventListener('DOMContentLoaded', function () {
-    if (localStorage.getItem('dn_large_text') === '1') {
-      document.documentElement.classList.add('large-text');
-    }
-    if (localStorage.getItem('dn_plain_language') === '1') {
-      document.documentElement.classList.add('plain-language');
-    }
+    const plainActive = localStorage.getItem('dn_plain_language') === '1';
+    const largeActive = localStorage.getItem('dn_large_text') === '1';
+    document.documentElement.classList.toggle('plain-language', plainActive);
+    document.documentElement.classList.toggle('large-text', largeActive);
+    _setToggleButton('dn-toggle-plain-language', plainActive, '쉬운 말 사용 중', '쉬운 말');
+    _setToggleButton('dn-toggle-large-text', largeActive, '큰 글씨 사용 중', '글씨 크게');
   });
 
   // 화면 폼 → API 순서 호출 공통 헬퍼. 화면 7종의 각 스크립트 블록에서 사용한다.
@@ -121,12 +145,14 @@
   <header class="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between gap-2">
     <h1 class="text-base font-bold truncate">{{ service_name }}</h1>
     <div class="flex gap-1 shrink-0">
-      <button type="button" onclick="togglePlainLanguage()"
-              class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-              aria-label="쉬운 말 모드 전환">쉬운 말</button>
-      <button type="button" onclick="toggleLargeText()"
-              class="text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-              aria-label="큰 글씨 보기 전환">글씨 크게</button>
+      <button type="button" id="dn-toggle-plain-language" onclick="togglePlainLanguage()"
+              class="text-xs px-2 py-1 rounded border-2 border-slate-300 bg-white text-slate-700
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+              aria-pressed="false" aria-label="쉬운 말 모드 전환">쉬운 말</button>
+      <button type="button" id="dn-toggle-large-text" onclick="toggleLargeText()"
+              class="text-xs px-2 py-1 rounded border-2 border-slate-300 bg-white text-slate-700
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+              aria-pressed="false" aria-label="큰 글씨 보기 전환">글씨 크게</button>
     </div>
   </header>
 

@@ -215,12 +215,13 @@ def test_supplement_page_shows_five_fixed_questions() -> None:
 
 
 def test_result_page_shows_confirmed_numbers_and_trace() -> None:
+    """모든 핵심 입력이 확인된 경우 — 숫자가 그대로 보이고 "계산할 수 없음"은 없다."""
     client, sid = _client_with_session()
     r = client.get(f"/web/session/{sid}/result")
     assert r.status_code == 200
-    assert "확정 숫자" in r.text
     assert "20만 원" in r.text
     assert "이 숫자는 어디서 왔나요" in r.text
+    assert "계산할 수 없음" not in r.text
 
 
 def test_result_page_shows_income_drop_scenario() -> None:
@@ -251,6 +252,9 @@ def _result_session(
     debts: tuple[Debt, ...],
     monthly_available: Decimal,
     monthly_total_payment: Decimal,
+    dti_ratio: Decimal | None = Decimal("0.1"),
+    assumptions: tuple[str, ...] = (),
+    excluded_items: tuple[str, ...] = (),
 ) -> tuple[TestClient, str]:
     now = datetime(2026, 8, 18)
     session_id = "result-test-session"
@@ -259,7 +263,9 @@ def _result_session(
         monthly_total_payment=monthly_total_payment,
         monthly_available=monthly_available,
         monthly_shortfall=monthly_total_payment - monthly_available,
-        dti_ratio=Decimal("0.1"),
+        dti_ratio=dti_ratio,
+        assumptions=assumptions,
+        excluded_items=excluded_items,
     )
     extraction = ExtractionResult(debts=debts)
     analysis = AnalysisResult(
@@ -327,13 +333,37 @@ def test_result_page_headline_when_shortfall_positive() -> None:
 
 
 def test_result_page_headline_when_shortfall_zero() -> None:
+    """실제 계산 결과가 정확히 0원인 경우 — "계산할 수 없음"이 아니라 0원으로 표시한다."""
     client, sid = _result_session(
         debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
         monthly_available=Decimal("500000"),
         monthly_total_payment=Decimal("500000"),
     )
     r = client.get(f"/web/session/{sid}/result")
-    assert "예정 상환액과 가용재원이 같습니다" in r.text
+    assert "현재 입력 기준 월 부족액은 0원입니다" in r.text
+    assert "예정 상환액과 월 가용재원이 같습니다" in r.text
+    assert "계산할 수 없음" not in r.text
+
+
+def test_result_page_shows_insufficient_input_state_instead_of_misleading_zero() -> None:
+    """핵심 입력(소득)이 없어 0으로 대신 채운 경우 — 0원이 아니라 "계산할 수 없음"으로 구분한다."""
+    client, sid = _result_session(
+        debts=(_debt_for_result("d0", "OO캐피탈", Decimal("5000000")),),
+        monthly_available=Decimal("0"),
+        monthly_total_payment=Decimal("0"),
+        dti_ratio=None,
+        assumptions=("월 실수령소득 미입력 — 0으로 처리", "필수생활비 미입력 — 0으로 처리"),
+        excluded_items=("OO캐피탈: 월상환액 미입력으로 합계에서 제외",),
+    )
+    r = client.get(f"/web/session/{sid}/result")
+    assert r.status_code == 200
+    assert "아직 정확한 월 상환 여력을 계산하기 어렵습니다" in r.text
+    assert "월 소득, 생활비 또는 월 상환액 정보가 부족할 수 있습니다" in r.text
+    assert "입력값 다시 확인하기" in r.text
+    assert r.text.count("계산할 수 없음") >= 3  # 가용재원·예정상환액·부족액·부담률 중 3개 이상
+    # 부족합니다/여유가 있습니다처럼 확정된 결론 문구는 뜨지 않아야 한다.
+    assert "이 부족합니다" not in r.text
+    assert "여유가 있습니다" not in r.text
 
 
 def test_result_page_headline_when_shortfall_negative() -> None:
@@ -421,6 +451,30 @@ def test_dev_mode_banner_shown_when_allow_unverified_cards_enabled(monkeypatch) 
     monkeypatch.setattr(web_routes, "get_settings", lambda: relaxed)
     r = client.get(f"/web/session/{sid}/result")
     assert "개발 모드" in r.text
+
+
+def test_security_headers_present_on_html_and_api_and_static_responses() -> None:
+    """저위험 보안 헤더는 CSP를 제외하고 모든 응답 종류에 공통 적용돼야 한다."""
+    client, sid = _client_with_session()
+    expected = {
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-frame-options": "DENY",
+    }
+    for path in (f"/web/session/{sid}/result", "/healthz", "/"):
+        r = client.get(path)
+        for header, value in expected.items():
+            assert r.headers.get(header) == value, f"{path} missing/incorrect {header}"
+    assert "content-security-policy" not in {k.lower() for k in client.get("/").headers}
+
+
+def test_accessibility_toggle_buttons_have_correct_markup() -> None:
+    client, sid = _client_with_session()
+    r = client.get(f"/web/session/{sid}/result")
+    assert 'id="dn-toggle-plain-language"' in r.text
+    assert 'id="dn-toggle-large-text"' in r.text
+    assert 'aria-pressed="false"' in r.text
+    assert r.text.count('aria-pressed="false"') == 2
 
 
 def test_missing_session_returns_404_for_web_pages() -> None:
