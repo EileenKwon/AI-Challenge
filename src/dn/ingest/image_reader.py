@@ -22,6 +22,21 @@ from dn.domain.models import DocumentContent, PageContent
 logger = logging.getLogger(__name__)
 
 
+def ocr_text_from_image(image_path: Path) -> str | None:
+    """이미지 파일을 열어 OCR로 텍스트를 뽑는다. 글자를 인식하지 못하면 `None`.
+
+    업로드된 PNG/JPEG(이 모듈)와 `pdf_reader`가 렌더링한 스캔 PDF 페이지
+    이미지가 동일한 이 함수를 거치게 한다 — Tesseract 호출을 두 곳에
+    따로 두면 한쪽만 언어팩·파라미터를 바꾸는 회귀가 생기기 때문이다.
+    호출 전에 `pytesseract` 가 설치돼 있는지는 호출부에서 확인한다.
+    """
+    import pytesseract
+
+    with Image.open(image_path) as img:
+        text = pytesseract.image_to_string(img, lang="kor+eng").strip()
+    return text or None
+
+
 def read(path: Path, *, doc_id: str) -> DocumentContent:
     """이미지를 읽어 OCR 텍스트가 담긴 `DocumentContent` 로 변환한다.
 
@@ -54,10 +69,9 @@ def read(path: Path, *, doc_id: str) -> DocumentContent:
         raise ExtractionError("이미지 텍스트 인식 기능을 사용할 수 없습니다.") from exc
 
     try:
-        # img.verify() 는 검증 후 파일 핸들을 못 쓰게 만들므로 다시 연다(PIL 문서 권고).
-        with Image.open(path) as img:
-            text = pytesseract.image_to_string(img, lang="kor+eng").strip()
-    except pytesseract.TesseractError as exc:
+        # img.verify() 는 검증 후 파일 핸들을 못 쓰게 만들므로 ocr_text_from_image 가 다시 연다.
+        text = ocr_text_from_image(path)
+    except (pytesseract.TesseractError, pytesseract.TesseractNotFoundError) as exc:
         logger.warning(
             "image_ocr_failed",
             extra={"upload_filename": path.name, "exception_class": type(exc).__name__},
@@ -70,5 +84,5 @@ def read(path: Path, *, doc_id: str) -> DocumentContent:
         doc_id=doc_id,
         filename=path.name,
         is_scanned=True,
-        pages=(PageContent(page_no=1, text=text or None, image_path=str(path)),),
+        pages=(PageContent(page_no=1, text=text, image_path=str(path)),),
     )

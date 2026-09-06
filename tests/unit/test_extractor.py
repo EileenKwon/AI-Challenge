@@ -50,6 +50,34 @@ def _document() -> DocumentContent:
     )
 
 
+def test_multi_page_document_text_has_page_separators() -> None:
+    """여러 페이지(예: 다중 페이지 OCR 결과)가 구분자 없이 붙어 왜곡되지 않는지 확인한다."""
+    doc = DocumentContent(
+        doc_id="doc-multi",
+        filename="report.pdf",
+        is_scanned=True,
+        pages=(
+            PageContent(page_no=1, text="첫 페이지 내용 A금융"),
+            PageContent(page_no=2, text="둘째 페이지 내용 B카드"),
+        ),
+    )
+    captured_user_prompt: list[str] = []
+
+    def _capture(system: str, user: str) -> str:
+        captured_user_prompt.append(user)
+        return _FIXED_RESPONSE
+
+    client = StubClient(response=_capture)
+    extract(doc, client=client)
+
+    prompt = captured_user_prompt[0]
+    assert "--- PAGE 1 ---" in prompt
+    assert "--- PAGE 2 ---" in prompt
+    assert prompt.index("--- PAGE 1 ---") < prompt.index("첫 페이지 내용")
+    assert prompt.index("--- PAGE 2 ---") < prompt.index("둘째 페이지 내용")
+    assert prompt.index("첫 페이지 내용") < prompt.index("--- PAGE 2 ---")
+
+
 def test_extract_produces_exactly_three_debts() -> None:
     client = StubClient(response=_FIXED_RESPONSE)
     debts = extract(_document(), client=client)

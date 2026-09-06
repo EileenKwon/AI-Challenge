@@ -21,7 +21,12 @@ from dn.llm.schema_call import call_json
 
 
 def _document_text(content: DocumentContent) -> str:
-    return "\n".join(page.text for page in content.pages if page.text)
+    # 스캔 페이지 OCR 결과가 여러 장 이어질 때 서로 다른 페이지의 텍스트가
+    # 경계 없이 붙어 왜곡되지 않도록 페이지 구분자를 둔다. 네이티브 텍스트
+    # 페이지에도 동일하게 적용해 두 경로의 문서 조립 방식을 하나로 유지한다.
+    return "\n\n".join(
+        f"--- PAGE {page.page_no} ---\n{page.text}" for page in content.pages if page.text
+    )
 
 
 def _parse_date(raw: str | None) -> date | None:

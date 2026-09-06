@@ -371,6 +371,53 @@ def _png_bytes() -> bytes:
     return buf.getvalue()
 
 
+def _scanned_pdf_bytes() -> bytes:
+    """텍스트 레이어가 전혀 없는 "스캔본" PDF — 이미지 한 장만 담긴 PDF."""
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (200, 100), color="white").save(buf, format="PDF")
+    return buf.getvalue()
+
+
+# --- 텍스트 레이어 없는 스캔 PDF가 OCR 로 연결되지 않던 갭 (2026-09-06) ---------
+
+
+def test_scanned_pdf_upload_routes_through_ocr_not_left_empty(monkeypatch) -> None:
+    """렌더링만 하고 OCR 로 연결하지 않던 갭 회귀 테스트 — 스캔 PDF도 s2_extracted 까지 간다."""
+    monkeypatch.setattr("pytesseract.image_to_string", lambda img, lang=None: "스캔본 OCR 텍스트")
+
+    client, sid = _client_with_session()
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("scanned.pdf", _scanned_pdf_bytes(), "application/pdf")},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["stage"] == "s2_extracted"
+
+
+def test_scanned_pdf_ocr_engine_missing_gets_safe_error_without_internal_path(monkeypatch) -> None:
+    """tesseract 자체가 없을 때도 크래시·경로 노출 없이 안전하게 400 으로 떨어진다."""
+    import pytesseract
+
+    def _raise(img, lang=None):
+        raise pytesseract.TesseractNotFoundError()
+
+    monkeypatch.setattr("pytesseract.image_to_string", _raise)
+
+    client, sid = _client_with_session()
+    r = client.post(
+        f"/api/session/{sid}/document",
+        files={"file": ("scanned.pdf", _scanned_pdf_bytes(), "application/pdf")},
+    )
+    assert r.status_code == 400
+    body = r.json()["detail"]
+    assert "/" not in body
+    assert str(get_settings().upload_dir) not in body
+
+
 def test_png_upload_dispatches_to_image_reader_not_pdf_reader(monkeypatch) -> None:
     """핵심 회귀 테스트 — PNG 는 반드시 image_reader 를 타고 pdf_reader(pypdf)는 타지 않는다."""
     import dn.api.routes_document as routes_document
