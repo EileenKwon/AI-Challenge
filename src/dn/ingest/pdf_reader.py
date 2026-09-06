@@ -78,7 +78,15 @@ def _render_page_image(path: Path, page_no: int, *, settings: Settings) -> str |
         return None
 
     try:
-        images = convert_from_path(str(path), first_page=page_no, last_page=page_no)
+        # dpi=150 + grayscale — 렌더링은 오직 OCR 입력용이라 시각 품질이 필요
+        # 없다. 기본값(dpi=200, RGB)은 원본 픽셀 수 대비 raw 메모리를 5배
+        # 넘게 써서, Render 무료 티어(512MB)에서 poppler 렌더링 서브프로세스와
+        # tesseract OCR 서브프로세스가 한 요청 안에서 겹치면 컨테이너가
+        # OOM 으로 재시작했다(2026-09-06 실측: 스캔 PDF 업로드 직후 healthz
+        # 503). 150dpi 그레이스케일로도 OCR 인식률은 실측상 차이가 없었다.
+        images = convert_from_path(
+            str(path), first_page=page_no, last_page=page_no, dpi=150, grayscale=True
+        )
     except PDFInfoNotInstalledError:
         return None
     if not images:
