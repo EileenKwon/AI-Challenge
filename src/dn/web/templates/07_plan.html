@@ -26,7 +26,7 @@
       이 PDF는 자격 판정 결과가 아니라 공식 상담을 준비하기 위한 요약 자료입니다.
     </p>
 
-    <form id="report-options-form" class="space-y-2 {{ 'hidden' if current_step >= 7 else '' }}">
+    <form id="report-options-form" class="space-y-2 {{ 'hidden' if progress.complete else '' }}">
       <p class="text-xs text-slate-500">포함할 항목을 선택해 주세요.</p>
       <div class="space-y-2 text-sm">
         <label class="flex items-center gap-2">
@@ -107,7 +107,7 @@
 <script>
 (function () {
   const SESSION_ID = {{ session_id | tojson }};
-  const ALREADY_REPORTED = {{ 'true' if current_step >= 7 else 'false' }};
+  const ALREADY_REPORTED = {{ 'true' if progress.complete else 'false' }};
   // 실측(2026-09-06, docs/report_timing.md): 폰트 서브셋 캐시가 없는 최초
   // 렌더링은 약 6.5초, 이후는 약 0.9초. 넉넉히 잡아 이 시간을 넘기면
   // "평소보다 오래 걸림" 안내만 띄운다(오류 처리 아님).

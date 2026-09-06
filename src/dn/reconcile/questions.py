@@ -23,6 +23,7 @@ def _question_from_raw(raw: dict[str, Any]) -> Question:
         conditional_on=raw.get("conditional_on"),
         skippable=raw.get("skippable", False),
         skip_impact=raw.get("skip_impact"),
+        helper=raw.get("helper"),
     )
 
 

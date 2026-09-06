@@ -188,6 +188,7 @@ class Question(Base):
     conditional_on: str | None = None
     skippable: bool = False
     skip_impact: str | None = None  # 건너뛸 경우 계산에 미치는 영향
+    helper: str | None = None  # 화면에 문항 아래 보여줄 보충 설명 (UI 전용, 판정 로직 무관)
 
 
 # ===========================================================================

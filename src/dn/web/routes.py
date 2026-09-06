@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dn.api.deps import get_session_or_404, get_session_store
 from dn.api.routes_session import create_session
 from dn.cashflow.formatting import format_ratio, format_ratio_plain, format_won
+from dn.domain.enums import SessionStage
 from dn.domain.models import ExtractionResult, SessionState
 from dn.ingest.uploader import supported_format_label
 from dn.reconcile.questions import (
@@ -31,16 +32,49 @@ landing_router = APIRouter(tags=["web"])
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
-_STAGE_STEP = {
-    "s0_consent": 0,
-    "s1_uploaded": 1,
-    "s2_extracted": 2,
-    "s3_confirmed": 3,
-    "s4_supplemented": 4,
-    "s5_analyzed": 5,
-    "s6_planned": 6,
-    "s7_reported": 7,
+# 화면 진행 표시(progress indicator) — 사용자 여정 7단계.
+# 내부 SessionStage(s0_consent..s7_reported) 값을 그대로 화면에 쓰지 않는다.
+# 그 값은 "그 화면에 도달하기 직전까지 서버에 저장된 상태"를 뜻해서 화면이
+# 보여줘야 하는 "지금 사용자가 보고 있는 단계"와 하나씩 어긋난다(예: 업로드
+# 화면을 보고 있는 시점의 저장된 stage 는 아직 s0_consent 다). 그래서 각
+# 페이지 라우터가 "이 화면은 사용자 여정 몇 번째인가"를 직접 명시한다.
+_USER_STEP_LABELS = [
+    "자료 입력",
+    "채무 확인",
+    "추가정보",
+    "상환여력",
+    "회복경로",
+    "실행계획",
+    "상담 준비",
+]
+_USER_STEP_TOTAL = len(_USER_STEP_LABELS)
+_USER_STEP_NEXT = {
+    1: "추출한 채무정보를 직접 확인합니다.",
+    2: "계산에 필요한 소득과 생활비를 입력합니다.",
+    3: "현재 월 상환여력을 계산합니다.",
+    4: "검토할 수 있는 회복경로를 확인합니다.",
+    5: "공식 상담을 위한 행동계획을 만듭니다.",
+    6: "상담용 요약서를 준비합니다.",
 }
+
+
+def _progress_context(user_step: int, *, complete: bool = False) -> dict[str, Any]:
+    """화면 상단 진행 표시에 넘길 값. `complete=True` 면 7/7 완료로 고정한다.
+
+    새로고침 후에도 완료 상태가 유지되어야 하므로(요구사항), 이 값은
+    JS 가 아니라 라우터가 세션의 실제 stage 를 보고 서버 렌더링 시점에
+    결정한다 — `POST /report` 성공 직후의 화면 전환은 별도로 JS
+    (`dnMarkStepperComplete()`)가 같은 모양을 흉내낸다.
+    """
+    index = _USER_STEP_TOTAL if complete else user_step
+    return {
+        "index": index,
+        "total": _USER_STEP_TOTAL,
+        "steps": _USER_STEP_LABELS,
+        "label": _USER_STEP_LABELS[index - 1],
+        "next_text": None if complete else _USER_STEP_NEXT.get(user_step),
+        "complete": complete,
+    }
 
 _TIMING_LABEL = {
     "today": "오늘",
@@ -121,7 +155,7 @@ def _base_context(state: SessionState) -> dict[str, Any]:
         "session_id": state.session_id,
         "service_name": settings.config.meta.service_name,
         "policy_base_date": settings.config.meta.policy_base_date,
-        "current_step": _STAGE_STEP.get(state.stage.value, 0),
+        "progress": None,
         "dev_mode": settings.config.rules.allow_unverified_cards,
         "upload_ttl_minutes": settings.config.session.ttl_minutes,
     }
@@ -133,7 +167,11 @@ def _debt_view(debt) -> dict[str, Any]:
     return {
         "creditor": debt.creditor.value or "미확인",
         "creditor_source": debt.creditor.source.value,
-        "product_type": (debt.product_type.value.value if debt.product_type.value else "미확인"),
+        "product_type": (
+            _PRODUCT_TYPE_LABELS.get(debt.product_type.value.value, debt.product_type.value.value)
+            if debt.product_type.value
+            else "미확인"
+        ),
         "product_type_source": debt.product_type.source.value,
         "balance": format_won(balance.value),
         "balance_source": balance.source.value,
@@ -192,6 +230,7 @@ def upload_page(
 ) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(1)
     settings = get_settings()
     ctx["synthetic_cases"] = _demo_cases(settings)
     ctx["product_types"] = [{"id": k, "label": v} for k, v in _PRODUCT_TYPE_LABELS.items()]
@@ -207,6 +246,7 @@ def extraction_page(
     state = get_session_or_404(session_id, store)
     extraction = state.extraction or ExtractionResult()
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(2)
     ctx["debts"] = [_debt_view(d) for d in extraction.debts]
     return render_page("03_extraction.html", ctx)
 
@@ -218,6 +258,7 @@ def supplement_page(
     state = get_session_or_404(session_id, store)
     extraction = state.extraction or ExtractionResult()
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(3)
     ctx["debts"] = [_debt_view(d) for d in extraction.debts]
     ctx["fixed_questions"] = load_fixed_questions()
     active = select_active_questions(
@@ -234,6 +275,7 @@ def supplement_page(
 def result_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(4)
     analysis = state.analysis
     cashflow = analysis.cashflow if analysis else None
 
@@ -290,6 +332,7 @@ def result_page(session_id: str, store: SessionStore = Depends(get_session_store
 def paths_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(5)
     rules = state.analysis.rules if state.analysis else None
     ctx["paths"] = [
         {
@@ -316,6 +359,7 @@ def paths_page(session_id: str, store: SessionStore = Depends(get_session_store)
 def plan_page(session_id: str, store: SessionStore = Depends(get_session_store)) -> HTMLResponse:
     state = get_session_or_404(session_id, store)
     ctx = _base_context(state)
+    ctx["progress"] = _progress_context(6, complete=state.stage == SessionStage.S7_REPORTED)
     plan = state.analysis.plan if state.analysis else None
     ctx["plan_items"] = [
         {

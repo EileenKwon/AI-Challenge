@@ -54,15 +54,35 @@
   async function dnPatch(url, body) { return dnSend(url, body, 'PATCH'); }
 
   // 세션이 s7_reported 에 도달했을 때(상담용 요약서 생성 완료) 페이지 새로고침
-  // 없이도 상단 진행 표시 마지막 칸까지 채운다. 서버 렌더링 시점의
-  // `current_step` 은 그 순간의 세션 상태를 그대로 반영하므로, 이후 상태가
+  // 없이도 상단 진행 표시가 "7/7 상담 준비 완료" 로 바뀐다. 서버 렌더링
+  // 시점의 진행 표시는 그 순간의 세션 상태를 그대로 반영하므로, 이후 상태가
   // 바뀌면(요약서 생성) 이 함수로 화면만 맞춰준다 — 실제 상태는 이미
   // `GET .../report/status` 응답의 `session_stage` 로 확인한 뒤에만 호출한다.
   function dnMarkStepperComplete() {
-    document.querySelectorAll('#dn-stepper li[data-step-index]').forEach((li) => {
-      li.classList.remove('bg-slate-300');
-      li.classList.add('bg-emerald-500');
+    const nav = document.getElementById('dn-stepper');
+    if (!nav) return;
+    nav.querySelectorAll('li[data-step-index] > .dn-step-dot').forEach((dot) => {
+      dot.classList.remove('bg-slate-200', 'text-slate-400', 'bg-emerald-600', 'ring-2', 'ring-emerald-200');
+      dot.classList.add('bg-emerald-500', 'text-white');
+      dot.textContent = '✓';
     });
+    nav.querySelectorAll('li[data-step-index] > .dn-step-sr').forEach((sr) => {
+      sr.textContent = '완료: ' + (sr.dataset.label || sr.textContent);
+    });
+    nav.querySelectorAll('li[data-step-index] > .dn-step-line').forEach((line) => {
+      line.classList.remove('bg-slate-200');
+      line.classList.add('bg-emerald-500');
+    });
+    const counter = document.getElementById('dn-progress-counter');
+    if (counter) counter.textContent = '7 / 7';
+    const label = document.getElementById('dn-progress-label');
+    if (label) label.textContent = '상담 준비';
+    const nextText = document.getElementById('dn-progress-next');
+    if (nextText) {
+      nextText.textContent = '상담 준비 완료';
+      nextText.classList.remove('text-slate-500');
+      nextText.classList.add('text-emerald-700', 'font-medium');
+    }
   }
 
   function dnShowError(anchorEl, message) {
@@ -98,15 +118,45 @@
   </header>
 
   {% block stepper %}
-  <nav id="dn-stepper" class="max-w-md mx-auto px-4 pb-2" aria-label="진행 단계">
-    <ol class="flex gap-1">
-      {% for step in ["소개", "업로드", "확인", "보완", "결과", "경로", "계획"] %}
-      <li data-step-index="{{ loop.index0 }}"
-          class="flex-1 h-1.5 rounded-full {{ 'bg-emerald-500' if loop.index0 < current_step else ('bg-slate-300') }}"
-          title="{{ step }}"></li>
+  {% if progress %}
+  <nav id="dn-stepper" class="max-w-md mx-auto px-4 pb-3" aria-label="진행 단계">
+    <div class="flex items-baseline justify-between mb-1.5">
+      <p id="dn-progress-counter" class="text-xs font-semibold text-emerald-700">
+        {{ progress.index }} / {{ progress.total }}
+      </p>
+      <p id="dn-progress-label" class="text-xs font-semibold text-slate-700">{{ progress.label }}</p>
+    </div>
+    <ol class="flex items-center" role="list">
+      {% for step_label in progress.steps %}
+      {% set idx = loop.index %}
+      {% set is_done = idx < progress.index or progress.complete %}
+      {% set is_current = idx == progress.index and not progress.complete %}
+      <li data-step-index="{{ loop.index0 }}" class="flex items-center {{ '' if loop.last else 'flex-1' }}"
+          {% if is_current %}aria-current="step"{% endif %}>
+        <span aria-hidden="true"
+              class="dn-step-dot shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold
+                     {% if is_done %}bg-emerald-500 text-white
+                     {% elif is_current %}bg-emerald-600 text-white ring-2 ring-emerald-200
+                     {% else %}bg-slate-200 text-slate-400{% endif %}">
+          {{ '✓' if is_done else ('●' if is_current else '○') }}
+        </span>
+        <span class="dn-step-sr sr-only" data-label="{{ step_label }}">
+          {% if is_done %}완료: {{ step_label }}
+          {% elif is_current %}현재 단계: {{ step_label }}
+          {% else %}예정: {{ step_label }}{% endif %}
+        </span>
+        {% if not loop.last %}
+        <span aria-hidden="true"
+              class="dn-step-line flex-1 h-0.5 mx-0.5 {{ 'bg-emerald-500' if is_done else 'bg-slate-200' }}"></span>
+        {% endif %}
+      </li>
       {% endfor %}
     </ol>
+    <p id="dn-progress-next" class="text-xs mt-1.5 {{ 'text-emerald-700 font-medium' if progress.complete else 'text-slate-500' }}">
+      {{ "상담 준비 완료" if progress.complete else ("다음: " + progress.next_text if progress.next_text else "") }}
+    </p>
   </nav>
+  {% endif %}
   {% endblock %}
 
   <main class="max-w-md mx-auto px-4 pb-16">

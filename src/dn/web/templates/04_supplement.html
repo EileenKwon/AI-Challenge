@@ -1,6 +1,6 @@
 {% extends "_layout.html" %}
 {% import "_macros.html" as m %}
-{% block title %}보완 입력{% endblock %}
+{% block title %}추가정보{% endblock %}
 {% block content %}
 <section class="space-y-4 pt-2">
   <h2 class="text-xl font-bold">추가로 확인이 필요합니다</h2>
@@ -12,7 +12,7 @@
 
   <form id="supplement-form" class="space-y-4">
     <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
-      <h3 class="font-semibold text-sm">채무별 금리·월상환액 일괄 입력</h3>
+      <h3 class="font-semibold text-sm">채무별 금리·월상환액 (아는 만큼만)</h3>
       {% for debt in debts %}
       <div class="border-t border-slate-100 pt-2 first:border-0 first:pt-0">
         <p class="text-sm font-medium">{{ debt.creditor }}</p>
@@ -23,9 +23,12 @@
                    class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
           </label>
           <label class="text-xs text-slate-500">
-            월상환액(원)
-            <input type="number" name="payment_{{ loop.index0 }}"
-                   class="mt-0.5 block w-full rounded border-slate-300 text-sm" />
+            월상환액
+            <div class="mt-0.5 flex items-center gap-1">
+              <input type="text" inputmode="numeric" placeholder="예: 350,000" name="payment_{{ loop.index0 }}"
+                     class="dn-money-input block w-full rounded border-slate-300 text-sm" />
+              <span class="text-slate-400">원</span>
+            </div>
           </label>
         </div>
         <label class="flex items-center gap-2 text-xs text-slate-500 mt-1">
@@ -36,49 +39,106 @@
       {% endfor %}
     </div>
 
-    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-4">
       <h3 class="font-semibold text-sm">기본 질문 (5문항)</h3>
       {% for q in fixed_questions %}
       <div>
-        <label class="text-sm font-medium block">{{ loop.index }}. {{ q.text }}</label>
         {% if q.kind == "money" %}
-        <input type="number" name="{{ q.qid }}" class="mt-1 block w-full rounded border-slate-300 text-sm" />
-        {% elif q.kind == "bool" %}
-        <div class="flex gap-3 mt-1 text-sm">
-          <label><input type="radio" name="{{ q.qid }}" value="true" /> 예</label>
-          <label><input type="radio" name="{{ q.qid }}" value="false" /> 아니오</label>
+        <label for="{{ q.qid }}" class="text-sm font-semibold block">{{ loop.index }}. {{ q.text }}</label>
+        {% if q.helper %}<p id="{{ q.qid }}-help" class="text-xs text-slate-500 mt-0.5">{{ q.helper }}</p>{% endif %}
+        <div class="mt-1.5 flex items-center gap-2">
+          <input id="{{ q.qid }}" type="text" inputmode="numeric" placeholder="예: 2,500,000"
+                 name="{{ q.qid }}" aria-describedby="{{ q.qid }}-help"
+                 class="dn-money-input flex-1 rounded border-slate-300 text-sm" />
+          <span class="text-sm text-slate-500">원</span>
         </div>
+
+        {% elif q.kind == "bool" %}
+        <fieldset>
+          <legend class="text-sm font-semibold">{{ loop.index }}. {{ q.text }}</legend>
+          {% if q.helper %}<p class="text-xs text-slate-500 mt-0.5 mb-1.5">{{ q.helper }}</p>{% endif %}
+          <div class="flex gap-2 {{ '' if q.helper else 'mt-1.5' }}" role="radiogroup" aria-label="{{ q.text }}">
+            <label class="flex-1">
+              <input type="radio" name="{{ q.qid }}" value="true" class="sr-only peer" />
+              <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                           peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:font-semibold
+                           peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-emerald-600">예</span>
+            </label>
+            <label class="flex-1">
+              <input type="radio" name="{{ q.qid }}" value="false" class="sr-only peer" />
+              <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                           peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:font-semibold
+                           peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-emerald-600">아니요</span>
+            </label>
+            {% if q.skippable %}
+            <label class="flex-1">
+              <input type="radio" name="{{ q.qid }}" value="unknown" class="sr-only peer" />
+              <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                           peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:font-semibold
+                           peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-amber-600">잘 모르겠어요</span>
+            </label>
+            {% endif %}
+          </div>
+          {% if q.skippable %}
+          <p id="{{ q.qid }}-unknown-note" class="hidden text-xs text-amber-700 bg-amber-50 rounded px-2 py-1.5 mt-1.5" role="status">
+            괜찮습니다. 이 항목은 미확인으로 두고 상담할 때 확인할 내용으로 표시하겠습니다.
+          </p>
+          {% endif %}
+        </fieldset>
+
         {% else %}
-        <input type="number" name="{{ q.qid }}" class="mt-1 block w-full rounded border-slate-300 text-sm" />
-        {% endif %}
+        <label for="{{ q.qid }}" class="text-sm font-semibold block">{{ loop.index }}. {{ q.text }}</label>
+        {% if q.helper %}<p id="{{ q.qid }}-help" class="text-xs text-slate-500 mt-0.5">{{ q.helper }}</p>{% endif %}
+        <input id="{{ q.qid }}" type="number" name="{{ q.qid }}" aria-describedby="{{ q.qid }}-help"
+               class="mt-1 block w-full rounded border-slate-300 text-sm" />
         {% if q.skippable %}
         <label class="flex items-center gap-2 text-xs text-slate-500 mt-1">
           <input type="checkbox" name="skip_{{ q.qid }}" />
           <span>모름 — {{ q.skip_impact }}</span>
         </label>
         {% endif %}
+        {% endif %}
       </div>
       {% endfor %}
     </div>
 
     {% if conditional_questions %}
-    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-4">
       <h3 class="font-semibold text-sm">추가 질문 (해당 시)</h3>
       {% for q in conditional_questions %}
-      <div>
-        <label class="text-sm font-medium block">{{ q.text }}</label>
-        <div class="flex gap-3 mt-1 text-sm">
-          <label><input type="radio" name="{{ q.qid }}" value="true" /> 예</label>
-          <label><input type="radio" name="{{ q.qid }}" value="false" /> 아니오</label>
+      <fieldset>
+        <legend class="text-sm font-semibold">{{ q.text }}</legend>
+        <div class="flex gap-2 mt-1.5" role="radiogroup" aria-label="{{ q.text }}">
+          <label class="flex-1">
+            <input type="radio" name="{{ q.qid }}" value="true" class="sr-only peer" />
+            <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                         peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:font-semibold
+                         peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-emerald-600">예</span>
+          </label>
+          <label class="flex-1">
+            <input type="radio" name="{{ q.qid }}" value="false" class="sr-only peer" />
+            <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                         peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:font-semibold
+                         peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-emerald-600">아니요</span>
+          </label>
+          <label class="flex-1">
+            <input type="radio" name="{{ q.qid }}" value="unknown" class="sr-only peer" />
+            <span class="dn-choice-pill block text-center text-sm rounded-lg border-2 border-slate-300 py-2 cursor-pointer
+                         peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:font-semibold
+                         peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-amber-600">잘 모르겠어요</span>
+          </label>
         </div>
-      </div>
+        <p id="{{ q.qid }}-unknown-note" class="hidden text-xs text-amber-700 bg-amber-50 rounded px-2 py-1.5 mt-1.5" role="status">
+          괜찮습니다. 이 항목은 미확인으로 두고 상담할 때 확인할 내용으로 표시하겠습니다.
+        </p>
+      </fieldset>
       {% endfor %}
     </div>
     {% endif %}
 
     <button type="submit"
             class="w-full rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700">
-      입력 완료하고 결과 보기
+      상환여력 계산하기
     </button>
   </form>
 </section>
@@ -102,6 +162,26 @@ const DN_FLAG_FIELD_MAP = {
   C3_INCOME_DROP: 'income_drop_occurred',
 };
 
+// 금액 입력란: 숫자만 남기고 입력 중 천 단위 콤마를 붙여 보여준다.
+// 서버에는 콤마를 뗀 순수 숫자 문자열을 그대로 보낸다(기존 number input과 동일한 형식).
+document.querySelectorAll('.dn-money-input').forEach((el) => {
+  el.addEventListener('input', () => {
+    const digits = el.value.replace(/[^0-9]/g, '');
+    el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+  });
+});
+function dnMoneyValue(raw) {
+  if (!raw) return raw;
+  return raw.replace(/,/g, '');
+}
+
+// "잘 모르겠어요" 선택 시 짧은 안내를 보여주고, 다른 값으로 바뀌면 숨긴다.
+document.getElementById('supplement-form').addEventListener('change', (e) => {
+  if (e.target.type !== 'radio') return;
+  const note = document.getElementById(e.target.name + '-unknown-note');
+  if (note) note.classList.toggle('hidden', e.target.value !== 'unknown');
+});
+
 document.getElementById('supplement-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -113,7 +193,7 @@ document.getElementById('supplement-form').addEventListener('submit', async (e) 
   for (let i = 0; i < DN_DEBT_COUNT; i++) {
     if (fd.get('skip_' + i) === 'on') continue;
     const rate = fd.get('rate_' + i);
-    const payment = fd.get('payment_' + i);
+    const payment = dnMoneyValue(fd.get('payment_' + i));
     if (rate || payment) {
       debts.push({
         debt_index: i,
@@ -125,15 +205,22 @@ document.getElementById('supplement-form').addEventListener('submit', async (e) 
   if (debts.length) body.debts = debts;
 
   for (const [qid, spec] of Object.entries(DN_QUESTION_FIELD_MAP)) {
-    if (fd.get('skip_' + qid) === 'on') continue;
     const raw = fd.get(qid);
-    if (raw === null || raw === '') continue;
-    body[spec.field] = spec.kind === 'bool' ? (raw === 'true') : raw;
+    if (spec.kind === 'bool') {
+      // 'unknown' 이거나 아무것도 선택하지 않았으면(raw === null) 필드 자체를
+      // 보내지 않는다 — 서버가 UNKNOWN(3-state)으로 남기게 하기 위해서다.
+      if (raw === 'true' || raw === 'false') body[spec.field] = raw === 'true';
+      continue;
+    }
+    if (fd.get('skip_' + qid) === 'on') continue;
+    const value = spec.kind === 'money' ? dnMoneyValue(raw) : raw;
+    if (value === null || value === '') continue;
+    body[spec.field] = value;
   }
 
   for (const [qid, field] of Object.entries(DN_FLAG_FIELD_MAP)) {
     const raw = fd.get(qid);
-    if (raw === null) continue;
+    if (raw !== 'true' && raw !== 'false') continue;  // unknown 또는 미선택 → 미확인 유지
     body[field] = raw === 'true';
   }
 
@@ -146,7 +233,7 @@ document.getElementById('supplement-form').addEventListener('submit', async (e) 
   } catch (err) {
     dnShowError(btn, err.message);
     btn.disabled = false;
-    btn.textContent = '입력 완료하고 결과 보기';
+    btn.textContent = '상환여력 계산하기';
   }
 });
 </script>

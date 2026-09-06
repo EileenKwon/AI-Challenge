@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 
@@ -164,15 +165,18 @@ def test_generation_failure_reports_failed_state_without_leaking_details(monkeyp
     download = client.get(f"/api/session/{session_id}/report/download", params={"job_id": job_id})
     assert download.status_code == 409
 
-    # 실패했으므로 세션은 여전히 이전 단계에 머문다 — 진행바 마지막 칸이
-    # 회색으로 남아야 한다는 요구사항과 대응된다.
+    # 실패했으므로 세션은 여전히 이전 단계에 머문다 — 진행 표시 마지막(7번째)
+    # 칸이 완료(✓)가 아니라 예정(○, 회색)으로 남아야 한다는 요구사항과 대응된다.
     final = client.get(f"/api/session/{session_id}/report/status", params={"job_id": job_id}).json()
     assert final["state"] == "failed"
     plan_page = client.get(f"/web/session/{session_id}/plan")
-    assert (
-        'data-step-index="6"\n          class="flex-1 h-1.5 rounded-full bg-slate-300"'
-        in plan_page.text
+    last_step = re.search(
+        r'data-step-index="6".*?</li>', plan_page.text, re.DOTALL
     )
+    assert last_step is not None, "7번째 진행 단계 항목을 찾지 못했습니다"
+    assert "bg-slate-200" in last_step.group(0)
+    assert "○" in last_step.group(0)
+    assert "✓" not in last_step.group(0)
 
 
 def test_in_progress_status_is_not_reported_as_error(monkeypatch) -> None:

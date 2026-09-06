@@ -69,7 +69,7 @@
             class="w-full rounded-lg bg-emerald-600 text-white font-semibold py-3 active:bg-emerald-700
                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
                    focus-visible:outline-emerald-700">
-      업로드하고 다음으로
+      채무정보 확인하기
     </button>
   </form>
 </section>
@@ -187,7 +187,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     } catch (err) {
       dnShowError(btn, err.message);
       btn.disabled = false;
-      btn.textContent = '업로드하고 다음으로';
+      btn.textContent = '채무정보 확인하기';
     }
     return;
   }
@@ -224,7 +224,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   } catch (err) {
     dnShowError(btn, err.message);
     btn.disabled = false;
-    btn.textContent = '업로드하고 다음으로';
+    btn.textContent = '채무정보 확인하기';
   }
 });
 </script>

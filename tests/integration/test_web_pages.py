@@ -167,7 +167,7 @@ def test_extraction_page_shows_source_badges() -> None:
     assert r.status_code == 200
     assert "A금융" in r.text
     assert "문서" in r.text  # source badge label
-    assert "전체 확인 완료" in r.text
+    assert "추가입력 계속하기" in r.text
 
 
 def test_supplement_page_shows_five_fixed_questions() -> None:
@@ -175,7 +175,7 @@ def test_supplement_page_shows_five_fixed_questions() -> None:
     r = client.get(f"/web/session/{sid}/supplement")
     assert r.status_code == 200
     assert "모름" in r.text
-    assert "월 실수령소득은 얼마인가?" in r.text
+    assert "월 실수령소득을 알려주세요" in r.text
 
 
 def test_result_page_shows_confirmed_numbers_and_trace() -> None:
