@@ -25,8 +25,12 @@ from dn.settings import Settings, get_settings
 
 logger = logging.getLogger(__name__)
 
-_RATE_LIMIT_RETRIES = 2
-_MAX_RATE_LIMIT_WAIT = 30.0
+# 무료 티어의 분당 토큰 한도는 낮다(실측: Groq 8,000 TPM). 심사처럼 여러 명이
+# 몰리면 429 가 흔해지는데, 재시도가 부족하면 사용자에게는 "일시적으로 사용할 수
+# 없습니다" 로 보인다. Retry-After 는 보통 수 초라 4회면 대개 통과하고,
+# 최악의 경우에도 대기가 웹 요청으로 감당 못 할 수준은 아니다.
+_RATE_LIMIT_RETRIES = 4
+_MAX_RATE_LIMIT_WAIT = 15.0
 
 DOCUMENT_SYSTEM_PROMPT = (
     "당신은 문서에서 정보를 추출하는 보조자다. "
@@ -203,7 +207,12 @@ class OpenAICompatibleClient:
             if response.status_code != 429 or attempt == _RATE_LIMIT_RETRIES:
                 break
             wait = min(float(response.headers.get("retry-after", 5) or 5), _MAX_RATE_LIMIT_WAIT)
-            logger.warning("llm_rate_limited_retrying", extra={"wait_sec": wait})
+            logger.warning(
+                "llm_rate_limited_retrying (%.1fs 대기, %d/%d)",
+                wait,
+                attempt + 1,
+                _RATE_LIMIT_RETRIES,
+            )
             time.sleep(wait)
 
         response.raise_for_status()

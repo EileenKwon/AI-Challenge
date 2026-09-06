@@ -21,6 +21,22 @@ from dn.settings import get_settings
 _FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
+@pytest.fixture
+def scanned_pdf(tmp_path: Path) -> Path:
+    """스캔 fixture 의 사본 경로.
+
+    원본을 그대로 읽으면 안 된다 — `_render_page_image()` 는 렌더링 결과를
+    원본 PDF 옆(`{원본디렉터리}/_rendered/`)에 만들기 때문에, 테스트가
+    `tests/fixtures/` 안에 산출물을 쌓고 저장소를 더럽힌다(실제로 그 파일이
+    커밋될 뻔했다). 사본을 tmp_path 에 두면 산출물도 함께 임시 경로에 남는다.
+    """
+    import shutil
+
+    target = tmp_path / "sample_scanned.pdf"
+    shutil.copy(_FIXTURES / "sample_scanned.pdf", target)
+    return target
+
+
 def test_text_pdf_extracts_page_text() -> None:
     doc = pdf_reader.read(_FIXTURES / "sample_text.pdf", doc_id="doc-text")
     assert doc.is_scanned is False
@@ -45,12 +61,12 @@ def test_text_pdf_never_calls_ocr(monkeypatch) -> None:
     assert called is False
 
 
-def test_scanned_pdf_is_flagged_and_rendered(monkeypatch) -> None:
+def test_scanned_pdf_is_flagged_and_rendered(monkeypatch, scanned_pdf) -> None:
     # 이 fixture 는 실제 글자가 없는 빈 이미지다 — OCR 을 실제로 돌려도(배포 환경)
     # 빈 결과가 나오는 게 맞지만, 로컬에는 tesseract 바이너리가 없으므로 그
     # "빈 결과" 자체를 흉내내 렌더링/플래그 동작만 검증한다.
     monkeypatch.setattr("pytesseract.image_to_string", lambda img, lang=None: "")
-    doc = pdf_reader.read(_FIXTURES / "sample_scanned.pdf", doc_id="doc-scanned")
+    doc = pdf_reader.read(scanned_pdf, doc_id="doc-scanned")
     assert doc.is_scanned is True
     assert len(doc.pages) == 1
     page = doc.pages[0]
@@ -60,19 +76,21 @@ def test_scanned_pdf_is_flagged_and_rendered(monkeypatch) -> None:
     assert Path(page.image_path).exists()
 
 
-def test_scanned_pdf_ocr_result_becomes_page_text(monkeypatch) -> None:
+def test_scanned_pdf_ocr_result_becomes_page_text(monkeypatch, scanned_pdf) -> None:
     """렌더링된 스캔 페이지 이미지가 실제로 OCR 을 거쳐 page.text 에 반영된다."""
     monkeypatch.setattr(
         "pytesseract.image_to_string", lambda img, lang=None: "OO캐피탈 채무 3건 46,000,000원"
     )
-    doc = pdf_reader.read(_FIXTURES / "sample_scanned.pdf", doc_id="doc-scanned-ocr")
+    doc = pdf_reader.read(scanned_pdf, doc_id="doc-scanned-ocr")
     assert doc.is_scanned is True
     page = doc.pages[0]
     assert page.text == "OO캐피탈 채무 3건 46,000,000원"
     assert page.image_path is not None
 
 
-def test_scanned_pdf_ocr_uses_same_language_setting_as_image_upload(monkeypatch) -> None:
+def test_scanned_pdf_ocr_uses_same_language_setting_as_image_upload(
+    monkeypatch, scanned_pdf
+) -> None:
     """PDF 스캔 페이지와 PNG/JPEG 업로드가 동일한 언어 설정(kor+eng)으로 OCR 을 호출한다."""
     seen_langs = []
 
@@ -81,7 +99,7 @@ def test_scanned_pdf_ocr_uses_same_language_setting_as_image_upload(monkeypatch)
         return "인식된 한글 텍스트"
 
     monkeypatch.setattr("pytesseract.image_to_string", _spy)
-    pdf_reader.read(_FIXTURES / "sample_scanned.pdf", doc_id="doc-scanned-lang")
+    pdf_reader.read(scanned_pdf, doc_id="doc-scanned-lang")
     assert seen_langs == ["kor+eng"]
 
 
@@ -116,7 +134,7 @@ def test_corrupted_pdf_error_message_has_no_internal_path(tmp_path) -> None:
 
 
 def test_scanned_pdf_ocr_engine_missing_raises_extraction_error_without_leaking_path(
-    monkeypatch,
+    monkeypatch, scanned_pdf
 ) -> None:
     """tesseract 바이너리 자체가 없을 때도(배포 오설정 등) 크래시 대신 안내 메시지로 떨어진다."""
     import pytesseract
@@ -126,7 +144,7 @@ def test_scanned_pdf_ocr_engine_missing_raises_extraction_error_without_leaking_
 
     monkeypatch.setattr("pytesseract.image_to_string", _raise)
     with pytest.raises(ExtractionError) as exc_info:
-        pdf_reader.read(_FIXTURES / "sample_scanned.pdf", doc_id="doc-scanned-noengine")
+        pdf_reader.read(scanned_pdf, doc_id="doc-scanned-noengine")
     msg = str(exc_info.value)
     assert "/" not in msg
     assert "인식하지 못했습니다" in msg

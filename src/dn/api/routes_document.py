@@ -116,7 +116,10 @@ def upload_document(
         # LLM 백엔드 장애·한도 초과로 추출이 막혀도 서비스 전체가 죽으면 안 된다.
         # 세션은 S1 에 그대로 두고 503 으로 돌려주면, 화면 02 의 기존 오류 표시가
         # 이 문구를 그대로 띄우고 사용자는 다른 입력 방식으로 넘어갈 수 있다.
-        logger.warning("extraction_failed", extra={"error": type(exc).__name__})
+        # 예외 종류를 메시지 본문에 넣는다. extra= 로만 넘기면 uvicorn 기본
+        # 포매터가 출력하지 않아 배포 로그에 "extraction_failed" 만 남고 원인을
+        # 알 수 없다 — 실제로 그 상태에서 원인 추적에 시간을 썼다.
+        logger.warning("extraction_failed: %s: %s", type(exc).__name__, exc)
         raise HTTPException(
             status_code=503,
             detail=(

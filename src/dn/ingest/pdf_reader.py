@@ -92,7 +92,11 @@ def _render_page_image(path: Path, page_no: int, *, settings: Settings) -> str |
     if not images:
         return None
 
-    out_dir = settings.upload_dir / "_rendered" / path.stem
+    # 원본 PDF 옆(= 세션 디렉터리 안)에 둔다. upload_dir 바로 아래에 두면
+    # TTL 스위퍼의 삭제 범위(`upload_dir/{session_id}/`) 밖이라 영원히 남는다 —
+    # 화면 01과 요약서가 약속하는 "세션 종료 시 자동 삭제"가 깨지고, 사용자
+    # 신용정보조회서를 렌더링한 이미지가 디스크에 계속 쌓인다.
+    out_dir = path.parent / "_rendered" / path.stem
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"page_{page_no}.png"
     images[0].save(out_path)
