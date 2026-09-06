@@ -1,0 +1,32 @@
+{
+  "complex_support": {
+    "checked_at": "2026-09-06",
+    "hash": "fc554deb851c1bfa65d08a3982fa17b1578515af00b1e359314f0c24cddbf8b7",
+    "url": "https://www.kinfa.or.kr/index.jsp"
+  },
+  "court_rehabilitation": {
+    "checked_at": "2026-09-06",
+    "hash": "b8a8180bd064de91f003bcb01fa039901ed494c26a96a0d332a53ba599c7320e",
+    "url": "https://www.scourt.go.kr/nm/min_2/min_2_7/index.html"
+  },
+  "creditor_negotiation": {
+    "checked_at": "2026-09-06",
+    "hash": "c186a478e87eba59e615d88d1bb31c5087f4604cbef769975f06f87dce155344",
+    "url": "https://www.fss.or.kr/fss/main/main.do"
+  },
+  "personal_workout": {
+    "checked_at": "2026-09-06",
+    "hash": "1d3219e5f616ca2cab35cf8d10ebd5e9df66148830aed7111d1a02ea3dcc73a4",
+    "url": "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=1930"
+  },
+  "pre_debt_adjustment": {
+    "checked_at": "2026-09-06",
+    "hash": "d94a7344ab6ebba892898d211c85aa793e7f9d5bbb088402f66438518c3fbba8",
+    "url": "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=490"
+  },
+  "sinsok_debt_adjustment": {
+    "checked_at": "2026-09-06",
+    "hash": "e95cddff4674d44ba5a88fe4b6d4e6e1d9bf735d6f278950fb7f91eb9bbe8634",
+    "url": "https://www.ccrs.or.kr/cms/com/index.do?MENU_ID=520"
+  }
+}

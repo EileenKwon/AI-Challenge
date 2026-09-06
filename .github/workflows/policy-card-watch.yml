@@ -1,0 +1,67 @@
+# 정책 카드(config/policy_cards/**.yaml) 출처 페이지가 바뀌었는지 월 1회 확인하고,
+# 바뀌었으면 GitHub 이슈로 알린다.
+#
+# 이 워크플로는 카드 내용을 절대 자동으로 고치지 않는다 — 정부·공공기관
+# 페이지의 문구를 조건 YAML(연체일수 경계, 소득 요건 등)로 옮기는 판단은
+# 반드시 사람이 한다(AGENTS.md: 정책 카드 자동 반영 금지). 여기서 자동화하는
+# 건 "바뀐 것 같다"는 감지·알림뿐이다.
+#
+# 알림을 보낸 뒤에는 스냅샷(config/policy_cards/_source_snapshots.json)을
+# 최신 상태로 갱신해 커밋한다 — 사람이 아직 검토하지 않았어도, 페이지가 그
+# 뒤로 또 바뀌지 않는 한 다음 달에 같은 변경을 반복해서 알리지 않는다.
+name: Policy Card Source Watch
+
+on:
+  schedule:
+    - cron: "0 0 1 * *" # 매월 1일 00:00 UTC — 월 1회
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -e .
+
+      - name: 출처 페이지 변경 확인
+        run: python tools/policy_watch/check_policy_sources.py
+
+      - name: 라벨 준비
+        if: hashFiles('policy_change_report.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "policy-review" \
+            --color "FBCA04" \
+            --description "정책 카드 출처 변경 감지 — 사람 검토 필요" \
+            --force
+
+      - name: 변경 감지 시 이슈 생성
+        if: hashFiles('policy_change_report.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "정책 카드 출처 변경 감지 — $(date -u +%Y-%m-%d)" \
+            --body-file policy_change_report.md \
+            --label "policy-review"
+
+      - name: 스냅샷 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/policy_cards/_source_snapshots.json
+          git diff --cached --quiet || git commit -m "chore: 정책 카드 출처 스냅샷 갱신 [skip ci]"
+          git push
