@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -14,6 +15,31 @@ from fastapi.testclient import TestClient
 from dn.main import create_app
 
 _FIXTURE_PDF = Path(__file__).resolve().parents[1] / "fixtures" / "sample_text.pdf"
+
+
+def _generate_and_download_report(client: TestClient, session_id: str) -> bytes:
+    """`POST /report`(202+job) → `GET /report/status` 폴링 → `GET /report/download`.
+
+    `/report` 가 PDF 를 직접 돌려주지 않고 비동기 작업으로 바뀐 뒤(2026-09-06,
+    진행상태 UX 개선) 스모크 테스트도 같은 순서를 따라야 한다.
+    """
+    created = client.post(f"/api/session/{session_id}/report")
+    assert created.status_code == 202, created.text
+    job_id = created.json()["job_id"]
+
+    status = created.json()
+    for _ in range(100):
+        if status["state"] in ("ready", "failed"):
+            break
+        time.sleep(0.05)
+        status = client.get(
+            f"/api/session/{session_id}/report/status", params={"job_id": job_id}
+        ).json()
+    assert status["state"] == "ready", status
+
+    download = client.get(f"/api/session/{session_id}/report/download", params={"job_id": job_id})
+    assert download.status_code == 200
+    return download.content
 
 
 def test_full_demo_scenario_upload_to_pdf_download() -> None:
@@ -47,10 +73,9 @@ def test_full_demo_scenario_upload_to_pdf_download() -> None:
     assert client.post(f"/api/session/{session_id}/analyze").status_code == 200
     assert client.post(f"/api/session/{session_id}/plan").status_code == 200
 
-    report = client.post(f"/api/session/{session_id}/report")
-    assert report.status_code == 200
-    assert report.content.startswith(b"%PDF")
-    assert len(report.content) > 1000
+    pdf_bytes = _generate_and_download_report(client, session_id)
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 1000
 
 
 def test_report_before_plan_returns_409() -> None:
@@ -158,6 +183,5 @@ def test_full_demo_scenario_with_extracted_debts() -> None:
     assert client.post(f"/api/session/{session_id}/analyze").status_code == 200
     assert client.post(f"/api/session/{session_id}/plan").status_code == 200
 
-    report = client.post(f"/api/session/{session_id}/report")
-    assert report.status_code == 200
-    assert report.content.startswith(b"%PDF")
+    pdf_bytes = _generate_and_download_report(client, session_id)
+    assert pdf_bytes.startswith(b"%PDF")

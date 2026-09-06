@@ -81,9 +81,31 @@ echo "  [STAGE] 7일 계획"
 curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/plan" > /dev/null
 echo "  [OK] plan"
 
+echo "  [STAGE] 요약서 PDF 생성 요청 (비동기 작업)"
+# /report 는 PDF 를 바로 돌려주지 않는다(2026-09-06, 진행상태 UX 개선) —
+# 202 + job_id 를 받고 완료될 때까지 상태를 폴링한다.
+REPORT_RESPONSE=$(curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/report")
+JOB_ID=$(echo "$REPORT_RESPONSE" | _json_field job_id)
+echo "  [OK] job_id=$JOB_ID"
+
+echo "  [STAGE] 요약서 생성 상태 폴링"
+STATE="preparing_data"
+for _ in $(seq 1 100); do
+  STATE=$(curl -fsS "$BASE_URL/api/session/$SESSION_ID/report/status?job_id=$JOB_ID" | _json_field state)
+  if [ "$STATE" = "ready" ] || [ "$STATE" = "failed" ]; then
+    break
+  fi
+  sleep 0.2
+done
+if [ "$STATE" != "ready" ]; then
+  echo "[ERR] 요약서 생성이 완료되지 않았습니다 (state=$STATE)"
+  exit 1
+fi
+echo "  [OK] state=ready"
+
 echo "  [STAGE] 요약서 PDF 다운로드"
 OUT_PDF="$(mktemp).pdf"
-curl -fsS -X POST "$BASE_URL/api/session/$SESSION_ID/report" -o "$OUT_PDF"
+curl -fsS "$BASE_URL/api/session/$SESSION_ID/report/download?job_id=$JOB_ID" -o "$OUT_PDF"
 if [ ! -s "$OUT_PDF" ]; then
   echo "[ERR] PDF 가 비어 있습니다"
   exit 1

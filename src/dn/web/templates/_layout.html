@@ -53,6 +53,18 @@
   async function dnPost(url, body) { return dnSend(url, body, 'POST'); }
   async function dnPatch(url, body) { return dnSend(url, body, 'PATCH'); }
 
+  // 세션이 s7_reported 에 도달했을 때(상담용 요약서 생성 완료) 페이지 새로고침
+  // 없이도 상단 진행 표시 마지막 칸까지 채운다. 서버 렌더링 시점의
+  // `current_step` 은 그 순간의 세션 상태를 그대로 반영하므로, 이후 상태가
+  // 바뀌면(요약서 생성) 이 함수로 화면만 맞춰준다 — 실제 상태는 이미
+  // `GET .../report/status` 응답의 `session_stage` 로 확인한 뒤에만 호출한다.
+  function dnMarkStepperComplete() {
+    document.querySelectorAll('#dn-stepper li[data-step-index]').forEach((li) => {
+      li.classList.remove('bg-slate-300');
+      li.classList.add('bg-emerald-500');
+    });
+  }
+
   function dnShowError(anchorEl, message) {
     let box = document.getElementById('dn-error-box');
     if (!box) {
@@ -86,10 +98,11 @@
   </header>
 
   {% block stepper %}
-  <nav class="max-w-md mx-auto px-4 pb-2" aria-label="진행 단계">
+  <nav id="dn-stepper" class="max-w-md mx-auto px-4 pb-2" aria-label="진행 단계">
     <ol class="flex gap-1">
       {% for step in ["소개", "업로드", "확인", "보완", "결과", "경로", "계획"] %}
-      <li class="flex-1 h-1.5 rounded-full {{ 'bg-emerald-500' if loop.index0 < current_step else ('bg-slate-300') }}"
+      <li data-step-index="{{ loop.index0 }}"
+          class="flex-1 h-1.5 rounded-full {{ 'bg-emerald-500' if loop.index0 < current_step else ('bg-slate-300') }}"
           title="{{ step }}"></li>
       {% endfor %}
     </ol>

@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <style>
+  {% if font_face_url %}
+  @font-face {
+    font-family: "ReportKR";
+    src: url("{{ font_face_url }}");
+  }
+  {% endif %}
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
   body {
-    font-family: "{{ font_family }}", "Noto Sans CJK KR", sans-serif;
+    font-family: {% if font_face_url %}"ReportKR", {% endif %}"{{ font_family }}", "Noto Sans CJK KR", sans-serif;
     font-size: 9.5pt;
     line-height: 1.35;
     color: #1a1a1a;

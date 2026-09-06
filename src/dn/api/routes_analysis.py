@@ -21,7 +21,7 @@ from dn.domain.models import (
 from dn.domain.provenance import Tracked
 from dn.llm.client import LLMClient
 from dn.pipeline.orchestrator import analyze as run_analysis
-from dn.pipeline.stages import transition
+from dn.pipeline.stages import can_transition, transition
 from dn.planning.action_plan import build_plan
 from dn.reconcile.conflict_detector import detect_conflicts
 from dn.reconcile.gap_detector import detect_gaps
@@ -31,7 +31,7 @@ from dn.reconcile.questions import (
     has_secured_debt,
     select_active_questions,
 )
-from dn.report.summary_pdf import render as render_summary
+from dn.report import jobs as report_jobs
 from dn.settings import get_settings
 from dn.storage.session_store import SessionStore
 
@@ -275,19 +275,62 @@ def create_plan(session_id: str, store: SessionStore = Depends(get_session_store
     return plan.model_dump()
 
 
-@router.post("/{session_id}/report")
+@router.post("/{session_id}/report", status_code=202)
 def create_report(
     session_id: str,
     options: ReportOptions | None = None,
     store: SessionStore = Depends(get_session_store),
-) -> Response:
+) -> dict:
+    """상담용 요약서 PDF 생성을 시작한다. PDF 를 바로 돌려주지 않는다.
+
+    WeasyPrint 렌더링은 수백 ms~수 초가 걸릴 수 있어(2026-09-06 실측,
+    `docs/report_timing.md`), 요청을 즉시 202 로 받아넘기고 실제 렌더링은
+    백그라운드 스레드에서 진행한다. 진행 상황은 `GET .../report/status`,
+    완성된 PDF 는 `GET .../report/download` 로 가져온다.
+
+    같은 `analysis` 내용 + 같은 옵션으로 이미 만든 적이 있으면 재생성하지
+    않고 그 결과를 재사용한다(`report/jobs.py` 캐시).
+    """
     state = get_session_or_404(session_id, store)
     if state.analysis is None:
         raise HTTPException(status_code=404, detail="아직 분석 결과가 없습니다.")
+    # 세션 상태 전이 가능 여부를 먼저 확인해, 계획 단계를 건너뛴 세션은
+    # 백그라운드 작업을 시작하지도 않고 바로 409 로 돌려준다(기존 동작 유지).
+    if state.stage != SessionStage.S7_REPORTED and not can_transition(
+        state.stage, SessionStage.S7_REPORTED
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"허용되지 않은 전이입니다: {state.stage.value} → {SessionStage.S7_REPORTED.value}"
+            ),
+        )
 
-    pdf_bytes = render_summary(state.analysis, options or ReportOptions())
+    settings = get_settings()
+    job, _started = report_jobs.get_or_create_job(
+        session_id, state.analysis, options or ReportOptions(), settings=settings, store=store
+    )
+    return {"job_id": job.job_id, **job.to_status_dict()}
 
-    new_state = transition(state, SessionStage.S7_REPORTED)
-    new_state = new_state.model_copy(update={"updated_at": datetime.now()})
-    store.save(new_state)
-    return Response(content=pdf_bytes, media_type="application/pdf")
+
+@router.get("/{session_id}/report/status")
+def get_report_status(
+    session_id: str, job_id: str, store: SessionStore = Depends(get_session_store)
+) -> dict:
+    job = report_jobs.get_job(job_id)
+    if job is None or job.session_id != session_id:
+        raise HTTPException(status_code=404, detail="작업을 찾을 수 없습니다.")
+    state = get_session_or_404(session_id, store)
+    result = job.to_status_dict()
+    result["session_stage"] = state.stage.value
+    return result
+
+
+@router.get("/{session_id}/report/download")
+def download_report(session_id: str, job_id: str) -> Response:
+    job = report_jobs.get_job(job_id)
+    if job is None or job.session_id != session_id:
+        raise HTTPException(status_code=404, detail="작업을 찾을 수 없습니다.")
+    if job.status != "ready" or job.pdf_bytes is None:
+        raise HTTPException(status_code=409, detail="아직 준비되지 않았습니다.")
+    return Response(content=job.pdf_bytes, media_type="application/pdf")

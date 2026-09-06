@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from dn.cashflow.formatting import format_ratio, format_won
 from dn.domain.models import AnalysisResult, ReportOptions
+from dn.report.fonts import get_subset_font_path
 from dn.settings import Settings, get_settings
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -73,10 +74,17 @@ def _paths_and_questions(
     return paths_ctx, questions[:_MAX_QUESTIONS_SHOWN]
 
 
-def _build_context(
-    analysis: AnalysisResult, options: ReportOptions, *, settings: Settings
+def build_context(
+    analysis: AnalysisResult, options: ReportOptions, *, settings: Settings | None = None
 ) -> dict[str, Any]:
+    """PDF 생성의 1단계("preparing_data") — 세션 데이터를 템플릿 컨텍스트로 정리한다.
+
+    LLM을 호출하지 않는다 — `s6_planned`에서 이미 확정된 `analysis`(cashflow·
+    rules·narrative·plan)를 그대로 포맷팅만 한다.
+    """
+    settings = settings or get_settings()
     paths_ctx, questions = _paths_and_questions(analysis, options)
+    font_path = get_subset_font_path(settings)
     return {
         "service_name": settings.config.meta.service_name,
         "debts": _debt_rows(analysis, options),
@@ -88,14 +96,29 @@ def _build_context(
         "disclaimer": _DISCLAIMER,
         "options": options,
         "font_family": settings.config.report.font_family,
+        # 로컬 서브셋 폰트가 준비됐으면 그 파일을 @font-face 로 직접 가리켜
+        # WeasyPrint 가 매 렌더링마다 거대한 시스템 CJK 폰트를 서브셋하지
+        # 않게 한다(fonts.py 참고, 실측 4.5초 → 0.4~0.5초). 못 만들었으면
+        # (개발환경 등) None 이 되어 기존 시스템 폰트 이름 방식으로 폴백한다.
+        "font_face_url": font_path.resolve().as_uri() if font_path else None,
     }
+
+
+def render_html_from_context(context: dict[str, Any]) -> str:
+    """PDF 생성의 2단계("rendering_html") — Jinja 템플릿을 HTML 문자열로 렌더링한다."""
+    template = _env().get_template("summary.html")
+    return template.render(**context)
+
+
+def render_pdf_from_html(html: str) -> bytes:
+    """PDF 생성의 3단계("rendering_pdf") — WeasyPrint 로 HTML을 PDF 바이트로 변환한다."""
+    return weasyprint.HTML(string=html).write_pdf()
 
 
 def render(
     analysis: AnalysisResult, options: ReportOptions, *, settings: Settings | None = None
 ) -> bytes:
-    """`analysis` 를 상담용 요약서 PDF 바이트로 렌더링한다."""
-    settings = settings or get_settings()
-    template = _env().get_template("summary.html")
-    html = template.render(**_build_context(analysis, options, settings=settings))
-    return weasyprint.HTML(string=html).write_pdf()
+    """`analysis` 를 상담용 요약서 PDF 바이트로 렌더링한다(3단계를 이어 호출하는 편의 함수)."""
+    context = build_context(analysis, options, settings=settings)
+    html = render_html_from_context(context)
+    return render_pdf_from_html(html)

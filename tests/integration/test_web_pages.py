@@ -209,7 +209,7 @@ def test_plan_page_shows_plan_and_pdf_download() -> None:
     r = client.get(f"/web/session/{sid}/plan")
     assert r.status_code == 200
     assert "추출된 채무 목록과 연체일수 확인" in r.text
-    assert "PDF 다운로드" in r.text
+    assert "상담용 요약서 만들기" in r.text
     assert "포함할 항목을 선택" in r.text
 
 
