@@ -76,6 +76,7 @@ def _progress_context(user_step: int, *, complete: bool = False) -> dict[str, An
         "complete": complete,
     }
 
+
 _TIMING_LABEL = {
     "today": "오늘",
     "d1": "1일 이내",

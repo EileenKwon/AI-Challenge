@@ -170,9 +170,7 @@ def test_generation_failure_reports_failed_state_without_leaking_details(monkeyp
     final = client.get(f"/api/session/{session_id}/report/status", params={"job_id": job_id}).json()
     assert final["state"] == "failed"
     plan_page = client.get(f"/web/session/{session_id}/plan")
-    last_step = re.search(
-        r'data-step-index="6".*?</li>', plan_page.text, re.DOTALL
-    )
+    last_step = re.search(r'data-step-index="6".*?</li>', plan_page.text, re.DOTALL)
     assert last_step is not None, "7번째 진행 단계 항목을 찾지 못했습니다"
     assert "bg-slate-200" in last_step.group(0)
     assert "○" in last_step.group(0)
