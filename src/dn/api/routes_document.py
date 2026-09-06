@@ -42,13 +42,26 @@ router = APIRouter(prefix="/api/session", tags=["document"])
 
 
 @router.post("/{session_id}/document")
-async def upload_document(
+def upload_document(
     session_id: str,
     request: Request,
     file: UploadFile,
     store: SessionStore = Depends(get_session_store),
     client: LLMClient = Depends(get_llm_client_dep),
 ) -> dict:
+    """PDF/이미지 업로드를 받아 텍스트를 추출한다.
+
+    일부러 `async def` 가 아니라 동기 함수다 — 본문 전체(PDF 파싱, poppler
+    렌더링, Tesseract OCR, LLM 호출)가 전부 블로킹 호출인데 `async def` 로
+    선언하면 Starlette 가 스레드풀로 offload 하지 않고 단일 이벤트 루프에서
+    그대로 실행한다. 스캔 PDF OCR(poppler + tesseract 서브프로세스 2개가
+    한 요청 안에서 순차 실행)을 얹은 뒤 이 블로킹 구간이 길어져, Render
+    무료 티어의 헬스체크(`HEALTHCHECK`, 10초 간격)가 응답을 못 받고 연속
+    실패해 컨테이너가 재시작되는 문제가 실제로 발생했다(2026-09-06 실측:
+    스캔 PDF 업로드 직후 healthz 가 503/502 로 떨어지고 세션이 사라짐).
+    동기 함수로 바꾸면 Starlette 가 이 핸들러를 스레드풀에서 실행해 메인
+    이벤트 루프(헬스체크 포함)를 막지 않는다.
+    """
     state = get_session_or_404(session_id, store)
     settings = get_settings()
     if settings.config.ratelimit.enabled:
@@ -58,7 +71,7 @@ async def upload_document(
             window_sec=settings.config.ratelimit.window_seconds,
         )
 
-    content_bytes = await file.read()
+    content_bytes = file.file.read()
     try:
         canonical_mime = validate_upload(
             filename=file.filename or "upload",
