@@ -31,3 +31,6 @@ figures/*.png
 # 직접 읽으면 tests/fixtures/ 안에도 만들어진다(테스트는 사본을 쓰도록 고쳤지만
 # 실수로 되돌아가도 커밋되지 않게 막아 둔다).
 _rendered/
+
+# 대회가 배포한 빈 양식 원본. 저장소에 재배포하지 않는다.
+tools/submission/forms/
