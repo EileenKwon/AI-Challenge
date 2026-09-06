@@ -11,11 +11,12 @@ fixed:
     required: true
     skippable: false
   - qid: Q2_LIVING_COST
-    text: 한 달 필수생활비는 얼마인가요?
-    helper: 주거비, 식비, 교통비 등 매달 꼭 필요한 지출입니다.
+    text: 한 달에 꼭 필요한 생활비는 얼마인가요?
+    helper: 최근 2~3개월의 실제 지출을 기준으로 입력해 주세요.
     kind: money
     required: true
-    skippable: false
+    skippable: true
+    skip_impact: 필수생활비가 미확인으로 남아 월 상환여력 계산에 0원으로 반영되고, 추가 확인이 필요한 항목으로 표시됩니다.
   - qid: Q3_INCOME_PROOF
     text: 최근 3개월의 소득을 확인할 수 있는 자료가 있나요?
     helper: 급여명세서, 급여 입금내역, 소득금액증명 등이 해당될 수 있습니다.

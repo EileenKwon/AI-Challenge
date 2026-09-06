@@ -43,7 +43,71 @@
       <h3 class="font-semibold text-sm">기본 질문 (5문항)</h3>
       {% for q in fixed_questions %}
       <div>
-        {% if q.kind == "money" %}
+        {% if q.qid == "Q2_LIVING_COST" %}
+        <label for="Q2_LIVING_COST" class="text-sm font-semibold block">{{ loop.index }}. {{ q.text }}</label>
+        {% if q.helper %}<p id="Q2_LIVING_COST-help" class="text-xs text-slate-500 mt-0.5">{{ q.helper }}</p>{% endif %}
+        <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-1.5 leading-relaxed">
+          대출·카드 등 채무 상환액은 포함하지 마세요. 채무 상환액은 별도로 계산됩니다.
+        </p>
+
+        <div class="mt-1.5 flex items-center gap-2">
+          <input id="Q2_LIVING_COST" type="text" inputmode="numeric" placeholder="예: 1,450,000"
+                 name="Q2_LIVING_COST" aria-describedby="Q2_LIVING_COST-help"
+                 class="dn-money-input flex-1 rounded border-slate-300 text-sm" />
+          <span class="text-sm text-slate-500">원</span>
+        </div>
+
+        <div class="flex items-center gap-3 mt-1.5">
+          <button type="button" id="living-cost-breakdown-toggle"
+                  class="text-xs text-emerald-700 underline underline-offset-2" aria-expanded="false"
+                  aria-controls="living-cost-breakdown">
+            항목별로 계산하기
+          </button>
+          <label class="flex items-center gap-1.5 text-xs text-slate-500">
+            <input type="checkbox" name="skip_Q2_LIVING_COST" id="living-cost-unknown-checkbox" />
+            <span>정확히 모르겠어요</span>
+          </label>
+        </div>
+
+        <p id="living-cost-unknown-note" class="hidden text-xs text-amber-700 bg-amber-50 rounded px-2 py-1.5 mt-1.5" role="status">
+          괜찮습니다. 최근 카드·계좌내역 등을 확인해 주세요. 확인 전까지는 미확인으로 남겨 두고, 상담할 때 확인할 내용으로 표시하겠습니다.
+        </p>
+
+        <div id="living-cost-breakdown" class="hidden mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2.5">
+          <div>
+            <label for="lc-part-housing" class="text-xs font-medium text-slate-600 block">주거비 <span class="font-normal text-slate-400">(월세·관리비 등)</span></label>
+            <p class="text-[11px] text-slate-400 mt-0.5 mb-1">이미 채무 항목에 입력한 대출 상환액은 제외하고 입력해 주세요.</p>
+            <div class="flex items-center gap-1">
+              <input id="lc-part-housing" type="text" inputmode="numeric" placeholder="0"
+                     class="dn-money-input lc-part flex-1 rounded border-slate-300 text-sm" data-part="housing" />
+              <span class="text-xs text-slate-400">원</span>
+            </div>
+          </div>
+          {% for part_id, part_label in [("food", "식비"), ("utilities", "공과금·통신비"), ("transport", "교통비"), ("medical", "의료·돌봄비"), ("other", "기타 필수 고정비")] %}
+          <div>
+            <label for="lc-part-{{ part_id }}" class="text-xs font-medium text-slate-600 block">{{ part_label }}</label>
+            <div class="flex items-center gap-1 mt-1">
+              <input id="lc-part-{{ part_id }}" type="text" inputmode="numeric" placeholder="0"
+                     class="dn-money-input lc-part flex-1 rounded border-slate-300 text-sm" data-part="{{ part_id }}" />
+              <span class="text-xs text-slate-400">원</span>
+            </div>
+          </div>
+          {% endfor %}
+          <div class="flex items-center justify-between border-t border-slate-200 pt-2">
+            <span class="text-sm font-medium text-slate-700">필수생활비 합계</span>
+            <span id="living-cost-sum" class="text-sm font-bold text-emerald-700">0원</span>
+          </div>
+          <button type="button" id="living-cost-apply-btn"
+                  class="w-full rounded border-2 border-emerald-600 text-emerald-700 text-sm font-semibold py-2">
+            이 금액으로 사용
+          </button>
+        </div>
+
+        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+          이 금액은 현재 상환여력을 계산하기 위한 사용자 입력값이며, 공식기관의 생계비 인정 기준을 의미하지 않습니다.
+        </p>
+
+        {% elif q.kind == "money" %}
         <label for="{{ q.qid }}" class="text-sm font-semibold block">{{ loop.index }}. {{ q.text }}</label>
         {% if q.helper %}<p id="{{ q.qid }}-help" class="text-xs text-slate-500 mt-0.5">{{ q.helper }}</p>{% endif %}
         <div class="mt-1.5 flex items-center gap-2">
@@ -174,6 +238,65 @@ function dnMoneyValue(raw) {
   if (!raw) return raw;
   return raw.replace(/,/g, '');
 }
+
+// 필수생활비 "항목별로 계산하기" — 합계는 항상 실시간 재계산만 하고,
+// 임의의 "적정 생활비" 추천값을 채우지 않는다(요구사항: 자동 추천 금지).
+(function () {
+  const toggleBtn = document.getElementById('living-cost-breakdown-toggle');
+  const breakdown = document.getElementById('living-cost-breakdown');
+  const sumEl = document.getElementById('living-cost-sum');
+  const applyBtn = document.getElementById('living-cost-apply-btn');
+  const totalInput = document.getElementById('Q2_LIVING_COST');
+  const unknownCheckbox = document.getElementById('living-cost-unknown-checkbox');
+  const unknownNote = document.getElementById('living-cost-unknown-note');
+  if (!toggleBtn || !breakdown || !totalInput) return;
+
+  function partSum() {
+    let sum = 0;
+    breakdown.querySelectorAll('.lc-part').forEach((el) => {
+      const digits = el.value.replace(/[^0-9]/g, '');
+      sum += digits ? Number(digits) : 0;
+    });
+    return sum;
+  }
+
+  function renderSum() {
+    sumEl.textContent = partSum().toLocaleString('ko-KR') + '원';
+  }
+
+  function setBreakdownOpen(open) {
+    breakdown.classList.toggle('hidden', !open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    toggleBtn.textContent = open ? '항목별 입력 접기' : '항목별로 계산하기';
+    if (open) renderSum();
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    setBreakdownOpen(breakdown.classList.contains('hidden'));
+  });
+
+  breakdown.querySelectorAll('.lc-part').forEach((el) => {
+    el.addEventListener('input', renderSum);
+  });
+
+  applyBtn.addEventListener('click', () => {
+    totalInput.disabled = false;
+    totalInput.value = partSum().toLocaleString('ko-KR');
+    unknownCheckbox.checked = false;
+    unknownNote.classList.add('hidden');
+    setBreakdownOpen(false);
+  });
+
+  unknownCheckbox.addEventListener('change', () => {
+    const checked = unknownCheckbox.checked;
+    unknownNote.classList.toggle('hidden', !checked);
+    totalInput.disabled = checked;
+    if (checked) {
+      totalInput.value = '';
+      setBreakdownOpen(false);
+    }
+  });
+})();
 
 // "잘 모르겠어요" 선택 시 짧은 안내를 보여주고, 다른 값으로 바뀌면 숨긴다.
 document.getElementById('supplement-form').addEventListener('change', (e) => {
