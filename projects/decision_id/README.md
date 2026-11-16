@@ -14,7 +14,42 @@ accurate financial decisions? The project separates four objects:
 It then tests whether a decision-relevant weak-identifiability diagnostic, and an allocation rule built
 on it, adds anything beyond known methods.
 
-<!-- RESULTS -->
+## Bottom line
+
+* **Identifiable ≠ decision-relevant, and the reverse.**
+  * Gaussian location: 145% median relative error, yet only 27% of VaR99 uncertainty.
+  * Tail-index error vs regret: ρ = 0.07 for VaR95 and 0.76 for VaR99.9.
+  * In the regime mixture, a badly wrong parameter posterior gives the same VaR99 decision.
+* **The proposed diagnostic is not new in its valid form, and not valid in its new form.**
+  * $R_g(0)$ is the delta method; $R_g(\lambda)$ is Bayesian c-optimality.
+  * The Fisher-eigen "weak × sensitive" split depends on coordinates: 0.5% vs 54% for the same data.
+  * The invariant repair is the goal-oriented prior-whitened decomposition (Spantini et al. 2017).
+* **Beyond posterior variance?**
+  * Not for predicting decision error (partial ρ ≈ 0.1).
+  * Marginally for prior sensitivity ($\pi_g$: ρ 0.89 vs 0.88 for the contraction ratio).
+* **Decision-targeted allocation.**
+  * It beats uniform, own-history-only and predictive (log-score) allocation.
+  * It beats Fisher-only D-optimal design only for VaR97.5 (regret 0.52 vs 0.66 of uniform). FZ0 is a
+    tie and VaR99.9 is inconclusive.
+  * The global preposterior version adds nothing over the local one, at ~150× the cost.
+* **New-ish, applied results.**
+  * At fixed variance, VaR is tail-index-immune at α = Φ(√3) = 0.958 and ES at Φ(1) = 0.841 near the
+    Gaussian limit. The immune level rises to 0.987 / 0.938 at ν = 4.
+  * Quantile-score regret compresses tail risk: VaR posterior variance grows ~500× from α = 0.90 to
+    0.999, but regret grows only ~2.3×.
+  * Log-score criteria are misaligned with tail decisions.
+* **Verdict.** No publishable *methods* contribution as proposed. There is a plausible applied paper on
+  tail-index estimation risk in VaR/ES decisions. See `docs/05_assessment.md` for the failure analysis and
+  the extensions that could change this.
+
+| figure | shows |
+|---|---|
+| `figures/e1_contours_n250.png` | likelihood vs posterior contours in 3 parameterizations, Fisher eigenvectors, iso-functional curves |
+| `figures/e1_spectrum.png` | ξ-sensitivity sign change, weak-direction share and regret proxy across VaR levels |
+| `figures/e3_coverage.png` | functional coverage of 7 inference methods vs n |
+| `figures/e3_param_vs_decision.png` | tail-index error vs regret, VaR97.5 vs VaR99.9 |
+| `figures/e4_mixture_example.png` | singular-locus posterior, Laplace failure in parameter space vs agreement in functional space |
+| `figures/e5_regret_ratio.png` | allocation policies vs uniform for three decision targets |
 
 ## Documents
 
@@ -41,7 +76,7 @@ src/decision_id/
   allocation.py    data sources, local and preposterior decision-value criteria
   npe.py           numpy Gaussian-head neural posterior estimation (no DL framework was available)
 experiments/       e1..e6 scripts (+ e3_analyze, e5_analyze, run_all.sh)
-tests/             23 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
+tests/             24 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
                    posterior agreement (grid vs MCMC/Laplace/VI), NPE gradients, allocation sources
 config.yaml        every path, seed, prior and experiment setting
 ```

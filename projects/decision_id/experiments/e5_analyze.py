@@ -144,9 +144,10 @@ def main() -> None:
             lw=1.5,
         )
         ax.axvline(1.0, color=ps.TEXT2, lw=1, ls="--")
+        ax.set_xscale("log")
         ax.set_yticks(y, POLICIES)
         ax.set_title(f"{et}: mean regret / uniform (90% CI)")
-        ax.set_xlabel("ratio (lower is better)")
+        ax.set_xlabel("ratio, log scale (lower is better)")
     ps.save(fig, cfg["paths"]["figures"] / "e5_regret_ratio.png")
 
     fl = ".4f"

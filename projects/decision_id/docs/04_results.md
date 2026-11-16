@@ -203,3 +203,64 @@ least as much as by approximation accuracy.**
   n = 250). They are close to nominal at n = 1000.
 * **Decisions.** Bayes-act regret is within about ±10% of the exact posterior. KL is within 1–7%.
 * Simulation-budget allocation for NPE was **not** studied (see `05_assessment.md`).
+
+## E5 — Decision-targeted observation allocation (Stages 3–4)
+
+**Setup.**
+
+* Six conditions: ν ∈ {3, 5, 10} × n₀ ∈ {100, 400}; 60 replications each.
+* Budget: 8 batches × cost 50. Per batch that buys 50 own returns, 200 peer standardized residuals
+  (these carry information about ξ only), or 100 noisy variance proxies (log sd only).
+* All policies share the same data pools (common random numbers).
+* Regret is measured for the final Bayes act under the true DGP.
+* Pooled ratio = mean regret / uniform, with 90% paired-bootstrap CI. `figures/e5_regret_ratio.png`.
+
+| target | own_only | predictive (log score) | D-opt (Fisher-only) | DR-local | DR-preposterior |
+|---|---|---|---|---|---|
+| VaR97.5 (quantile score) | 4.14 [3.54, 4.88] | 0.82 [0.73, 0.93] | 0.66 [0.57, 0.76] | 0.54 [0.46, 0.63] | **0.52 [0.45, 0.60]** |
+| (VaR, ES)97.5 (FZ0) | 5.72 | 0.81 [0.73, 0.90] | 0.67 [0.59, 0.75] | **0.64 [0.57, 0.72]** | 0.64 [0.57, 0.72] |
+| VaR99.9 (quantile score) | 8.91 | 0.82 [0.73, 0.91] | 0.83 [0.74, 0.94] | **0.76 [0.67, 0.86]** | 0.76 [0.67, 0.85] |
+
+**Head-to-head against D-opt** (DR rarely chooses the same sequence: 1–17% of replications):
+
+| target | win / loss | mean-regret ratio when sequences differ |
+|---|---|---|
+| VaR97.5 | 44–46% / 35–37% | 0.79–0.83 |
+| VaR99.9 | 44–45% / 44% | 0.85 |
+| FZ0 | 28–30% / 23–24% | 0.96 |
+
+By condition, DR loses to D-opt for VaR99.9 at (ν = 3, n₀ = 100) (0.78 vs 0.61) and at
+(ν = 5, n₀ = 400). It wins clearly at ν = 10.
+
+**Source mix** (batches out of 8, own/peer/rv):
+
+| policy | own | peer | rv |
+|---|---|---|---|
+| DR for VaR97.5 | 0 | 1.6 | 6.4 |
+| DR for VaR99.9 | 0 | 5.3 | 2.7 |
+| DR for FZ0 | 0 | 2.9 | 5.1 |
+| D-opt | 0 | 3.4 | 4.6 |
+| predictive | 0.1 | 5.0 | 2.9 |
+
+The allocation moves with the functional's sensitivity, as the theory says. VaR97.5 is scale-dominated;
+VaR99.9 is tail-dominated.
+
+**What the policies give up.**
+
+* DR-VaR97.5 has worse ξ recovery (|ξ error| 0.026 vs 0.018 for D-opt) and a worse log score (KL 0.0011
+  vs 0.0007), yet lower VaR97.5 regret. This is a direct instance of "better parameter recovery ≠ better
+  decisions".
+* The predictive (log-score) criterion over-buys tail information for the scale-dominated target.
+
+**H5: partly supported.**
+
+* Decision-targeted allocation clearly beats uniform, own-history-only and predictive allocation.
+* Against Fisher-only D-optimal design it is clearly better only for VaR97.5. It is a tie for FZ0 and
+  inconclusive for VaR99.9.
+
+**H6: not supported.**
+
+* Preposterior / local regret ratios lie in 0.84–1.06; every 90% CI except one contains 1.
+* The suggestive cell is ν = 3, n₀ = 100, VaR97.5: 0.84 [0.65, 1.01].
+* The preposterior EVSI costs about 20 s per replicate versus 0.1–0.2 s for the local criterion
+  (≈ 150×).

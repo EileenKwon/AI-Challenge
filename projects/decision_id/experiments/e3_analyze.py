@@ -64,8 +64,15 @@ def main() -> None:
     df = pd.read_csv(raw)
     meth = df[df.functional == "__method__"].dropna(axis=1, how="all")
     func = df[~df.functional.isin(["__method__"]) & (df.method != "__diag__")].drop(
-        columns=["err_xi", "err_logsd", "kl", "seconds", "bt_regret_var99", "frac_outside",
-                 "boundary"]
+        columns=[
+            "err_xi",
+            "err_logsd",
+            "kl",
+            "seconds",
+            "bt_regret_var99",
+            "frac_outside",
+            "boundary",
+        ]
     )
     diag = df[df.method == "__diag__"].dropna(axis=1, how="all").copy()
     R = cfg["paths"]["results"]

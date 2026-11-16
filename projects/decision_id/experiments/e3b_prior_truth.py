@@ -77,14 +77,27 @@ def main() -> None:
         cov = s.groupby("method")["cover"].mean()
         for m in [c for c in piv.columns if c != "grid"]:
             r, lo, hi = boot(piv[m].values, piv["grid"].values, rng)
-            out.append({"n": n, "functional": f, "method": m, "regret_ratio_vs_exact": r,
-                        "lo90": lo, "hi90": hi, "coverage": cov[m],
-                        "coverage_exact": cov["grid"]})
+            out.append(
+                {
+                    "n": n,
+                    "functional": f,
+                    "method": m,
+                    "regret_ratio_vs_exact": r,
+                    "lo90": lo,
+                    "hi90": hi,
+                    "coverage": cov[m],
+                    "coverage_exact": cov["grid"],
+                }
+            )
     tab = pd.DataFrame(out)
-    md = ["# E3b — Truths drawn from the prior (sanity check)", "",
-          f"xi0 ~ U(xi_min, xi_max), sd = 1; {REPS} replications per n. Ratio > 1 means the "
-          "approximation has higher mean regret than the exact Bayes act.", "",
-          tab.to_markdown(index=False, floatfmt=".4f")]
+    md = [
+        "# E3b — Truths drawn from the prior (sanity check)",
+        "",
+        f"xi0 ~ U(xi_min, xi_max), sd = 1; {REPS} replications per n. Ratio > 1 means the "
+        "approximation has higher mean regret than the exact Bayes act.",
+        "",
+        tab.to_markdown(index=False, floatfmt=".4f"),
+    ]
     out_md = cfg["paths"]["reports"] / "e3b_prior_truth.md"
     out_md.write_text("\n".join(md), encoding="utf-8")
     print(tab.to_string(index=False))
