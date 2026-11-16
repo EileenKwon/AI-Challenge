@@ -19,3 +19,7 @@ $PY -u -W ignore experiments/r1_robustness.py e3_prior_swap
 $PY -u -W ignore experiments/r1_robustness.py e5_variants
 $PY -u -W ignore experiments/r1_robustness.py h6_confirm
 $PY -u experiments/r1_robustness.py analyze
+$PY -u -W ignore experiments/e7_adaptive.py calibrate
+$PY -u -W ignore experiments/e7_adaptive.py evaluate
+$PY -u experiments/e7_analyze.py
+$PY -u -W ignore experiments/e7b_noise.py

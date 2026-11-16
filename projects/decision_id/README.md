@@ -68,6 +68,7 @@ on it, adds anything beyond known methods.
 | `docs/03_novelty_check.md` | prior-art map (c-optimality, goal-oriented OED / Spantini et al., sloppy models, VOI, finance estimation risk) |
 | `docs/04_results.md` | consolidated results of E1–E6 against each hypothesis |
 | `docs/05_assessment.md` | failure analysis and the publishability verdict |
+| `docs/07_adaptive_design.md` | failure-triggered adaptive goal-oriented design vs Bayesian c-optimal and global Bayesian designs in Student-t, regime-mixture, GARCH and SV models (E7) |
 | `docs/06_significance_robustness.md` | significance tests (MCSE, paired/cluster tests, Holm, MCS) and robustness re-runs (seed, design, prior, finite backtests with Kupiec/DM) |
 | `reports/*.md` | auto-generated tables per experiment |
 | `figures/*.png` | auto-generated figures |
@@ -97,7 +98,7 @@ cd projects/decision_id
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -q                       # ~7 s
-bash experiments/run_all.sh     # ~3 h on 4 cores; writes results/, reports/, figures/
+bash experiments/run_all.sh     # ~6 h on 4 cores; writes results/, reports/, figures/
 ```
 
 Seeds are fixed (`SEED = 42`, `numpy.random.SeedSequence` per task). Returns are synthetic and in
