@@ -1,0 +1,6 @@
+# large raw simulation output (reproducible with experiments/e3_student_t_study.py)
+results/e3_raw.csv
+results/*_log.txt
+__pycache__/
+*.egg-info/
+.venv/

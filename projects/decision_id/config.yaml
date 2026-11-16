@@ -1,0 +1,85 @@
+# DECISION-ID experiment configuration. All paths are relative to this file's directory.
+seed: 42
+
+paths:
+  results: results
+  reports: reports
+  figures: figures
+
+units: percent            # returns are expressed in percent (sd = 1.0 means 1% daily vol)
+
+student_t:
+  xi_max: 0.45            # tail index xi = 1/nu in (0, xi_max]  => nu > 2.22 (finite variance)
+  xi_min_grid: 0.0005     # smallest xi on the grid (xi=0 is the Gaussian limit)
+  prior:
+    logsd_mean: 0.0       # log sd ~ N(logsd_mean, logsd_sd^2)
+    logsd_sd: 1.0
+    # xi ~ Uniform(0, xi_max)
+  alt_prior:              # alternative prior used for prior-sensitivity checks
+    logsd_mean: 0.3
+    logsd_sd: 0.5
+    xi_halfnormal_sd: 0.1 # xi ~ HalfNormal(0.1) truncated to (0, xi_max)
+  grid:
+    n_logsd: 121
+    n_xi: 161
+    logsd_halfwidth_se: 8.0
+  levels:
+    var: [0.95, 0.975, 0.99, 0.999]
+    es: [0.975, 0.99]
+
+gaussian:
+  prior: {m: 0.0, k: 0.01, a: 2.0, b: 1.0}   # Normal-Inverse-Gamma
+  truth: {mu: 0.03, sd: 1.0}
+  gamma: 3.0                                      # risk aversion in percent units
+  n_grid: [60, 250, 1000, 5000]
+  reps: 300
+
+e1:
+  n: [250, 1000]
+  nu: 4.0
+  sd: 1.0
+
+e3:
+  n_grid: [100, 250, 1000, 2500]
+  nu_grid: [3.0, 4.0, 6.0, 10.0, 50.0]
+  sd: 1.0
+  reps: 100
+  mcmc_reps: 30           # MCMC run on the first mcmc_reps replicates of each cell
+  mcmc_iters: 12000
+  mcmc_burn: 3000
+  n_draws: 2000           # draws used for sampling-based approximations
+  ci_level: 0.90
+  shift: {nu_factor: 0.6, sd_factor: 1.3}   # distribution shift for out-of-sample evaluation
+  backtest_len: 5000      # finite out-of-sample backtest length
+
+e4:
+  sigma1: 1.0
+  truth: {p: 0.04, s2: 3.5}
+  n_grid: [250, 1000]
+  reps: 200
+  prior: {logit_p_mean: -3.0, logit_p_sd: 1.5, log_s2_max: 2.4849}   # log(12)
+  grid: {n_logit_p: 141, n_log_s2: 141, logit_p_lo: -9.0, logit_p_hi: 1.0}
+  levels_var: [0.95, 0.99, 0.999]
+  levels_es: [0.975]
+
+e5:
+  nu_grid: [3.0, 5.0, 10.0]
+  n0_grid: [100, 400]
+  reps: 60
+  batches: 8
+  batch_cost: 50.0
+  sources:
+    own:  {cost: 1.0}     # one additional daily return of the target asset
+    peer: {cost: 0.25}    # one unit-variance standardized residual from a peer asset (shares xi)
+    rv:   {cost: 0.5, m: 5}   # one noisy variance proxy, RV ~ sd^2 * chi2_m / m
+  preposterior_sims: 12
+  targets: [var975, fz975, var999]
+
+e6:
+  n: [250, 1000]
+  n_train: 40000
+  n_test: 200
+  nu_test: [3.0, 5.0, 10.0]
+  hidden: 64
+  epochs: 60
+  lr: 0.002
