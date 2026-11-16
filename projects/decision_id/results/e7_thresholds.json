@@ -1,0 +1,8 @@
+{
+  "tau_kappa": 1000000000.0,
+  "tau_margin": 0.5,
+  "cal_recall": 0.8137931034482758,
+  "cal_fire_rate": 0.6121212121212121,
+  "n_stages": 660,
+  "n_disagree": 145
+}

@@ -83,3 +83,23 @@ e6:
   hidden: 64
   epochs: 60
   lr: 0.002
+
+e7:
+  stages: 6
+  n_sims: 16
+  reps_cal: 10
+  reps_eval: 30
+  tau_fixed: [0.223, 0.10]     # kappa > log(1.25) or relative copt margin < 0.10 (pre-specified)
+  cal_recall: 0.8              # calibrated trigger: smallest firing rate with >= 80% recall
+  cells:                       # model, truth, target
+    - [t, nu3, var999]
+    - [mix, moderate, var99]
+    - [mix, moderate, var999]
+    - [mix, rare, var99]
+    - [mix, rare, var999]
+    - [garch, regular, var99]
+    - [garch, regular, qlike10]
+    - [garch, weak, var99]
+    - [garch, weak, qlike10]
+    - [sv, regular, var99]
+    - [sv, weak, var99]
