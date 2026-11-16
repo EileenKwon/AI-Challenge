@@ -40,6 +40,17 @@ on it, adds anything beyond known methods.
   * H2, H3 and E3b are robust. "π_g beats the contraction ratio" is **not** significant.
   * Exact-posterior coverage collapses under a prior that conflicts with the truth on ξ (0.37 for
     VaR99.9).
+* **Failure-triggered adaptive design (E7, doc 07).**
+  * Tested in Student-t, regime-mixture, GARCH(1,1)-t6 and SV models, against uniform, D-opt, Bayesian
+    c-optimal (key baseline) and always-global Bayesian designs.
+  * It does **not** beat c-optimal design: 0.99–1.13, n.s.; worse in SV.
+  * Always-global design is itself never better than c-optimal: n.s. in t, mixture and GARCH; ×2.1
+    worse in SV under the QML quasi-likelihood. The only trend is GARCH weak-ID / 10-day variance, 0.74
+    (n.s.).
+  * Posterior non-Gaussianity does not predict when global changes the decision (AUC ≈ 0.5). The
+    decision margin does in t / mixture (AUC 0.87).
+  * Net result: local Bayesian c-optimal design is a strong, cheap baseline in non-regular financial
+    models.
 * **New-ish, applied results.**
   * At fixed variance, VaR is tail-index-immune at α = Φ(√3) = 0.958 and ES at Φ(1) = 0.841 near the
     Gaussian limit. The immune level rises to 0.987 / 0.938 at ν = 4.
@@ -86,7 +97,7 @@ src/decision_id/
   allocation.py    data sources, local and preposterior decision-value criteria
   npe.py           numpy Gaussian-head neural posterior estimation (no DL framework was available)
 experiments/       e1..e6 scripts (+ e3_analyze, e5_analyze, run_all.sh)
-tests/             30 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
+tests/             37 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
                    posterior agreement (grid vs MCMC/Laplace/VI), NPE gradients, allocation sources
 config.yaml        every path, seed, prior and experiment setting
 ```

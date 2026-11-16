@@ -33,6 +33,26 @@ Finance* note). It is not a JASA/AoS/NeurIPS methods paper unless one of the ext
 | preposterior beats local allocation (H6) | **rejected**: n.s. in all targets. In the confirmatory run (32 simulations), 97% of final allocations are identical; the earlier disagreements were Monte Carlo noise |
 | exact posterior intervals are reliable | true under the default prior. **Not robust to a prior that conflicts with the truth on ξ** (VaR99.9 coverage 0.37 at n = 100, ν = 3; MLE 0.80) |
 | finite backtests | Kupiec over-rejects for *all* methods (15–34%). Diebold–Mariano reproduces the population-regret ordering with low power |
+| **(E7) the earlier "decision-targeted local" policy is Bayesian c-optimal design** | correction: for scalar functionals the score curvature only rescales the c-optimal criterion. "Beats D-opt" is therefore a known result |
+| (E7) failure-triggered adaptive design beats Bayesian c-optimal design | **not supported** in Student-t, regime mixture, GARCH or SV (0.99–1.13, n.s.). Significantly worse in SV (1.90, p = 0.017). Non-inferior to always-global design at 15–50% lower CPU |
+| (E7) always-global Bayesian design (EVSI / exact preposterior variance) beats c-optimal in non-regular models | **not supported**: n.s. in t, mixture and GARCH; **worse in SV** (×2.1, p = 0.007) under the QML quasi-likelihood. Only trend in favour: GARCH weak-ID with 10-day variance (0.74, p = 0.12) |
+| (E7) posterior non-Gaussianity (κ) signals when local design fails | **rejected**: AUC 0.41–0.58 for predicting local/global disagreement; calibration removed κ. The decision margin predicts disagreement in t / mixture (AUC 0.86–0.88), but not in GARCH/SV (0.56–0.57) |
+
+## 0b. Update after E7 (doc 07)
+
+The proposed next step was to compute global inference only where local criteria are likely to fail,
+validated in GARCH/SV against Bayesian c-optimal design. It produced a clear negative result:
+
+* the expensive global criterion is not better than local Bayesian c-optimal design in these models;
+* under a misspecified working likelihood (SV via QML) the global criterion is significantly worse;
+* hence no gate can beat c-optimal design.
+
+The open problem that remains is narrower:
+
+* correctly specified latent-variable likelihoods;
+* persistence-sensitive multi-horizon targets (the GARCH weak-ID / 10-day-variance trend);
+* non-myopic designs with variance-controlled preposterior estimators;
+* the decision margin, rather than non-Gaussianity, as the trigger.
 
 ## 1. The central question
 

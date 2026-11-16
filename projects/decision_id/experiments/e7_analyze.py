@@ -187,6 +187,10 @@ def main() -> None:
                 linewidth=1.5,
             )
         ax.set_xscale("log")
+        from matplotlib.ticker import FuncFormatter, NullFormatter
+
+        ax.xaxis.set_minor_formatter(NullFormatter())
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
         ax.axhline(1.0, color=ps.TEXT2, lw=1, ls="--")
         ax.set_title(f"{model}: regret / c-opt vs CPU")
         ax.set_xlabel("CPU seconds per run (log)")
