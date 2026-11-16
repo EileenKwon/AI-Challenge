@@ -13,3 +13,9 @@ $PY -u -W ignore experiments/e4_mixture_multimodal.py
 $PY -u -W ignore experiments/e5_allocation.py
 $PY -u experiments/e5_analyze.py
 $PY -u -W ignore experiments/e6_npe.py
+$PY -u experiments/s1_significance.py
+$PY -u -W ignore experiments/r1_robustness.py backtest_dm
+$PY -u -W ignore experiments/r1_robustness.py e3_prior_swap
+$PY -u -W ignore experiments/r1_robustness.py e5_variants
+$PY -u -W ignore experiments/r1_robustness.py h6_confirm
+$PY -u experiments/r1_robustness.py analyze

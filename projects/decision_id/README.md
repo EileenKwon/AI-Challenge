@@ -29,9 +29,17 @@ on it, adds anything beyond known methods.
   * Marginally for prior sensitivity ($\pi_g$: ρ 0.89 vs 0.88 for the contraction ratio).
 * **Decision-targeted allocation.**
   * It beats uniform, own-history-only and predictive (log-score) allocation.
-  * It beats Fisher-only D-optimal design only for VaR97.5 (regret 0.52 vs 0.66 of uniform). FZ0 is a
-    tie and VaR99.9 is inconclusive.
-  * The global preposterior version adds nothing over the local one, at ~150× the cost.
+  * It beats Fisher-only D-optimal design by a modest 13–17% for VaR targets: pooled over 6 seed/design
+    runs, p ≤ 5e-7, all 6 runs < 1. The gain for FZ0 is ≈3% and fragile.
+  * Single-run significance is underpowered and target-unstable.
+  * The global preposterior version reproduces the local choice in 97% of cases, at ~150× the cost.
+* **Significance and robustness** (doc 06).
+  * MCSE, paired and cell-clustered tests, Holm adjustment, Model Confidence Set.
+  * Re-runs over seed, cost design and prior.
+  * Kupiec and Diebold–Mariano backtests.
+  * H2, H3 and E3b are robust. "π_g beats the contraction ratio" is **not** significant.
+  * Exact-posterior coverage collapses under a prior that conflicts with the truth on ξ (0.37 for
+    VaR99.9).
 * **New-ish, applied results.**
   * At fixed variance, VaR is tail-index-immune at α = Φ(√3) = 0.958 and ES at Φ(1) = 0.841 near the
     Gaussian limit. The immune level rises to 0.987 / 0.938 at ν = 4.
@@ -60,6 +68,7 @@ on it, adds anything beyond known methods.
 | `docs/03_novelty_check.md` | prior-art map (c-optimality, goal-oriented OED / Spantini et al., sloppy models, VOI, finance estimation risk) |
 | `docs/04_results.md` | consolidated results of E1–E6 against each hypothesis |
 | `docs/05_assessment.md` | failure analysis and the publishability verdict |
+| `docs/06_significance_robustness.md` | significance tests (MCSE, paired/cluster tests, Holm, MCS) and robustness re-runs (seed, design, prior, finite backtests with Kupiec/DM) |
 | `reports/*.md` | auto-generated tables per experiment |
 | `figures/*.png` | auto-generated figures |
 
@@ -76,7 +85,7 @@ src/decision_id/
   allocation.py    data sources, local and preposterior decision-value criteria
   npe.py           numpy Gaussian-head neural posterior estimation (no DL framework was available)
 experiments/       e1..e6 scripts (+ e3_analyze, e5_analyze, run_all.sh)
-tests/             24 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
+tests/             30 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
                    posterior agreement (grid vs MCMC/Laplace/VI), NPE gradients, allocation sources
 config.yaml        every path, seed, prior and experiment setting
 ```
@@ -88,7 +97,7 @@ cd projects/decision_id
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -q                       # ~7 s
-bash experiments/run_all.sh     # ~1.5-2 h on 4 cores; writes results/, reports/, figures/
+bash experiments/run_all.sh     # ~3 h on 4 cores; writes results/, reports/, figures/
 ```
 
 Seeds are fixed (`SEED = 42`, `numpy.random.SeedSequence` per task). Returns are synthetic and in

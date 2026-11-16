@@ -10,14 +10,29 @@
   * The invariant repair is the goal-oriented prior-whitened decomposition (Spantini et al. 2017).
   * The eigen split itself is coordinate-dependent (it moves from 0.5% to 54% for the same data).
 * The allocation rule is goal-oriented Bayesian experimental design.
-* Empirically, the allocation rule beats a functional-blind Fisher-only (D-optimal) design for only one
-  of three targets.
+* Empirically, the allocation rule beats a functional-blind Fisher-only (D-optimal) design by a modest
+  13–17% regret reduction for VaR targets. This holds pooled over six seed/design runs; single runs are
+  underpowered. For the joint (VaR, ES) target the gain is ≈3%.
 * Its global (preposterior) version is indistinguishable from the cheap local version in these models.
 
 **What does exist** is a coherent *applied / expository* contribution on **tail-index estimation risk in
 VaR/ES decisions**, with a few clean results that we did not find stated elsewhere. It suits a risk or
 forecasting journal (*J. Risk*, *J. Risk Model Validation*, *Int. J. Forecasting*, a *Quantitative
 Finance* note). It is not a JASA/AoS/NeurIPS methods paper unless one of the extensions in §5 succeeds.
+
+## 0. Statistical status of the key claims (details: `06_significance_robustness.md`)
+
+| claim | status after Holm-adjusted tests and robustness re-runs |
+|---|---|
+| tail-index recovery matters little for VaR95/97.5 and a lot for VaR99.9 (H2) | **significant** (contrast p = 2e-6, 20 cells). Robust to inference method (MLE, Laplace) and to swapping the prior |
+| Fisher-eigen split is coordinate-dependent (H3) | **proven** (identity), and large in practice |
+| local diagnostics add (almost) nothing beyond the exact functional variance (H4) | partial ρ ≈ +0.08–0.11. **Small, but significant for the whitened local variance** (Holm p = 0.044). Parameter-only metrics are significantly worse |
+| π_g best predicts decision prior sensitivity (H4b) | beats posterior variance (p = 0.012). **Not distinguishable from the contraction ratio** (p = 0.52) |
+| no approximation beats the exact posterior when truth ~ prior (E3b) | 0/30 better, 10/30 significantly worse |
+| decision-targeted allocation beats D-opt (H5) | single run: significant only for VaR97.5 (0.83, Holm p = 0.03; MCS excludes D-opt). **Pooled over 6 independent seed/design runs (secondary analysis): VaR97.5 0.865 (p = 5e-7), VaR99.9 0.828 (p = 1e-10), 6/6 runs < 1; FZ0 0.97 (fragile, Wilcoxon n.s.).** Which target reaches significance in a single run is not stable |
+| preposterior beats local allocation (H6) | **rejected**: n.s. in all targets. In the confirmatory run (32 simulations), 97% of final allocations are identical; the earlier disagreements were Monte Carlo noise |
+| exact posterior intervals are reliable | true under the default prior. **Not robust to a prior that conflicts with the truth on ξ** (VaR99.9 coverage 0.37 at n = 100, ν = 3; MLE 0.80) |
+| finite backtests | Kupiec over-rejects for *all* methods (15–34%). Diebold–Mariano reproduces the population-regret ordering with low power |
 
 ## 1. The central question
 
@@ -70,8 +85,9 @@ the project quantifies it:
 | decision_sensitivity_j = \|v_jᵀ∇g\| | same problem; its "weak share" is nearly useless as a failure predictor | E3 §3 (pooled ρ 0.25–0.35 vs 0.61) |
 | $R_g(\lambda>0)$ | equals a posterior variance only for one coordinate-specific prior; changes ×1.05–5.4 across coordinates | Prop. 1; E3 §4 |
 | local diagnostics in general | underestimate uncertainty for tail/moment functionals in short samples, at boundaries and near singular loci | E3 §7, §9; E4 |
-| decision-targeted allocation (local) | myopic one-batch criterion; loses to D-opt for VaR99.9 at ν = 3, n₀ = 100 and ν = 5, n₀ = 400; ties for FZ0 | E5 |
-| preposterior EVSI | ~150× the cost, no measurable gain; 12 preposterior simulations add Monte Carlo noise | E5 H6 |
+| decision-targeted allocation (local) | myopic one-batch criterion. Gains over D-opt are modest (13–17% for VaR, ≈3% for FZ0) and need about 2,000 paired replications to establish; individual conditions can favour D-opt (VaR99.9 at ν = 3, n₀ = 100) | E5, R1 §2.3 |
+| preposterior EVSI | ~150× the cost, no gain. With 32 simulations it reproduces the local choice in 97% of cases | E5 H6, R1 §2.4 |
+| exact Bayesian intervals under a conflicting prior | VaR99.9 coverage 0.37 (n = 100, ν = 3) when ξ ~ HalfNormal(0.1); prior-free Wald 0.80 | R1 §2.1 |
 | decision gains at a fixed truth | can reverse with the truth because the prior on the weak direction matters; a claim must be averaged over the prior or over a truth grid | E3 vs E3b |
 | design dependence | E5 gains depend on the chosen costs and sources. Own-history-only looks 4–9× worse than uniform because the variance proxy is cheap by design | E5 setup |
 
@@ -97,10 +113,12 @@ the project quantifies it:
 4. **$\pi_g$ as a prior-sensitivity index for decisions.** The identity "worst-case prior-mean
    sensitivity / posterior variance = $\sum c_j/(1+\lambda_j)/\sum c_j$" unifies local robustness with the
    "weak × sensitive" intuition. Empirically it is only marginally better than the contraction ratio.
-5. **A negative result worth reporting.** In low-dimensional financial risk models, decision-targeted
-   allocation beats a functional-blind D-optimal design only when the decision is dominated by a
-   direction that D-optimality under-weights (here: scale, for VaR97.5). Global preposterior evaluation
-   does not improve on the local criterion despite non-Gaussian posteriors.
+5. **A sober result on allocation.** In low-dimensional financial risk models, decision-targeted
+   allocation beats a functional-blind D-optimal design by 13–17% for VaR targets. The gain is robust
+   across seeds and cost designs, but it needs ~2,000 paired replications to detect, and it is ≈3% for
+   the joint (VaR, ES) target. Global preposterior evaluation reproduces the local choice (97%
+   agreement) despite non-Gaussian posteriors. This is what goal-oriented design theory predicts, not a
+   new phenomenon.
 
 Items 1–3 combined with E1/E3 would make a solid applied paper ("Which risk measures are robust to
 tail-index estimation risk, and where should the next data come from?"). Items 4–5 are supporting
