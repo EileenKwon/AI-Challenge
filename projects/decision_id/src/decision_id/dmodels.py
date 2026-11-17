@@ -128,6 +128,10 @@ class _Base:
         """Shallow-safe copy (arrays are never modified in place)."""
         return {**s, "ptr": dict(s["ptr"]), "data": {k: copy.copy(v) for k, v in s["data"].items()}}
 
+    def _truth(self, truth):
+        """Named truth or an explicit parameter tuple (used for training-truth sampling)."""
+        return self.truths[truth] if isinstance(truth, str) else truth
+
     def grad_g(self, target, m, post, state):
         """Gradient of the target functional at a parameter point."""
         return fd_grad(lambda p: self.g_point(target, p, state), m, self.fd_step(m))
@@ -154,7 +158,7 @@ class TDesign(_Base):
         self.xm = self.prior.xi_max
 
     def init_state(self, rng, truth: str, n0: int = 200, stages: int = 6) -> dict:
-        xi0 = 1 / self.truths[truth]
+        xi0 = 1 / self._truth(truth)
         s0 = np.sqrt(1 - 2 * xi0)
         pools = {
             s: al.simulate_source(rng, s, self.units[s] * stages, s0, xi0, self.M)
@@ -242,7 +246,7 @@ class MixDesign(_Base):
     LS2MAX = np.log(12.0)
 
     def init_state(self, rng, truth: str, n0: int = 250, stages: int = 6) -> dict:
-        p0, s20 = self.truths[truth]
+        p0, s20 = self._truth(truth)
 
         def own(n):
             c = rng.uniform(size=n) < p0
@@ -390,12 +394,17 @@ class GarchDesign(_Base):
     sources = ("rv", "rv_hf", "peer")
     units = {"rv": 50, "rv_hf": 12, "peer": 250}
     M = {"rv": 10, "rv_hf": 50}
-    targets = {"var99": ("var", 0.99), "qlike10": ("qlike", None)}
+    targets = {
+        "var99": ("var", 0.99),
+        "qlike10": ("qlike", 10),
+        "qlike5": ("qlike", 5),
+        "qlike22": ("qlike", 22),
+    }
     truths = {"regular": (1.0, 0.08, 0.88), "weak": (1.0, 0.02, 0.96)}
     N0 = 500
 
     def init_state(self, rng, truth: str, stages: int = 6) -> dict:
-        v0, a0, b0 = self.truths[truth]
+        v0, a0, b0 = self._truth(truth)
         r, path = garch_simulate(rng, self.N0, v0, a0, b0)
         n_rv = {k: self.units[k] * stages for k in ("rv", "rv_hf")}
         pools = {
@@ -493,9 +502,10 @@ class GarchDesign(_Base):
 
     # -- functionals -------------------------------------------------------------------
     @staticmethod
-    def _v10(v, a, b, s2n):
+    def _vh(v, a, b, s2n, h):
+        """Expected sum of the next h conditional variances (h-day variance forecast)."""
         pi = a + b
-        return 10 * v + (s2n - v) * (1 - pi**10) / (1 - pi)
+        return h * v + (s2n - v) * (1 - pi**h) / (1 - pi)
 
     def lossmix(self, post, s):
         sc = np.sqrt(post.cache["s2_next"])[:, None] * C_T6
@@ -508,17 +518,17 @@ class GarchDesign(_Base):
 
     def gvals(self, target, post, s):
         c = post.cache
-        return self._v10(c["v"], c["a"], c["b"], c["s2_next"])
+        return self._vh(c["v"], c["a"], c["b"], c["s2_next"], self.targets[target][1])
 
     def truth_gval(self, target, s):
         v0, a0, b0 = s["truth"]
-        return float(self._v10(v0, a0, b0, s["s2_next"]))
+        return float(self._vh(v0, a0, b0, s["s2_next"], self.targets[target][1]))
 
     def g_point(self, target, p, s):
         v, a, b = np.exp(p[0]), p[1], p[2]
         s2n = garch_path(s["data"]["r"], v, a, b)[0, -1]
         if self.targets[target][0] == "qlike":
-            return float(self._v10(v, a, b, s2n))
+            return float(self._vh(v, a, b, s2n, self.targets[target][1]))
         return float(np.sqrt(s2n) * C_T6 * stats.t.ppf(self.targets[target][1], NU_G))
 
     def fd_step(self, m):
@@ -670,8 +680,23 @@ class SVDesign(_Base):
     truths = {"regular": (0.0, 0.95, 0.25), "weak": (0.0, 0.97, 0.06)}
     N0 = 500
 
+    def __init__(self, exact: bool = False):
+        # exact=True: observations y_t = h_t + N(QM, QV), so the QML likelihood is the exact
+        # likelihood (misspecification ablation); exact=False: y_t = log r_t^2 (true SV)
+        self.exact = exact
+
+    def _y(self, rng, r, h):
+        """Observation series from returns r and aligned log-variances h."""
+        if self.exact:
+            return h + rng.normal(QM, np.sqrt(QV), len(h))
+        return np.log(r**2 + 1e-12)
+
+    def _sim_peer(self, rng, ph, se):
+        r, h = sv_simulate(rng, self.units["peer"], 0.0, ph, se)
+        return self._y(rng, r, h[:-1])
+
     def init_state(self, rng, truth: str, stages: int = 6) -> dict:
-        mu0, ph0, se0 = self.truths[truth]
+        mu0, ph0, se0 = self._truth(truth)
         r, h = sv_simulate(rng, self.N0, mu0, ph0, se0)
         pools = {}
         for k in ("rv", "rv_hf"):
@@ -679,16 +704,14 @@ class SVDesign(_Base):
             sd = self.SD[k]
             hv = h[:-1][::-1][:n]
             pools[k] = hv + rng.normal(-(sd**2) / 2, sd, n)  # log RV, most recent day first
-        pools["peer"] = [
-            sv_simulate(rng, self.units["peer"], 0.0, ph0, se0)[0] for _ in range(stages)
-        ]
+        pools["peer"] = [self._sim_peer(rng, ph0, se0) for _ in range(stages)]
         return {
             "truth": (mu0, ph0, se0),
             "hT": h[-2],
             "pools": pools,
             "ptr": {s: 0 for s in self.sources},
             "data": {
-                "y": np.log(r**2 + 1e-12),
+                "y": self._y(rng, r, h[:-1]),
                 "rv": np.empty(0),
                 "rv_hf": np.empty(0),
                 "peer": [],
@@ -707,8 +730,7 @@ class SVDesign(_Base):
     @staticmethod
     def _peer_ll(series, ph, se):
         tot = 0.0
-        for r in series:
-            yp = np.log(r**2 + 1e-12)
+        for yp in series:
             mup = np.mean(yp) - QM
             tot = tot + sv_filter(yp, [], np.full(len(ph), mup), ph, se)[0]
         return tot
@@ -774,7 +796,7 @@ class SVDesign(_Base):
         n_rep = 2
         for _ in range(n_rep):
             if src == "peer":
-                y = sv_simulate(rng, self.units["peer"], 0.0, m[1], np.exp(m[2]))[0]
+                y = self._sim_peer(rng, m[1], np.exp(m[2]))
                 f = self._peer_ll([y], pts[:, 1], np.exp(pts[:, 2]))
                 H += -hess_from_vals(f, h) / n_rep
             else:
@@ -804,7 +826,7 @@ class SVDesign(_Base):
     def simulate(self, rng, src, k, post, s):
         p = post.phi[k]
         if src == "peer":
-            return sv_simulate(rng, self.units["peer"], 0.0, p[1], np.exp(p[2]))[0]
+            return self._sim_peer(rng, p[1], np.exp(p[2]))
         return self._sim_rv(rng, src, p, s)
 
     def update_lw(self, src, y, post, s):

@@ -232,6 +232,48 @@ def _state_rng(seed: int, kind: int, state) -> np.random.Generator:
     return np.random.default_rng([int(seed), kind, *[int(v) for v in state["ptr"].values()]])
 
 
+def source_features(model, post: NodePost, loc: dict, state, stage: int, n_stages: int):
+    """Per-source feature matrix (n_sources, F) for learned design policies.
+
+    Common: posterior mean and log sd of phi, kappa, margin, log EVPI, log Var(g), stage.
+    Per source: relative c-opt and D-opt scores, batches already bought, one-hot identity.
+    """
+    m, S = post.moments()
+    common = np.concatenate(
+        [
+            m,
+            0.5 * np.log(np.maximum(np.diag(S), 1e-300)),
+            [
+                loc["kappa"],
+                loc["margin"],
+                np.log(max(loc["evpi_now"], 1e-300)),
+                np.log(max(loc["var_now"], 1e-300)),
+                stage / n_stages,
+            ],
+        ]
+    )
+    cmax = max(abs(v) for v in loc["copt"].values()) + 1e-300
+    dmax = max(abs(v) for v in loc["dopt"].values()) + 1e-300
+    rows = []
+    for j, src in enumerate(model.sources):
+        pool = state["pools"][src]
+        bought = (
+            state["ptr"][src] if isinstance(pool, list) else state["ptr"][src] / model.units[src]
+        )
+        onehot = np.zeros(len(model.sources))
+        onehot[j] = 1.0
+        rows.append(
+            np.concatenate(
+                [
+                    common,
+                    [loc["copt"][src] / cmax, loc["dopt"][src] / dmax, bought / n_stages],
+                    onehot,
+                ]
+            )
+        )
+    return np.array(rows)
+
+
 def run_policy(
     model,
     policy: str,
@@ -243,6 +285,7 @@ def run_policy(
     tau: tuple[float, float] = (0.223, 0.10),
     log_both: bool = False,
     seed: int = 0,
+    scorer=None,
 ) -> dict:
     """Run one multi-stage allocation; returns final regret, costs and per-stage logs."""
     state = model.copy_state(state0)
@@ -278,6 +321,9 @@ def run_policy(
             src = max(model.sources, key=lambda s: glob["evsi"][s])
         elif policy.startswith("adapt"):
             src = max(model.sources, key=lambda s: glob["evsi"][s]) if fire else choice_local
+        elif policy == "learned":
+            pred = scorer(source_features(model, post, loc, state, stage, n_stages))
+            src = model.sources[int(np.argmin(pred))]
         else:
             raise ValueError(policy)
         rec = {

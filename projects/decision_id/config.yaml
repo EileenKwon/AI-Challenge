@@ -103,3 +103,18 @@ e7:
     - [garch, weak, qlike10]
     - [sv, regular, var99]
     - [sv, weak, var99]
+
+e8:
+  confirm_cell: [garch, weak, qlike10]   # pre-registered after E7 (p = 0.12 trend)
+  confirm_reps: 150
+  horizon_cells: [[garch, weak, qlike5], [garch, weak, qlike22]]
+  horizon_reps: 40
+  sv_exact_cells: [[svx, regular, var99], [svx, weak, var99]]
+  sv_exact_reps: 40
+
+e9:
+  n_traj: 300                  # training trajectories per model (truths drawn from a broad prior)
+  hidden: 64
+  label_delta_frac: 0.01       # log(regret + delta), delta = frac * median regret
+  garch_truth: {alpha: [0.005, 0.15], beta_lo: 0.80, persist_max: 0.985}
+  sv_truth: {phi: [0.90, 0.99], log_sigma_eta: [-3.2, -1.05]}
