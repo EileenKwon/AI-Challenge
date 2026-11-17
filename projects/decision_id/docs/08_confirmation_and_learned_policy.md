@@ -115,3 +115,17 @@ Full tables: `reports/e89_results.md`, `results/e89_tests.csv`; figure: `figures
   in practice the simulator is itself a model.
 * **Comparisons with amortized Bayesian design methods** (Deep Adaptive Design, RL-based Bayesian
   design), adapted to a decision loss, and a real-data rolling study.
+
+## Pre-registration of E10 (committed before running)
+
+* **H10 (primary).** In SV (QML working likelihood), the frozen E9 learned policy has lower mean
+  regret than local Bayesian c-optimal design.
+  * Pooled over truths {regular, weak}, 150 fresh replications each.
+  * Regrets normalized by the c-opt mean per truth; paired t and Wilcoxon, two-sided, α = 0.05.
+  * Networks are not retrained; seeds are disjoint from all earlier runs.
+* **Secondary.**
+  * learned vs always-global EVSI (first 50 replications per truth);
+  * c-opt vs always-global;
+  * uniform vs c-opt;
+  * per-truth ratios, median ratios, win rates;
+  * CPU.
