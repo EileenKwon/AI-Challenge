@@ -129,3 +129,36 @@ Full tables: `reports/e89_results.md`, `results/e89_tests.csv`; figure: `figures
   * uniform vs c-opt;
   * per-truth ratios, median ratios, win rates;
   * CPU.
+
+## E10 results (`reports/e10_sv_confirm.md`)
+
+| test | ratio [95% CI] | median ratio | first better | p (t) | p (Wilcoxon) |
+|---|---|---|---|---|---|
+| **H10 learned / c-opt, SV pooled (300)** | **0.93 [0.84, 1.03]** | 0.83 | 48% | 0.13 | 0.60 |
+| learned / c-opt, regular truth (150) | 0.81 [0.68, 0.94] | 0.86 | 52% | 0.012 | 0.14 |
+| learned / c-opt, weak truth (150) | 1.04 [0.94, 1.19] | 0.98 | 45% | 0.47 | 0.48 |
+| learned / always-global (100) | **0.46 [0.34, 0.60]** | 0.40 | 57% | 0.0002 | 0.0005 |
+| c-opt / always-global (100) | **0.49 [0.36, 0.64]** | 0.44 | 54% | 0.0003 | 0.0001 |
+| uniform / c-opt (300) | 0.93 [0.84, 1.03] | 0.76 | 46% | 0.15 | 0.91 |
+
+CPU per run: learned 2.75 s, c-opt 2.81 s, uniform 2.84 s, always-global 49.3 s.
+
+**Verdict.**
+
+* **H10 is not confirmed.** The E9 advantage over c-opt (0.73) shrank to 0.93 on fresh seeds, which
+  is regression to the mean. A possible effect remains in the regular-volatility truth (0.81,
+  p = 0.012); it is secondary and not adjusted.
+* **What did replicate is the failure of always-global Bayesian design in SV under QML.** It is about
+  2× worse than both the cheap local c-optimal criterion and the learned policy (E7: ×2.13; E10:
+  ×2.04, p = 0.0003), at about 18× the CPU.
+* **Source mix explains the pattern.** Mean batches out of 6:
+
+  | policy | noisy realized variance | precise realized variance |
+  |---|---|---|
+  | always-global | 4.2–5.0 | 0.6–0.8 |
+  | c-opt | 2.6–3.9 | 1.1–1.6 |
+  | learned | 1.6–1.7 | 2.7–3.0 |
+
+  The learned policy, trained on true regrets, shifts toward precise measurements and peer data.
+* **Net position.** The learned policy is *as good as* c-optimal design at the same cost. It is not
+  demonstrably better.

@@ -58,8 +58,10 @@ on it, adds anything beyond known methods.
   * A **regret-trained neural design policy** (numpy MLP trained on simulated true regrets) ties c-opt
     in GARCH. In SV it beats always-global design (×0.34, p = 0.002, at ~5% of the CPU) and c-opt
     (×0.73, Wilcoxon p = 0.044).
-  * No pre-registered primary test survives Holm. The learned policy is a lead that still needs a
-    confirmatory run.
+  * No pre-registered primary test survives Holm.
+  * **E10 confirmation (300 fresh SV seeds): learned / c-opt = 0.93 (p = 0.13), not confirmed.**
+  * What replicated is that always-global design is ~2× worse than both c-opt and the learned policy
+    in SV (p = 0.0003).
 * **New-ish, applied results.**
   * At fixed variance, VaR is tail-index-immune at α = Φ(√3) = 0.958 and ES at Φ(1) = 0.841 near the
     Gaussian limit. The immune level rises to 0.987 / 0.938 at ν = 4.
@@ -77,6 +79,7 @@ on it, adds anything beyond known methods.
 | `figures/e3_coverage.png` | functional coverage of 7 inference methods vs n |
 | `figures/e3_param_vs_decision.png` | tail-index error vs regret, VaR97.5 vs VaR99.9 |
 | `figures/e4_mixture_example.png` | singular-locus posterior, Laplace failure in parameter space vs agreement in functional space |
+| `figures/f1_immune_levels.png` | tail-index-immune VaR/ES levels vs degrees of freedom (Prop. 5) |
 | `figures/e5_regret_ratio.png` | allocation policies vs uniform for three decision targets |
 
 ## Documents
@@ -90,6 +93,7 @@ on it, adds anything beyond known methods.
 | `docs/05_assessment.md` | failure analysis and the publishability verdict |
 | `docs/07_adaptive_design.md` | failure-triggered adaptive goal-oriented design vs Bayesian c-optimal and global Bayesian designs in Student-t, regime-mixture, GARCH and SV models (E7) |
 | `docs/08_confirmation_and_learned_policy.md` | pre-registered confirmation (E8), SV misspecification ablation, regret-trained neural design policy (E9, the AI-in-finance component) |
+| `docs/09_highlights.md` | the 13 most interesting findings with numbers and status |
 | `docs/06_significance_robustness.md` | significance tests (MCSE, paired/cluster tests, Holm, MCS) and robustness re-runs (seed, design, prior, finite backtests with Kupiec/DM) |
 | `reports/*.md` | auto-generated tables per experiment |
 | `figures/*.png` | auto-generated figures |

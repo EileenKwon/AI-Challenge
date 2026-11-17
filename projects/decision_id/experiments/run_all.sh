@@ -28,3 +28,6 @@ $PY -u -W ignore experiments/e9_learned.py gen
 $PY -u -W ignore experiments/e9_learned.py train
 $PY -u -W ignore experiments/e9_learned.py eval
 $PY -u experiments/e89_analyze.py
+$PY -u -W ignore experiments/e10_sv_confirm.py run
+$PY -u experiments/e10_sv_confirm.py analyze
+$PY -u experiments/f1_immune_levels.py

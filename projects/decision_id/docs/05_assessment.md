@@ -72,6 +72,17 @@ The open problem that remains is narrower:
     * prior-shift robustness;
     * comparisons with amortized Bayesian design (DAD / RL-BED).
 
+## 0d. Update after E10
+
+The pre-registered confirmation of the learned policy in SV did not hold: 0.93 [0.84, 1.03], p = 0.13,
+on 300 fresh seeds. The failure of always-global design in SV did replicate (×2.04, p = 0.0003).
+
+Final position on the AI-in-finance angle:
+
+* the amortized, simulation-trained policy is *competitive* with c-optimal design at equal cost, and
+  far cheaper and better than global Bayesian design;
+* superiority over c-optimal design is not established.
+
 ## 1. The central question
 
 *Are statistically identifiable parameters necessarily the most important for decisions?* **No**, and
