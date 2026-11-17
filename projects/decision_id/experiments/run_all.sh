@@ -23,3 +23,8 @@ $PY -u -W ignore experiments/e7_adaptive.py calibrate
 $PY -u -W ignore experiments/e7_adaptive.py evaluate
 $PY -u experiments/e7_analyze.py
 $PY -u -W ignore experiments/e7b_noise.py
+$PY -u -W ignore experiments/e8_confirm.py
+$PY -u -W ignore experiments/e9_learned.py gen
+$PY -u -W ignore experiments/e9_learned.py train
+$PY -u -W ignore experiments/e9_learned.py eval
+$PY -u experiments/e89_analyze.py

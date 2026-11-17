@@ -54,6 +54,24 @@ The open problem that remains is narrower:
 * non-myopic designs with variance-controlled preposterior estimators;
 * the decision margin, rather than non-Gaussianity, as the trigger.
 
+## 0c. Update after E8/E9 (doc 08)
+
+* **H8a (GARCH weak-ID / 10-day variance) not confirmed:** 1.06 with 150 replications.
+* **H8b (SV with exact likelihood):** global design is still ×1.26 worse than c-opt. Misspecification
+  explained most of the earlier ×2.13, but not the sign.
+* **Learned (regret-trained, amortized) design policy.**
+  * Ties c-opt in GARCH. In SV it beats c-opt (×0.73, Wilcoxon p = 0.044) and always-global design
+    (×0.34, p = 0.002) at c-opt's CPU cost.
+  * Not significant after Holm over the five primary tests.
+* **Revised publishability.**
+  * As a statistics-methods paper, no.
+  * As an AI-in-finance paper on amortized, simulation-trained data-acquisition policies for financial
+    risk estimation, possibly. That requires:
+    * a confirmatory SV run;
+    * non-myopic training labels;
+    * prior-shift robustness;
+    * comparisons with amortized Bayesian design (DAD / RL-BED).
+
 ## 1. The central question
 
 *Are statistically identifiable parameters necessarily the most important for decisions?* **No**, and

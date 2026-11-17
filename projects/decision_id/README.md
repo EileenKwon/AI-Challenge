@@ -51,6 +51,15 @@ on it, adds anything beyond known methods.
     decision margin does in t / mixture (AUC 0.87).
   * Net result: local Bayesian c-optimal design is a strong, cheap baseline in non-regular financial
     models.
+* **Confirmation and AI extension (E8/E9, doc 08).**
+  * The GARCH weak-ID trend did not replicate (1.06 with 150 replications).
+  * With an exact SV likelihood, global design's deterioration shrinks from ×2.13 to ×1.26, but global
+    is still not better than c-opt.
+  * A **regret-trained neural design policy** (numpy MLP trained on simulated true regrets) ties c-opt
+    in GARCH. In SV it beats always-global design (×0.34, p = 0.002, at ~5% of the CPU) and c-opt
+    (×0.73, Wilcoxon p = 0.044).
+  * No pre-registered primary test survives Holm. The learned policy is a lead that still needs a
+    confirmatory run.
 * **New-ish, applied results.**
   * At fixed variance, VaR is tail-index-immune at α = Φ(√3) = 0.958 and ES at Φ(1) = 0.841 near the
     Gaussian limit. The immune level rises to 0.987 / 0.938 at ν = 4.
@@ -80,6 +89,7 @@ on it, adds anything beyond known methods.
 | `docs/04_results.md` | consolidated results of E1–E6 against each hypothesis |
 | `docs/05_assessment.md` | failure analysis and the publishability verdict |
 | `docs/07_adaptive_design.md` | failure-triggered adaptive goal-oriented design vs Bayesian c-optimal and global Bayesian designs in Student-t, regime-mixture, GARCH and SV models (E7) |
+| `docs/08_confirmation_and_learned_policy.md` | pre-registered confirmation (E8), SV misspecification ablation, regret-trained neural design policy (E9, the AI-in-finance component) |
 | `docs/06_significance_robustness.md` | significance tests (MCSE, paired/cluster tests, Holm, MCS) and robustness re-runs (seed, design, prior, finite backtests with Kupiec/DM) |
 | `reports/*.md` | auto-generated tables per experiment |
 | `figures/*.png` | auto-generated figures |
@@ -97,7 +107,7 @@ src/decision_id/
   allocation.py    data sources, local and preposterior decision-value criteria
   npe.py           numpy Gaussian-head neural posterior estimation (no DL framework was available)
 experiments/       e1..e6 scripts (+ e3_analyze, e5_analyze, run_all.sh)
-tests/             37 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
+tests/             39 tests: Fisher vs Monte Carlo, score properness/curvature, invariance identities,
                    posterior agreement (grid vs MCMC/Laplace/VI), NPE gradients, allocation sources
 config.yaml        every path, seed, prior and experiment setting
 ```
@@ -109,7 +119,7 @@ cd projects/decision_id
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -q                       # ~7 s
-bash experiments/run_all.sh     # ~6 h on 4 cores; writes results/, reports/, figures/
+bash experiments/run_all.sh     # ~8 h on 4 cores; writes results/, reports/, figures/
 ```
 
 Seeds are fixed (`SEED = 42`, `numpy.random.SeedSequence` per task). Returns are synthetic and in
